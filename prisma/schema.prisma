@@ -1,0 +1,187 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  password  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  orders     Order[]
+  wishlist   Wishlist?
+  cartItems  CartItem[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  namePl      String    @map("name_pl")
+  nameEn      String    @map("name_en")
+  descriptionPl String? @map("description_pl")
+  descriptionEn String? @map("description_en")
+  slug        String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  namePl        String    @map("name_pl")
+  nameEn        String    @map("name_en")
+  descriptionPl String?   @db.Text @map("description_pl")
+  descriptionEn String?   @db.Text @map("description_en")
+  pricePln      Decimal   @map("price_pln") @db.Decimal(10, 2)
+  priceEur      Decimal   @map("price_eur") @db.Decimal(10, 2)
+  stock         Int       @default(0)
+  sku           String?   @unique
+  slug          String    @unique
+  categoryId    String    @map("category_id")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  category      Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  images        Image[]
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+  orderItems    OrderItem[]
+  discounts     Discount[]
+
+  @@map("products")
+}
+
+model Image {
+  id        String   @id @default(cuid())
+  url       String
+  altPl     String?  @map("alt_pl")
+  altEn     String?  @map("alt_en")
+  productId String   @map("product_id")
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("images")
+}
+
+model Wishlist {
+  id        String         @id @default(cuid())
+  userId    String         @unique @map("user_id")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     WishlistItem[]
+
+  @@map("wishlists")
+}
+
+model WishlistItem {
+  id         String   @id @default(cuid())
+  wishlistId String   @map("wishlist_id")
+  productId  String   @map("product_id")
+  createdAt  DateTime @default(now())
+  updatedAt DateTime  @updatedAt
+
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([wishlistId, productId])
+  @@map("wishlist_items")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("cart_items")
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String      @map("user_id")
+  status    OrderStatus @default(PENDING)
+  totalPln  Decimal     @map("total_pln") @db.Decimal(10, 2)
+  totalEur  Decimal     @map("total_eur") @db.Decimal(10, 2)
+  discountId String?    @map("discount_id")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discount  Discount?   @relation(fields: [discountId], references: [id], onDelete: SetNull)
+  items     OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String   @map("order_id")
+  productId String   @map("product_id")
+  quantity  Int
+  pricePln  Decimal  @map("price_pln") @db.Decimal(10, 2)
+  priceEur  Decimal  @map("price_eur") @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime  @updatedAt
+
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+model Discount {
+  id          String        @id @default(cuid())
+  code        String        @unique
+  type        DiscountType
+  value       Decimal       @db.Decimal(10, 2)
+  validFrom   DateTime      @map("valid_from")
+  validUntil  DateTime?     @map("valid_until")
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  products    Product[]
+  orders      Order[]
+
+  @@map("discounts")
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
