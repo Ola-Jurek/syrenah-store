@@ -118,5 +118,42 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', var(--font-geist-sans), sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-playfair {
+    font-family: 'Playfair Display', serif;
+  }
+  
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  
+  .animate-float {
+    animation: float 2s ease-in-out infinite;
+  }
+  
+  .animate-float-delayed {
+    animation: float 2s ease-in-out infinite 0.2s;
+  }
+  
+  @keyframes ken-burns {
+    0% {
+      transform: scale(1) translate(0, 0);
+    }
+    100% {
+      transform: scale(1.1) translate(-2%, -2%);
+    }
+  }
+  
+  .animate-ken-burns {
+    animation: ken-burns 20s ease-in-out infinite alternate;
   }
 }
