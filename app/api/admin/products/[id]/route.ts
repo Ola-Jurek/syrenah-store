@@ -7,7 +7,7 @@ import { Prisma } from "@prisma/client";
 
 /**
  * GET /api/admin/products/[id]
- * Zwraca produkt z images i category
+ * Zwraca produkt z images, category i discounts
  */
 export async function GET(
   req: Request,
@@ -32,6 +32,16 @@ export async function GET(
         images: {
           orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
         },
+        discounts: {
+          select: {
+            id: true,
+            code: true,
+            namePl: true,
+            type: true,
+            value: true,
+            isActive: true,
+          },
+        },
       },
     });
 
@@ -50,6 +60,8 @@ export async function GET(
       descriptionEn: product.descriptionEn || null,
       pricePln: Number(product.pricePln),
       priceEur: Number(product.priceEur),
+      salePricePln: product.salePricePln ? Number(product.salePricePln) : null,
+      salePriceEur: product.salePriceEur ? Number(product.salePriceEur) : null,
       stock: product.stock,
       sku: product.sku || null,
       slug: product.slug,
@@ -63,6 +75,14 @@ export async function GET(
         altPl: img.altPl || null,
         altEn: img.altEn || null,
         isPrimary: img.isPrimary,
+      })),
+      discounts: product.discounts.map((d) => ({
+        id: d.id,
+        code: d.code,
+        namePl: d.namePl,
+        type: d.type,
+        value: Number(d.value),
+        isActive: d.isActive,
       })),
     };
 
@@ -82,7 +102,7 @@ export async function GET(
 
 /**
  * PATCH /api/admin/products/[id]
- * Aktualizuje produkt i obrazy
+ * Aktualizuje produkt, obrazy i przypisanie rabatu
  */
 export async function PATCH(
   req: Request,
@@ -101,6 +121,8 @@ export async function PATCH(
       descriptionEn,
       pricePln,
       priceEur,
+      salePricePln,
+      salePriceEur,
       stock,
       sku,
       slug,
@@ -108,11 +130,13 @@ export async function PATCH(
       sizes,
       colors,
       images,
+      discountId,
     } = body;
 
     // Sprawdź czy produkt istnieje
     const existingProduct = await prisma.product.findUnique({
       where: { id },
+      include: { discounts: { select: { id: true } } },
     });
 
     if (!existingProduct) {
@@ -130,6 +154,12 @@ export async function PATCH(
     if (descriptionEn !== undefined) productData.descriptionEn = descriptionEn || null;
     if (pricePln !== undefined) productData.pricePln = new Prisma.Decimal(pricePln);
     if (priceEur !== undefined) productData.priceEur = new Prisma.Decimal(priceEur);
+    if (salePricePln !== undefined) {
+      productData.salePricePln = salePricePln ? new Prisma.Decimal(salePricePln) : null;
+    }
+    if (salePriceEur !== undefined) {
+      productData.salePriceEur = salePriceEur ? new Prisma.Decimal(salePriceEur) : null;
+    }
     if (stock !== undefined) productData.stock = parseInt(stock);
     if (sku !== undefined) productData.sku = sku || null;
     if (slug !== undefined) productData.slug = slug;
@@ -148,6 +178,25 @@ export async function PATCH(
     }
     if (sizes !== undefined) productData.sizes = sizes && Array.isArray(sizes) && sizes.length > 0 ? sizes : null;
     if (colors !== undefined) productData.colors = colors && Array.isArray(colors) && colors.length > 0 ? colors : null;
+
+    // Obsługa przypisania rabatu
+    if (discountId !== undefined) {
+      // Rozłącz wszystkie istniejące rabaty
+      const currentDiscountIds = existingProduct.discounts.map((d) => d.id);
+      if (currentDiscountIds.length > 0) {
+        productData.discounts = {
+          disconnect: currentDiscountIds.map((dId) => ({ id: dId })),
+        };
+      }
+
+      // Jeśli nowy discountId jest podany, dołącz
+      if (discountId) {
+        productData.discounts = {
+          ...(productData.discounts || {}),
+          connect: [{ id: discountId }],
+        };
+      }
+    }
 
     // Aktualizuj produkt i obrazy w transakcji
     await prisma.$transaction(async (tx) => {
@@ -203,15 +252,12 @@ export async function PATCH(
         }
 
         // Dopilnuj, żeby był max 1 primary
-        // Znajdź wszystkie primary
         const primaryImages = await tx.image.findMany({
           where: { productId: id, isPrimary: true },
           orderBy: { updatedAt: "desc" },
         });
 
-        // Jeśli jest więcej niż jeden primary, ustaw tylko ostatni jako primary
         if (primaryImages.length > 1) {
-          const keepPrimary = primaryImages[0];
           const others = primaryImages.slice(1);
           await tx.image.updateMany({
             where: {
@@ -221,7 +267,6 @@ export async function PATCH(
           });
         }
 
-        // Jeśli nie ma żadnego primary, ustaw pierwszy jako primary
         if (primaryImages.length === 0) {
           const firstImage = await tx.image.findFirst({
             where: { productId: id },
@@ -329,4 +374,3 @@ export async function DELETE(
     );
   }
 }
-

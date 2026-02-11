@@ -17,9 +17,12 @@ type HeroImage = {
 
 type HeroSettings = {
   id: string;
-  title: string;
-  subtitle: string | null;
-  buttonText: string;
+  titlePl: string;
+  titleEn: string | null;
+  subtitlePl: string | null;
+  subtitleEn: string | null;
+  buttonTextPl: string;
+  buttonTextEn: string | null;
   link: string;
   images: HeroImage[];
   updatedAt: string;
@@ -52,9 +55,9 @@ export default function AdminHeroPage() {
         setHeroSettings(data);
         if (data) {
           setFormData({
-            title: data.title || "",
-            subtitle: data.subtitle || "",
-            buttonText: data.buttonText || "Odkryj",
+            title: data.titlePl || "",
+            subtitle: data.subtitlePl || "",
+            buttonText: data.buttonTextPl || "Odkryj",
             link: data.link || "/shop",
           });
         }
@@ -266,9 +269,9 @@ export default function AdminHeroPage() {
                 setEditing(false);
                 if (heroSettings) {
                   setFormData({
-                    title: heroSettings.title || "",
-                    subtitle: heroSettings.subtitle || "",
-                    buttonText: heroSettings.buttonText || "Odkryj",
+                    title: heroSettings.titlePl || "",
+                    subtitle: heroSettings.subtitlePl || "",
+                    buttonText: heroSettings.buttonTextPl || "Odkryj",
                     link: heroSettings.link || "/shop",
                   });
                 }
@@ -283,15 +286,15 @@ export default function AdminHeroPage() {
           {heroSettings && (
             <div className="space-y-2">
               <p className="text-sm text-black/60">
-                <strong>Tytuł:</strong> {heroSettings.title}
+                <strong>Tytuł:</strong> {heroSettings.titlePl}
               </p>
-              {heroSettings.subtitle && (
+              {heroSettings.subtitlePl && (
                 <p className="text-sm text-black/60">
-                  <strong>Podtytuł:</strong> {heroSettings.subtitle}
+                  <strong>Podtytuł:</strong> {heroSettings.subtitlePl}
                 </p>
               )}
               <p className="text-sm text-black/60">
-                <strong>Przycisk:</strong> {heroSettings.buttonText} → {heroSettings.link}
+                <strong>Przycisk:</strong> {heroSettings.buttonTextPl} → {heroSettings.link}
               </p>
             </div>
           )}

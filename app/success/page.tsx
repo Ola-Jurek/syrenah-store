@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/CartContext";
 
@@ -9,17 +9,20 @@ export default function CheckoutSuccessPage() {
   const sessionId = searchParams.get("session_id");
   const hasProcessed = useRef(false);
   const { clearCart } = useCart();
-  const [isProcessing, setIsProcessing] = useState(true);
+
+  // Natychmiast wyczyść localStorage (synchronicznie, bez czekania na efekty)
+  if (typeof window !== "undefined" && sessionId && !hasProcessed.current) {
+    localStorage.removeItem("cart");
+    localStorage.removeItem("syrenah_shipping");
+    localStorage.removeItem("syrenah_discount_code");
+  }
 
   useEffect(() => {
     if (!sessionId) return;
     if (hasProcessed.current) return;
 
     hasProcessed.current = true;
-
-    // ✅ tylko UI + local state
     clearCart();
-    setIsProcessing(false);
   }, [sessionId, clearCart]);
 
   return (
@@ -35,13 +38,7 @@ export default function CheckoutSuccessPage() {
 
       <a
         href="/shop"
-        className={`border border-black px-8 py-3 text-sm uppercase tracking-wide transition
-          ${
-            isProcessing
-              ? "opacity-50 pointer-events-none"
-              : "hover:bg-black hover:text-white"
-          }
-        `}
+        className="border border-black px-8 py-3 text-sm uppercase tracking-wide hover:bg-black hover:text-white transition"
       >
         Wróć do sklepu
       </a>

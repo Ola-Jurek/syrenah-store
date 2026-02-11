@@ -15,8 +15,21 @@ type Category = {
   slug: string;
 };
 
+type Discount = {
+  id: string;
+  code: string;
+  namePl: string | null;
+  type: "PERCENTAGE" | "FIXED";
+  value: number;
+  isActive: boolean;
+};
+
 type CategoriesResponse = {
   categories: Category[];
+};
+
+type DiscountsResponse = {
+  discounts: Discount[];
 };
 
 function getAdminToken(): string | null {
@@ -46,6 +59,7 @@ function generateSlug(text: string): string {
 export default function NewProductPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,12 +71,15 @@ export default function NewProductPage() {
     descriptionEn: "",
     pricePln: "",
     priceEur: "",
+    salePricePln: "",
+    salePriceEur: "",
     stock: "0",
     sku: "",
     slug: "",
     categoryId: "",
     sizes: "", // Tekst oddzielony przecinkami
     colors: "", // Tekst oddzielony przecinkami
+    discountId: "",
   });
 
   const [images, setImages] = useState<
@@ -72,7 +89,7 @@ export default function NewProductPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchCategories() {
+    async function fetchData() {
       const token = getAdminToken();
       if (!token) {
         const promptedToken = promptAdminToken();
@@ -87,32 +104,40 @@ export default function NewProductPage() {
       if (!finalToken) return;
 
       try {
-        const res = await fetch("/api/admin/categories", {
-          headers: {
-            "x-admin-token": finalToken,
-          },
-        });
+        const [catRes, discRes] = await Promise.all([
+          fetch("/api/admin/categories", {
+            headers: { "x-admin-token": finalToken },
+          }),
+          fetch("/api/admin/discounts", {
+            headers: { "x-admin-token": finalToken },
+          }),
+        ]);
 
-        if (res.status === 401) {
+        if (catRes.status === 401) {
           setError("Nieautoryzowany dostęp");
           setLoading(false);
           return;
         }
 
-        if (!res.ok) {
+        if (!catRes.ok) {
           throw new Error("Błąd pobierania kategorii");
         }
 
-        const data: CategoriesResponse = await res.json();
-        setCategories(data.categories);
+        const catData: CategoriesResponse = await catRes.json();
+        setCategories(catData.categories);
+
+        if (discRes.ok) {
+          const discData: DiscountsResponse = await discRes.json();
+          setDiscounts(discData.discounts.filter((d) => d.isActive));
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Błąd pobierania kategorii");
+        setError(err instanceof Error ? err.message : "Błąd pobierania danych");
       } finally {
         setLoading(false);
       }
     }
 
-    fetchCategories();
+    fetchData();
   }, []);
 
   const handleNamePlChange = (value: string) => {
@@ -219,6 +244,8 @@ export default function NewProductPage() {
         ...formData,
         pricePln: parseFloat(formData.pricePln),
         priceEur: parseFloat(formData.priceEur || formData.pricePln),
+        salePricePln: formData.salePricePln ? parseFloat(formData.salePricePln) : null,
+        salePriceEur: formData.salePriceEur ? parseFloat(formData.salePriceEur) : null,
         stock: parseInt(formData.stock),
         sku: formData.sku || null,
         descriptionPl: formData.descriptionPl || null,
@@ -226,6 +253,7 @@ export default function NewProductPage() {
         sizes: sizesArray.length > 0 ? sizesArray : null,
         colors: colorsArray.length > 0 ? colorsArray : null,
         images: images.filter((img) => img.url.trim() !== ""),
+        discountId: formData.discountId || null,
       };
 
       const res = await fetch("/api/admin/products", {
@@ -425,6 +453,49 @@ export default function NewProductPage() {
               </div>
             </div>
 
+            {/* Ceny promocyjne */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="salePricePln" className="text-black/70">
+                  Cena promocyjna PLN
+                </Label>
+                <Input
+                  id="salePricePln"
+                  type="number"
+                  step="0.01"
+                  value={formData.salePricePln}
+                  onChange={(e) =>
+                    setFormData({ ...formData, salePricePln: e.target.value })
+                  }
+                  placeholder="Zostaw puste, jeśli brak promocji"
+                  className="mt-1 border-black/20"
+                />
+                <p className="text-xs text-black/40 mt-1">
+                  Zostaw puste, jeśli brak promocji
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="salePriceEur" className="text-black/70">
+                  Cena promocyjna EUR
+                </Label>
+                <Input
+                  id="salePriceEur"
+                  type="number"
+                  step="0.01"
+                  value={formData.salePriceEur}
+                  onChange={(e) =>
+                    setFormData({ ...formData, salePriceEur: e.target.value })
+                  }
+                  placeholder="Zostaw puste, jeśli brak promocji"
+                  className="mt-1 border-black/20"
+                />
+                <p className="text-xs text-black/40 mt-1">
+                  Zostaw puste, jeśli brak promocji
+                </p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="stock" className="text-black/70">
@@ -487,6 +558,38 @@ export default function NewProductPage() {
                   className="mt-1 border-black/20"
                 />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Rabat */}
+        <Card className="mb-6 border-black/10 bg-white">
+          <CardHeader>
+            <CardTitle className="text-black">Rabat</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div>
+              <Label htmlFor="discountId" className="text-black/70">
+                Przypisz rabat
+              </Label>
+              <select
+                id="discountId"
+                value={formData.discountId}
+                onChange={(e) =>
+                  setFormData({ ...formData, discountId: e.target.value })
+                }
+                className="mt-1 w-full px-3 py-2 border border-black/20 rounded-md bg-white text-black focus:outline-none focus:ring-1 focus:ring-black/20"
+              >
+                <option value="">Brak rabatu</option>
+                {discounts.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.code} — {d.namePl || ""} ({d.type === "PERCENTAGE" ? `${d.value}%` : `${d.value} PLN`})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-black/40 mt-1">
+                Rabat zostanie automatycznie zastosowany do ceny bazowej produktu
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -668,4 +771,3 @@ export default function NewProductPage() {
     </div>
   );
 }
-

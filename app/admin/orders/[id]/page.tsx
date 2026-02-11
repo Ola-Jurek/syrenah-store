@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+/* ───────── Typy ───────── */
 
 type OrderItem = {
   id: string;
@@ -16,7 +19,30 @@ type OrderItem = {
     namePl: string;
     nameEn: string;
     slug: string;
+    imageUrl: string | null;
   };
+};
+
+type ShippingAddress = {
+  type?: string;
+  street?: string;
+  city?: string;
+  postalCode?: string;
+  parcelLockerCode?: string;
+};
+
+type BillingAddress = {
+  street?: string;
+  city?: string;
+  postalCode?: string;
+};
+
+type AlternateShippingAddress = {
+  fullName?: string;
+  street?: string;
+  city?: string;
+  postalCode?: string;
+  phone?: string;
 };
 
 type Order = {
@@ -26,12 +52,30 @@ type Order = {
   totalPln: number;
   totalEur: number;
   stripeSessionId: string | null;
+
+  shippingEmail: string | null;
+  shippingName: string | null;
+  shippingPhone: string | null;
+  shippingMethod: string | null;
+  shippingCost: number | null;
+  shippingAddress: ShippingAddress | null;
+
+  isInvoiceRequested: boolean;
+  companyName: string | null;
+  vatNumber: string | null;
+  billingAddress: BillingAddress | null;
+
+  isDifferentShippingAddress: boolean;
+  alternateShippingAddress: AlternateShippingAddress | null;
+
   items: OrderItem[];
 };
 
 type OrderResponse = {
   order: Order;
 };
+
+/* ───────── Helpers ───────── */
 
 function getAdminToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -96,6 +140,29 @@ const STATUS_OPTIONS = [
   { value: "REFUNDED", label: "Zwrócone" },
 ];
 
+/* ───────── Mini-komponent sekcji ───────── */
+function InfoRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  if (!value) return null;
+  return (
+    <div>
+      <p className="text-xs text-black/40 uppercase tracking-wider mb-0.5">
+        {label}
+      </p>
+      <p className="text-sm text-black/80">{value}</p>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   STRONA GŁÓWNA
+   ═══════════════════════════════════════════ */
+
 export default function AdminOrderDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -144,7 +211,9 @@ export default function AdminOrderDetailPage() {
         setOrder(data.order);
         setSelectedStatus(data.order.status);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Błąd pobierania zamówienia");
+        setError(
+          err instanceof Error ? err.message : "Błąd pobierania zamówienia"
+        );
       } finally {
         setLoading(false);
       }
@@ -186,7 +255,9 @@ export default function AdminOrderDetailPage() {
       setSaveMessage("Zapisano");
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Błąd aktualizacji statusu");
+      setError(
+        err instanceof Error ? err.message : "Błąd aktualizacji statusu"
+      );
     } finally {
       setSaving(false);
     }
@@ -202,7 +273,11 @@ export default function AdminOrderDetailPage() {
     return (
       <div className="max-w-4xl">
         <div className="text-center text-black/60 mb-4">{error}</div>
-        <Button asChild variant="outline" className="border-black/20 text-black/70 hover:bg-black/5">
+        <Button
+          asChild
+          variant="outline"
+          className="border-black/20 text-black/70 hover:bg-black/5"
+        >
           <Link href="/admin/orders">Wróć do listy</Link>
         </Button>
       </div>
@@ -213,18 +288,45 @@ export default function AdminOrderDetailPage() {
     return null;
   }
 
+  /* ─── Dane pomocnicze ─── */
+  const addr = order.shippingAddress as ShippingAddress | null;
+  const isParcelLocker =
+    order.shippingMethod === "parcel_locker" ||
+    addr?.type === "parcel_locker";
+  const billing = order.billingAddress as BillingAddress | null;
+  const altShip =
+    order.alternateShippingAddress as AlternateShippingAddress | null;
+
+  // Wyodrębnij imię i nazwisko
+  const nameParts = order.shippingName?.split(" ") ?? [];
+  const firstName = nameParts[0] || "—";
+  const lastName = nameParts.slice(1).join(" ") || "";
+
   return (
-    <div className="max-w-4xl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-5xl">
+      {/* ─── Header ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-medium text-black mb-1">Zamówienie</h1>
-          <p className="text-sm text-black/50 font-mono">
-            {shortenId(order.id)}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-black/50 font-mono">
+              {shortenId(order.id)}
+            </p>
+            <Badge
+              className={`rounded-full px-2.5 py-0.5 text-xs font-medium border ${getStatusClasses(
+                order.status
+              )}`}
+            >
+              {translateStatus(order.status)}
+            </Badge>
+          </div>
         </div>
-        <Button asChild variant="outline" className="border-black/20 text-black/70 hover:bg-black/5">
-          <Link href="/admin/orders">Wróć do listy</Link>
+        <Button
+          asChild
+          variant="outline"
+          className="border-black/20 text-black/70 hover:bg-black/5"
+        >
+          <Link href="/admin/orders">← Wróć do listy</Link>
         </Button>
       </div>
 
@@ -234,43 +336,154 @@ export default function AdminOrderDetailPage() {
         </div>
       )}
 
-      {/* Order Info */}
-      <Card className="mb-6 border-black/10 bg-white">
-        <CardHeader>
-          <CardTitle className="text-black">Informacje o zamówieniu</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-black/50 mb-1">Data</p>
-              <p className="font-medium text-black">{formatDate(order.createdAt)}</p>
+      {/* ─── Grid: 2 kolumny na desktop ─── */}
+      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+        {/* ══════════ DANE KLIENTA ══════════ */}
+        <Card className="border-black/10 bg-white">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm uppercase tracking-wider text-black/50 font-medium">
+              Dane klienta
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <InfoRow label="Imię" value={firstName} />
+              <InfoRow label="Nazwisko" value={lastName || "—"} />
             </div>
-            <div>
-              <p className="text-sm text-black/50 mb-1">Status</p>
-              <Badge className={`rounded-full px-2.5 py-0.5 text-xs font-medium border ${getStatusClasses(order.status)}`}>
-                {translateStatus(order.status)}
-              </Badge>
-            </div>
-            <div>
-              <p className="text-sm text-black/50 mb-1">Suma PLN</p>
-              <p className="font-medium text-black">{order.totalPln.toFixed(2)} zł</p>
-            </div>
-            {order.stripeSessionId && (
-              <div>
-                <p className="text-sm text-black/50 mb-1">
-                  Stripe Session ID
+            <InfoRow label="Email" value={order.shippingEmail || "—"} />
+            <InfoRow label="Telefon" value={order.shippingPhone || "—"} />
+          </CardContent>
+        </Card>
+
+        {/* ══════════ DOSTAWA ══════════ */}
+        <Card className="border-black/10 bg-white">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm uppercase tracking-wider text-black/50 font-medium">
+              Dostawa
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <InfoRow
+              label="Metoda"
+              value={
+                isParcelLocker ? "Paczkomat InPost" : "Kurier"
+              }
+            />
+            {order.shippingCost !== null && (
+              <InfoRow
+                label="Koszt dostawy"
+                value={`${order.shippingCost.toFixed(2)} zł`}
+              />
+            )}
+
+            {isParcelLocker && addr?.parcelLockerCode && (
+              <>
+                <InfoRow label="ID Paczkomatu" value={addr.parcelLockerCode} />
+                <InfoRow
+                  label="Adres paczkomatu"
+                  value={[addr.street, [addr.postalCode, addr.city].filter(Boolean).join(" ")].filter(Boolean).join(", ")}
+                />
+              </>
+            )}
+
+            {!isParcelLocker && addr && (
+              <InfoRow
+                label="Adres"
+                value={[addr.street, [addr.postalCode, addr.city].filter(Boolean).join(" ")].filter(Boolean).join(", ")}
+              />
+            )}
+
+            {/* Inny adres dostawy */}
+            {order.isDifferentShippingAddress && altShip && (
+              <div className="pt-3 mt-3 border-t border-black/10">
+                <p className="text-xs uppercase tracking-wider text-[#C1A88C] font-semibold mb-2">
+                  Adres do wysyłki (inny)
                 </p>
-                <p className="font-mono text-sm text-black/70">{order.stripeSessionId}</p>
+                {altShip.fullName && (
+                  <InfoRow label="Odbiorca" value={altShip.fullName} />
+                )}
+                <InfoRow
+                  label="Adres"
+                  value={[altShip.street, [altShip.postalCode, altShip.city].filter(Boolean).join(" ")].filter(Boolean).join(", ")}
+                />
+                {altShip.phone && (
+                  <InfoRow label="Telefon" value={altShip.phone} />
+                )}
               </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ══════════ FAKTURA (warunkowo) ══════════ */}
+      {order.isInvoiceRequested && (
+        <Card className="border-black/10 bg-white mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm uppercase tracking-wider text-black/50 font-medium">
+              Dane do faktury
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <InfoRow label="Nazwa firmy" value={order.companyName || "—"} />
+              <InfoRow label="NIP" value={order.vatNumber || "—"} />
+            </div>
+            {billing && (
+              <InfoRow
+                label="Adres firmy"
+                value={[billing.street, [billing.postalCode, billing.city].filter(Boolean).join(" ")].filter(Boolean).join(", ")}
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ══════════ INFORMACJE O ZAMÓWIENIU ══════════ */}
+      <Card className="mb-6 border-black/10 bg-white">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm uppercase tracking-wider text-black/50 font-medium">
+            Szczegóły zamówienia
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <InfoRow label="Data" value={formatDate(order.createdAt)} />
+            <InfoRow
+              label="Suma PLN"
+              value={`${order.totalPln.toFixed(2)} zł`}
+            />
+            <InfoRow
+              label="Status"
+              value={
+                <Badge
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-medium border ${getStatusClasses(
+                    order.status
+                  )}`}
+                >
+                  {translateStatus(order.status)}
+                </Badge>
+              }
+            />
+            {order.stripeSessionId && (
+              <InfoRow
+                label="Stripe Session"
+                value={
+                  <span className="font-mono text-[11px] break-all">
+                    {order.stripeSessionId}
+                  </span>
+                }
+              />
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Change Status */}
+      {/* ══════════ ZMIANA STATUSU ══════════ */}
       <Card className="mb-6 border-black/10 bg-white">
-        <CardHeader>
-          <CardTitle className="text-black">Zmiana statusu</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm uppercase tracking-wider text-black/50 font-medium">
+            Zmiana statusu
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
@@ -299,45 +512,123 @@ export default function AdminOrderDetailPage() {
             </Button>
           </div>
           {saveMessage && (
-            <p className="mt-3 text-sm text-black/60">
-              {saveMessage}
-            </p>
+            <p className="mt-3 text-sm text-black/60">{saveMessage}</p>
           )}
         </CardContent>
       </Card>
 
-      {/* Products List */}
+      {/* ══════════ PRODUKTY ══════════ */}
       <Card className="border-black/10 bg-white">
-        <CardHeader>
-          <CardTitle className="text-black">Produkty ({order.items.length})</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm uppercase tracking-wider text-black/50 font-medium">
+            Produkty ({order.items.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-black/10">
+                  <th className="text-left py-2 px-3 text-[10px] font-medium text-black/40 uppercase tracking-wider w-14">
+                    &nbsp;
+                  </th>
+                  <th className="text-left py-2 px-3 text-[10px] font-medium text-black/40 uppercase tracking-wider">
+                    Produkt
+                  </th>
+                  <th className="text-right py-2 px-3 text-[10px] font-medium text-black/40 uppercase tracking-wider">
+                    Cena
+                  </th>
+                  <th className="text-center py-2 px-3 text-[10px] font-medium text-black/40 uppercase tracking-wider">
+                    Ilość
+                  </th>
+                  <th className="text-right py-2 px-3 text-[10px] font-medium text-black/40 uppercase tracking-wider">
+                    Razem
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {order.items.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="border-b border-black/5 hover:bg-black/[0.02] transition-colors"
+                  >
+                    <td className="py-3 px-3">
+                      <div className="w-10 h-10 bg-black/5 rounded overflow-hidden relative flex-shrink-0">
+                        {item.product.imageUrl ? (
+                          <Image
+                            src={item.product.imageUrl}
+                            alt={item.product.namePl}
+                            fill
+                            className="object-cover"
+                            sizes="40px"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-black/20 text-[10px]">
+                            —
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 px-3">
+                      <p className="text-sm font-medium text-black">
+                        {item.product.namePl}
+                      </p>
+                      {item.product.nameEn && (
+                        <p className="text-[11px] text-black/40">
+                          {item.product.nameEn}
+                        </p>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-sm text-right text-black/70">
+                      {item.pricePln.toFixed(2)} zł
+                    </td>
+                    <td className="py-3 px-3 text-sm text-center text-black/70">
+                      {item.quantity}
+                    </td>
+                    <td className="py-3 px-3 text-sm text-right font-medium text-black">
+                      {(item.pricePln * item.quantity).toFixed(2)} zł
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
             {order.items.map((item) => (
               <div
                 key={item.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 border border-black/10 rounded-lg bg-white"
+                className="flex gap-3 p-3 border border-black/10 rounded-lg"
               >
-                <div className="flex-1">
-                  <h3 className="font-medium mb-1 text-black">{item.product.namePl}</h3>
-                  {item.product.nameEn && (
-                    <p className="text-sm text-black/50">
-                      {item.product.nameEn}
-                    </p>
+                <div className="w-12 h-12 bg-black/5 rounded overflow-hidden relative flex-shrink-0">
+                  {item.product.imageUrl ? (
+                    <Image
+                      src={item.product.imageUrl}
+                      alt={item.product.namePl}
+                      fill
+                      className="object-cover"
+                      sizes="48px"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-black/20 text-[10px]">
+                      —
+                    </div>
                   )}
-                  <p className="text-xs text-black/40 mt-1 font-mono">
-                    {item.product.slug}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-black truncate">
+                    {item.product.namePl}
+                  </p>
+                  <p className="text-xs text-black/50">
+                    {item.pricePln.toFixed(2)} zł × {item.quantity}
                   </p>
                 </div>
-                <div className="flex items-center gap-6 text-sm">
-                  <div>
-                    <p className="text-black/50">Ilość</p>
-                    <p className="font-medium text-black">{item.quantity}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-black/50">Cena PLN</p>
-                    <p className="font-medium text-black">{item.pricePln.toFixed(2)} zł</p>
-                  </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-sm font-medium text-black">
+                    {(item.pricePln * item.quantity).toFixed(2)} zł
+                  </p>
                 </div>
               </div>
             ))}
@@ -347,4 +638,3 @@ export default function AdminOrderDetailPage() {
     </div>
   );
 }
-

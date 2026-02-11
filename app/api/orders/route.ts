@@ -49,12 +49,57 @@ export async function POST(req: Request) {
     }
 
 
+    // Odczytaj dane dostawy z metadanych Stripe
+    const shippingRaw = session.metadata?.shipping;
+    const invoiceRaw = session.metadata?.invoice;
+    const alternateShippingRaw = session.metadata?.alternateShipping;
+    const userId = session.metadata?.userId || null;
+    const discountId = session.metadata?.discountId || null;
+
+    let shippingData: any = null;
+    let invoiceData: any = null;
+    let alternateShippingData: any = null;
+
+    if (shippingRaw) {
+      try { shippingData = JSON.parse(shippingRaw); } catch { /* ignore */ }
+    }
+    if (invoiceRaw) {
+      try { invoiceData = JSON.parse(invoiceRaw); } catch { /* ignore */ }
+    }
+    if (alternateShippingRaw) {
+      try { alternateShippingData = JSON.parse(alternateShippingRaw); } catch { /* ignore */ }
+    }
+
     const order = await prisma.order.create({
       data: {
         stripeSessionId: sessionId,
         status: OrderStatus.PROCESSING,
         totalPln: new Prisma.Decimal(total),
         totalEur: new Prisma.Decimal(total),
+        ...(userId ? { userId } : {}),
+        ...(discountId ? { discountId } : {}),
+
+        // Dane dostawy
+        shippingEmail: shippingData?.email || session.customer_details?.email || null,
+        shippingName: shippingData?.fullName || session.customer_details?.name || null,
+        shippingPhone: shippingData?.phone || null,
+        shippingMethod: shippingData?.shippingMethod || null,
+        shippingCost: shippingData?.shippingCost ? new Prisma.Decimal(shippingData.shippingCost) : null,
+        shippingAddress: shippingData?.shippingAddress || null,
+
+        // Faktura VAT
+        isInvoiceRequested: !!invoiceData,
+        companyName: invoiceData?.companyName || null,
+        vatNumber: invoiceData?.vatNumber || null,
+        billingAddress: invoiceData ? {
+          street: invoiceData.street,
+          postalCode: invoiceData.postalCode,
+          city: invoiceData.city,
+        } : null,
+
+        // Inny adres dostawy
+        isDifferentShippingAddress: !!alternateShippingData,
+        alternateShippingAddress: alternateShippingData || null,
       },
     });
 

@@ -13,6 +13,8 @@ export async function GET(req: Request) {
   try {
     assertAdmin(req);
 
+    const now = new Date();
+
     const products = await prisma.product.findMany({
       take: 50,
       orderBy: { createdAt: "desc" },
@@ -29,21 +31,53 @@ export async function GET(req: Request) {
           where: { isPrimary: true },
           take: 1,
         },
+        discounts: {
+          where: {
+            isActive: true,
+            validFrom: { lte: now },
+            OR: [
+              { validUntil: null },
+              { validUntil: { gte: now } },
+            ],
+          },
+          take: 1,
+          select: {
+            id: true,
+            code: true,
+            namePl: true,
+            type: true,
+            value: true,
+          },
+        },
       },
     });
 
-    const formattedProducts = products.map((product) => ({
-      id: product.id,
-      namePl: product.namePl,
-      nameEn: product.nameEn,
-      pricePln: Number(product.pricePln),
-      priceEur: Number(product.priceEur),
-      stock: product.stock,
-      sku: product.sku || null,
-      slug: product.slug,
-      category: product.category,
-      primaryImage: product.images[0] || null,
-    }));
+    const formattedProducts = products.map((product) => {
+      const activeDiscount = product.discounts[0] || null;
+      return {
+        id: product.id,
+        namePl: product.namePl,
+        nameEn: product.nameEn,
+        pricePln: Number(product.pricePln),
+        priceEur: Number(product.priceEur),
+        salePricePln: product.salePricePln ? Number(product.salePricePln) : null,
+        salePriceEur: product.salePriceEur ? Number(product.salePriceEur) : null,
+        stock: product.stock,
+        sku: product.sku || null,
+        slug: product.slug,
+        category: product.category,
+        primaryImage: product.images[0] || null,
+        activeDiscount: activeDiscount
+          ? {
+              id: activeDiscount.id,
+              code: activeDiscount.code,
+              namePl: activeDiscount.namePl,
+              type: activeDiscount.type,
+              value: Number(activeDiscount.value),
+            }
+          : null,
+      };
+    });
 
     return NextResponse.json({ products: formattedProducts });
   } catch (error) {
@@ -61,7 +95,7 @@ export async function GET(req: Request) {
 
 /**
  * POST /api/admin/products
- * Tworzy nowy produkt z opcjonalnymi obrazami
+ * Tworzy nowy produkt z opcjonalnymi obrazami i rabatem
  */
 export async function POST(req: Request) {
   try {
@@ -75,6 +109,8 @@ export async function POST(req: Request) {
       descriptionEn,
       pricePln,
       priceEur,
+      salePricePln,
+      salePriceEur,
       stock,
       sku,
       slug,
@@ -82,6 +118,7 @@ export async function POST(req: Request) {
       sizes,
       colors,
       images,
+      discountId,
     } = body;
 
     // Walidacja wymaganych pól
@@ -114,12 +151,20 @@ export async function POST(req: Request) {
           descriptionEn: descriptionEn || null,
           pricePln: new Prisma.Decimal(pricePln),
           priceEur: new Prisma.Decimal(priceEur || pricePln),
+          salePricePln: salePricePln ? new Prisma.Decimal(salePricePln) : null,
+          salePriceEur: salePriceEur ? new Prisma.Decimal(salePriceEur) : null,
           stock: parseInt(stock),
           sku: sku || null,
           slug,
           categoryId,
           sizes: sizes && Array.isArray(sizes) && sizes.length > 0 ? sizes : null,
           colors: colors && Array.isArray(colors) && colors.length > 0 ? colors : null,
+          // Przypisz rabat, jeśli został wybrany
+          ...(discountId ? {
+            discounts: {
+              connect: [{ id: discountId }],
+            },
+          } : {}),
         },
       });
 
@@ -172,4 +217,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

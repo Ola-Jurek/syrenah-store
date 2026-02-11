@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import { ProductCard } from "@/components/ProductCard";
+import { getEffectivePrice, extractDiscountInfo, extractDiscountLabel } from "@/lib/pricing";
 
 type Props = {
   params: Promise<{
@@ -20,6 +21,17 @@ export default async function CategoryPage({ params }: Props) {
         include: {
           images: {
             where: { isPrimary: true },
+            take: 1,
+          },
+          discounts: {
+            where: {
+              isActive: true,
+              validFrom: { lte: new Date() },
+              OR: [
+                { validUntil: null },
+                { validUntil: { gte: new Date() } },
+              ],
+            },
             take: 1,
           },
         },
@@ -54,45 +66,36 @@ export default async function CategoryPage({ params }: Props) {
           Produkty w przygotowaniu ✨
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5 lg:gap-8">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
           {categoryData.products.map((product) => {
             const primaryImage = product.images[0];
+            const discountInfo = extractDiscountInfo(product.discounts);
+            const discountLabel = extractDiscountLabel(product.discounts);
+            const pricing = getEffectivePrice({
+              pricePln: Number(product.pricePln),
+              priceEur: Number(product.priceEur),
+              salePricePln: product.salePricePln ? Number(product.salePricePln) : null,
+              salePriceEur: product.salePriceEur ? Number(product.salePriceEur) : null,
+              discount: discountInfo,
+            });
+
             return (
-              <Link
+              <ProductCard
                 key={product.id}
-                href={`/shop/${category}/${product.slug}`}
-                className="group"
-              >
-                <div className="bg-[#C1A88C]/10 aspect-[3/4] relative mb-3">
-                  {primaryImage ? (
-                    <Image
-                      src={primaryImage.url}
-                      alt={primaryImage.altPl || product.namePl}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 50vw, 20vw"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Image
-                        src="/logo.png"
-                        alt="Syrenah"
-                        width={80}
-                        height={80}
-                        className="opacity-20"
-                      />
-                    </div>
-                  )}
-                </div>
-                <div className="text-center">
-                  <h2 className="text-sm uppercase tracking-widest font-serif text-black mb-1">
-                    {product.namePl.toUpperCase()}
-                  </h2>
-                  <p className="text-xs text-black/60">
-                    {product.pricePln.toString()} PLN
-                  </p>
-                </div>
-              </Link>
+                product={{
+                  id: product.id,
+                  namePl: product.namePl,
+                  slug: product.slug,
+                  image: primaryImage?.url ?? null,
+                  imageAlt: primaryImage?.altPl ?? null,
+                  createdAt: product.createdAt.toISOString(),
+                  stock: product.stock,
+                  originalPrice: pricing.originalPricePln.toFixed(2),
+                  finalPrice: pricing.finalPricePln.toFixed(2),
+                  discountLabel,
+                }}
+                categorySlug={category}
+              />
             );
           })}
         </div>
@@ -100,4 +103,3 @@ export default async function CategoryPage({ params }: Props) {
     </div>
   );
 }
-

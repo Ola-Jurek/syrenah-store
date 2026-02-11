@@ -24,16 +24,19 @@ export function Footer() {
             <span className="text-xs tracking-wider text-foreground/60 uppercase">
               Informacje
             </span>
-            <Link href="/about" className="text-sm text-foreground/70 hover:text-foreground transition">
+            <Link href="/o-nas" className="text-sm text-foreground/70 hover:text-foreground transition">
               O nas
             </Link>
-            <Link href="/contact" className="text-sm text-foreground/70 hover:text-foreground transition">
+            <Link href="/kontakt" className="text-sm text-foreground/70 hover:text-foreground transition">
               Kontakt
             </Link>
-            <Link href="/policy" className="text-sm text-foreground/70 hover:text-foreground transition">
+            <Link href="/regulamin" className="text-sm text-foreground/70 hover:text-foreground transition">
               Regulamin
             </Link>
-            <Link href="/returns" className="text-sm text-foreground/70 hover:text-foreground transition">
+            <Link href="/polityka-prywatnosci" className="text-sm text-foreground/70 hover:text-foreground transition">
+              Polityka prywatności
+            </Link>
+            <Link href="/zwroty-i-reklamacje" className="text-sm text-foreground/70 hover:text-foreground transition">
               Zwroty i reklamacje
             </Link>
           </div>

@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
+import { LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/components/CartContext";
 
 export default function AdminLayout({
   children,
@@ -11,17 +14,99 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const { clearCart } = useCart();
   const [isMounted, setIsMounted] = useState(false);
+
+  const handleSignOut = async () => {
+    clearCart();
+    await signOut({ callbackUrl: "/" });
+  };
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  // Pokaż ładowanie dopóki sprawdzamy sesję
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-5 h-5 border-2 border-black/20 border-t-black/60 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Brak uprawnień — elegancka strona blokady
+  if (status === "unauthenticated" || session?.user?.role !== "ADMIN") {
+    const isLoggedIn = status === "authenticated";
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] px-4">
+        <div className="w-full max-w-xs text-center">
+          {/* Ikona kłódki */}
+          <div className="mb-6 flex justify-center">
+            <div className="w-12 h-12 rounded-full border border-[#E8E3D8] flex items-center justify-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-neutral-400"
+              >
+                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </div>
+          </div>
+
+          <h1 className="text-sm font-serif text-neutral-700 tracking-wider mb-2">
+            Panel Administracyjny
+          </h1>
+          <p className="text-xs text-neutral-400 leading-relaxed mb-8">
+            Dostęp do tej sekcji wymaga uprawnień administratora.
+          </p>
+
+          {/* Informacja o zalogowanym użytkowniku bez uprawnień */}
+          {isLoggedIn && (
+            <p className="text-xs text-neutral-400 mb-6">
+              Zalogowano jako {session?.user?.email}. Brak uprawnień.
+            </p>
+          )}
+
+          <div className="flex flex-col gap-2.5">
+            <Link
+              href="/"
+              className="w-full inline-flex items-center justify-center px-8 py-2.5 text-xs uppercase tracking-widest border border-[#E8E3D8] bg-transparent text-neutral-600 hover:bg-[#E8E3D8] hover:text-neutral-800 transition-colors"
+            >
+              Wróć do sklepu
+            </Link>
+
+            {!isLoggedIn && (
+              <Link
+                href="/login?callbackUrl=/admin"
+                className="w-full inline-flex items-center justify-center px-8 py-2.5 text-xs uppercase tracking-widest bg-[#E8E3D8] text-neutral-700 hover:bg-[#DDD7C8] transition-colors"
+              >
+                Zaloguj się jako administrator
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const navLinks = [
     { href: "/admin/orders", label: "Zamówienia" },
     { href: "/admin/products", label: "Produkty" },
     { href: "/admin/categories", label: "Kategorie" },
+    { href: "/admin/discounts", label: "Rabaty" },
     { href: "/admin/hero", label: "Hero" },
+    { href: "/admin/newsletter", label: "Newsletter" },
   ];
 
   // Generuj breadcrumbs na podstawie pathname
@@ -39,7 +124,9 @@ export default function AdminLayout({
       orders: "ZAMÓWIENIA",
       products: "PRODUKTY",
       categories: "KATEGORIE",
+      discounts: "RABATY",
       hero: "HERO",
+      newsletter: "NEWSLETTER",
       edit: "EDYCJA",
       new: "NOWY",
     };
@@ -67,23 +154,35 @@ export default function AdminLayout({
   return (
     <div className="min-h-screen bg-white">
       {/* Top Bar */}
-      <div className="border-b border-black/10 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
+      <div className="border-b border-[#E8E3D8]/60 bg-[#FDFBF7]/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col py-3">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
               <Link
                 href="/admin"
-                className="text-sm font-serif text-black/80 tracking-wide hover:text-black transition-colors"
+                className="text-sm font-serif text-neutral-700 tracking-wide hover:text-neutral-900 transition-colors"
               >
                 SYRENAH | Admin
               </Link>
-              <Link
-                href="/"
-                className="text-xs text-black/40 hover:text-black/60 transition-colors"
-              >
-                ← Sklep
-              </Link>
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/"
+                  className="text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
+                >
+                  ← Sklep
+                </Link>
+                {/* Separator */}
+                <span className="w-px h-4 bg-[#E8E3D8]" />
+                {/* Przycisk Wyloguj */}
+                <button
+                  onClick={handleSignOut}
+                  className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
+                >
+                  <LogOut size={14} strokeWidth={1.5} />
+                  Wyloguj
+                </button>
+              </div>
             </div>
             {/* Navigation Links */}
             <div className="flex items-center gap-6">
@@ -96,13 +195,13 @@ export default function AdminLayout({
                     className={cn(
                       "text-sm transition-colors relative",
                       isActive
-                        ? "text-black font-medium"
-                        : "text-black/60 hover:text-black"
+                        ? "text-neutral-800 font-medium"
+                        : "text-neutral-400 hover:text-neutral-700"
                     )}
                   >
                     {link.label}
                     {isActive && (
-                      <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-black" />
+                      <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#C1A88C]" />
                     )}
                   </Link>
                 );
@@ -159,4 +258,3 @@ export default function AdminLayout({
     </div>
   );
 }
-

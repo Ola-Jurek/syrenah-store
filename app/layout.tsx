@@ -6,6 +6,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { PageTransition } from "./PageTransition";
 import { CartProvider } from "@/components/CartContext";
+import { SessionProvider } from "@/components/SessionProvider";
+import { WishlistProvider } from "@/components/WishlistContext";
+import { NewsletterPopup } from "@/components/NewsletterPopup";
+import { CookieBanner } from "@/components/CookieBanner";
 
 
 
@@ -35,13 +39,19 @@ export default function RootLayout({
   return (
     <html lang="pl">
       <body>
-        <CartProvider>
-          <Header />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <Footer />
-        </CartProvider>
+        <SessionProvider>
+          <CartProvider>
+            <WishlistProvider>
+              <Header />
+              <main className="min-h-screen">
+                {children}
+              </main>
+              <Footer />
+              <CookieBanner />
+              <NewsletterPopup />
+            </WishlistProvider>
+          </CartProvider>
+        </SessionProvider>
       </body>
     </html>
   );

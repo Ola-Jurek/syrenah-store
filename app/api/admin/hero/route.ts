@@ -54,9 +54,9 @@ export async function POST(req: Request) {
 
     const heroSettings = await prisma.heroSettings.create({
       data: {
-        title,
-        subtitle: subtitle || null,
-        buttonText: buttonText || "Odkryj",
+        titlePl: title,
+        subtitlePl: subtitle || null,
+        buttonTextPl: buttonText || "Odkryj",
         link: link || "/shop",
       },
       include: {

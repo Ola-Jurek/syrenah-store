@@ -24,6 +24,24 @@ type Image = {
   _delete?: boolean;
 };
 
+type DiscountAssignment = {
+  id: string;
+  code: string;
+  namePl: string | null;
+  type: "PERCENTAGE" | "FIXED";
+  value: number;
+  isActive: boolean;
+};
+
+type AvailableDiscount = {
+  id: string;
+  code: string;
+  namePl: string | null;
+  type: "PERCENTAGE" | "FIXED";
+  value: number;
+  isActive: boolean;
+};
+
 type Product = {
   id: string;
   namePl: string;
@@ -32,12 +50,15 @@ type Product = {
   descriptionEn: string | null;
   pricePln: number;
   priceEur: number;
+  salePricePln: number | null;
+  salePriceEur: number | null;
   stock: number;
   sku: string | null;
   slug: string;
   categoryId: string;
   category: Category;
   images: Image[];
+  discounts: DiscountAssignment[];
 };
 
 type ProductResponse = {
@@ -46,6 +67,10 @@ type ProductResponse = {
 
 type CategoriesResponse = {
   categories: Category[];
+};
+
+type DiscountsResponse = {
+  discounts: AvailableDiscount[];
 };
 
 function getAdminToken(): string | null {
@@ -70,6 +95,7 @@ export default function EditProductPage() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [availableDiscounts, setAvailableDiscounts] = useState<AvailableDiscount[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -84,12 +110,15 @@ export default function EditProductPage() {
     descriptionEn: "",
     pricePln: "",
     priceEur: "",
+    salePricePln: "",
+    salePriceEur: "",
     stock: "0",
     sku: "",
     slug: "",
     categoryId: "",
     sizes: "", // Tekst oddzielony przecinkami
     colors: "", // Tekst oddzielony przecinkami
+    discountId: "",
   });
 
   const [images, setImages] = useState<Image[]>([]);
@@ -110,12 +139,15 @@ export default function EditProductPage() {
       if (!finalToken) return;
 
       try {
-        // Fetch product and categories in parallel
-        const [productRes, categoriesRes] = await Promise.all([
+        // Fetch product, categories and discounts in parallel
+        const [productRes, categoriesRes, discountsRes] = await Promise.all([
           fetch(`/api/admin/products/${id}`, {
             headers: { "x-admin-token": finalToken },
           }),
           fetch("/api/admin/categories", {
+            headers: { "x-admin-token": finalToken },
+          }),
+          fetch("/api/admin/discounts", {
             headers: { "x-admin-token": finalToken },
           }),
         ]);
@@ -142,13 +174,22 @@ export default function EditProductPage() {
         setProduct(productData.product);
         setCategories(categoriesData.categories);
 
+        // Load available discounts
+        if (discountsRes.ok) {
+          const discountsData: DiscountsResponse = await discountsRes.json();
+          setAvailableDiscounts(discountsData.discounts.filter((d) => d.isActive));
+        }
+
         // Parsuj sizes i colors z JSON do tekstu oddzielonego przecinkami
         const sizesArray = productData.product.sizes 
-          ? (Array.isArray(productData.product.sizes) ? productData.product.sizes : JSON.parse(productData.product.sizes as string))
+          ? (Array.isArray(productData.product.sizes) ? productData.product.sizes : JSON.parse(productData.product.sizes as unknown as string))
           : [];
         const colorsArray = productData.product.colors
-          ? (Array.isArray(productData.product.colors) ? productData.product.colors : JSON.parse(productData.product.colors as string))
+          ? (Array.isArray(productData.product.colors) ? productData.product.colors : JSON.parse(productData.product.colors as unknown as string))
           : [];
+
+        // Pobierz aktualny discountId (pierwszy przypisany)
+        const currentDiscountId = productData.product.discounts?.[0]?.id || "";
 
         // Set form data
         setFormData({
@@ -158,12 +199,15 @@ export default function EditProductPage() {
           descriptionEn: productData.product.descriptionEn || "",
           pricePln: productData.product.pricePln.toString(),
           priceEur: productData.product.priceEur.toString(),
+          salePricePln: productData.product.salePricePln?.toString() || "",
+          salePriceEur: productData.product.salePriceEur?.toString() || "",
           stock: productData.product.stock.toString(),
           sku: productData.product.sku || "",
           slug: productData.product.slug,
           categoryId: productData.product.categoryId,
           sizes: sizesArray.join(", "),
           colors: colorsArray.join(", "),
+          discountId: currentDiscountId,
         });
 
         // Set images
@@ -313,6 +357,8 @@ export default function EditProductPage() {
         ...formData,
         pricePln: parseFloat(formData.pricePln),
         priceEur: parseFloat(formData.priceEur || formData.pricePln),
+        salePricePln: formData.salePricePln ? parseFloat(formData.salePricePln) : null,
+        salePriceEur: formData.salePriceEur ? parseFloat(formData.salePriceEur) : null,
         stock: parseInt(formData.stock),
         sku: formData.sku || null,
         descriptionPl: formData.descriptionPl || null,
@@ -320,6 +366,7 @@ export default function EditProductPage() {
         sizes: sizesArray.length > 0 ? sizesArray : null,
         colors: colorsArray.length > 0 ? colorsArray : null,
         images: images,
+        discountId: formData.discountId || null,
       };
 
       const res = await fetch(`/api/admin/products/${id}`, {
@@ -587,6 +634,49 @@ export default function EditProductPage() {
               </div>
             </div>
 
+            {/* Ceny promocyjne */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="salePricePln" className="text-black/70">
+                  Cena promocyjna PLN
+                </Label>
+                <Input
+                  id="salePricePln"
+                  type="number"
+                  step="0.01"
+                  value={formData.salePricePln}
+                  onChange={(e) =>
+                    setFormData({ ...formData, salePricePln: e.target.value })
+                  }
+                  placeholder="Zostaw puste, jeśli brak promocji"
+                  className="mt-1 border-black/20"
+                />
+                <p className="text-xs text-black/40 mt-1">
+                  Zostaw puste, jeśli brak promocji
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="salePriceEur" className="text-black/70">
+                  Cena promocyjna EUR
+                </Label>
+                <Input
+                  id="salePriceEur"
+                  type="number"
+                  step="0.01"
+                  value={formData.salePriceEur}
+                  onChange={(e) =>
+                    setFormData({ ...formData, salePriceEur: e.target.value })
+                  }
+                  placeholder="Zostaw puste, jeśli brak promocji"
+                  className="mt-1 border-black/20"
+                />
+                <p className="text-xs text-black/40 mt-1">
+                  Zostaw puste, jeśli brak promocji
+                </p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="stock" className="text-black/70">
@@ -649,6 +739,38 @@ export default function EditProductPage() {
                   className="mt-1 border-black/20"
                 />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Rabat */}
+        <Card className="mb-6 border-black/10 bg-white">
+          <CardHeader>
+            <CardTitle className="text-black">Rabat</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div>
+              <Label htmlFor="discountId" className="text-black/70">
+                Przypisz rabat
+              </Label>
+              <select
+                id="discountId"
+                value={formData.discountId}
+                onChange={(e) =>
+                  setFormData({ ...formData, discountId: e.target.value })
+                }
+                className="mt-1 w-full px-3 py-2 border border-black/20 rounded-md bg-white text-black focus:outline-none focus:ring-1 focus:ring-black/20"
+              >
+                <option value="">Brak rabatu</option>
+                {availableDiscounts.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.code} — {d.namePl || ""} ({d.type === "PERCENTAGE" ? `${d.value}%` : `${d.value} PLN`})
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-black/40 mt-1">
+                Rabat zostanie automatycznie zastosowany do ceny bazowej produktu
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -867,4 +989,3 @@ export default function EditProductPage() {
     </div>
   );
 }
-

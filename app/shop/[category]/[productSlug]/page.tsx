@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
+import { WishlistButton } from "@/components/WishlistButton";
+import { getEffectivePrice, extractDiscountInfo, extractDiscountLabel } from "@/lib/pricing";
+import { ProductBadge } from "@/components/ProductBadge";
 import type { Metadata } from "next";
 
 type Props = {
@@ -74,6 +77,17 @@ export default async function ProductPage({ params }: Props) {
       images: {
         orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
       },
+      discounts: {
+        where: {
+          isActive: true,
+          validFrom: { lte: new Date() },
+          OR: [
+            { validUntil: null },
+            { validUntil: { gte: new Date() } },
+          ],
+        },
+        take: 1,
+      },
     },
   });
 
@@ -84,6 +98,17 @@ export default async function ProductPage({ params }: Props) {
   // Parsuj sizes i colors z JSON
   const sizes = product.sizes ? (typeof product.sizes === 'string' ? JSON.parse(product.sizes) : product.sizes) as string[] : [];
   const colors = product.colors ? (typeof product.colors === 'string' ? JSON.parse(product.colors) : product.colors) as string[] : [];
+
+  // Oblicz efektywną cenę
+  const discountInfo = extractDiscountInfo(product.discounts);
+  const discountLabel = extractDiscountLabel(product.discounts);
+  const pricing = getEffectivePrice({
+    pricePln: Number(product.pricePln),
+    priceEur: Number(product.priceEur),
+    salePricePln: product.salePricePln ? Number(product.salePricePln) : null,
+    salePriceEur: product.salePriceEur ? Number(product.salePriceEur) : null,
+    discount: discountInfo,
+  });
 
   return (
     <div className="px-6 pt-24 pb-16 max-w-6xl mx-auto bg-white">
@@ -109,7 +134,22 @@ export default async function ProductPage({ params }: Props) {
 
       <div className="grid gap-12 md:grid-cols-2">
         {/* LEFT: Images */}
-        <div className="w-full">
+        <div className="w-full relative">
+          {/* Product Badge (SALE / NEW / SOLD OUT) */}
+          <ProductBadge
+            createdAt={product.createdAt.toISOString()}
+            stock={product.stock}
+            hasPriceReduction={pricing.hasDiscount}
+            discountLabel={discountLabel}
+          />
+          {/* Wishlist Heart – prawy górny róg zdjęcia */}
+          <div className="absolute top-3 right-3 z-10">
+            <WishlistButton
+              productId={product.id}
+              size="md"
+              className="bg-white/60 backdrop-blur-sm shadow-sm"
+            />
+          </div>
           <div className="max-h-[80vh] overflow-hidden">
             <ProductGallery images={product.images} productName={product.namePl} />
           </div>
@@ -121,9 +161,23 @@ export default async function ProductPage({ params }: Props) {
             {product.namePl.toUpperCase()}
           </h1>
 
-          <p className="text-xs mb-8 text-center md:text-left text-black/60 uppercase tracking-widest">
-            {product.pricePln.toString()} PLN
-          </p>
+          {/* Cena */}
+          <div className="mb-8 text-center md:text-left">
+            {pricing.hasDiscount ? (
+              <div className="flex items-center gap-3 justify-center md:justify-start">
+                <span className="text-xs text-black/40 line-through uppercase tracking-widest">
+                  {pricing.originalPricePln.toFixed(2)} PLN
+                </span>
+                <span className="text-xs text-[#C1A88C] font-semibold uppercase tracking-widest">
+                  {pricing.finalPricePln.toFixed(2)} PLN
+                </span>
+              </div>
+            ) : (
+              <p className="text-xs text-black/60 uppercase tracking-widest">
+                {pricing.finalPricePln.toFixed(2)} PLN
+              </p>
+            )}
+          </div>
 
           {product.descriptionPl && (
             <p className="text-sm text-black/60 mb-8 leading-relaxed whitespace-pre-wrap text-center md:text-left">
@@ -136,7 +190,7 @@ export default async function ProductPage({ params }: Props) {
             <AddToCartButton
               productId={product.id}
               name={product.namePl}
-              price={Number(product.pricePln)}
+              price={pricing.finalPricePln}
               stock={product.stock}
               sizes={sizes}
               colors={colors}

@@ -14,15 +14,35 @@ model User {
   id        String    @id @default(cuid())
   email     String    @unique
   name      String?
+  lastName  String?   @map("last_name")
+  phone     String?
   password  String
+  role      Role      @default(USER)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
   orders     Order[]
   wishlist   Wishlist?
   cartItems  CartItem[]
+  addresses  Address[]
 
   @@map("users")
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  street     String
+  city       String
+  postalCode String   @map("postal_code")
+  country    String
+  phone      String?
+  userId     String?  @map("user_id")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
 }
 
 model Category {
@@ -48,6 +68,8 @@ model Product {
   descriptionEn String?   @db.Text @map("description_en")
   pricePln      Decimal   @map("price_pln") @db.Decimal(10, 2)
   priceEur      Decimal   @map("price_eur") @db.Decimal(10, 2)
+  salePricePln  Decimal?  @map("sale_price_pln") @db.Decimal(10, 2)
+  salePriceEur  Decimal?  @map("sale_price_eur") @db.Decimal(10, 2)
   stock         Int       @default(0)
   sku           String?   @unique
   slug          String    @unique
@@ -109,34 +131,58 @@ model WishlistItem {
 }
 
 model CartItem {
-  id        String   @id @default(cuid())
-  userId    String   @map("user_id")
-  productId String   @map("product_id")
-  quantity  Int      @default(1)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String?  @map("user_id")
+  productId    String   @map("product_id")
+  quantity     Int      @default(1)
+  size         String?
+  color        String?
+  sessionToken String?  @map("session_token")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, productId])
+  @@unique([userId, productId, size, color])
+  @@unique([sessionToken, productId, size, color])
   @@map("cart_items")
 }
 
 model Order {
-  id        String      @id @default(cuid())
-  stripeSessionId  String   @unique
-  userId    String?     @map("user_id")
-  status    OrderStatus @default(PENDING)
-  totalPln  Decimal     @map("total_pln") @db.Decimal(10, 2)
-  totalEur  Decimal     @map("total_eur") @db.Decimal(10, 2)
-  discountId String?    @map("discount_id")
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id              String      @id @default(cuid())
+  stripeSessionId String      @unique
+  userId          String?     @map("user_id")
+  status          OrderStatus @default(PENDING)
+  totalPln        Decimal     @map("total_pln") @db.Decimal(10, 2)
+  totalEur        Decimal     @map("total_eur") @db.Decimal(10, 2)
+  discountId      String?     @map("discount_id")
 
-  user      User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  discount  Discount?   @relation(fields: [discountId], references: [id], onDelete: SetNull)
-  items     OrderItem[]
+  shippingEmail   String?     @map("shipping_email")
+  shippingName    String?     @map("shipping_name")
+  shippingPhone   String?     @map("shipping_phone")
+  shippingAddress Json?       @map("shipping_address")
+  shippingMethod  String?     @map("shipping_method")
+  shippingCost    Decimal?    @map("shipping_cost") @db.Decimal(10, 2)
+
+  // Faktura VAT
+  isInvoiceRequested Boolean  @default(false) @map("is_invoice_requested")
+  companyName        String?  @map("company_name")
+  vatNumber          String?  @map("vat_number")
+  billingAddress     Json?    @map("billing_address")
+
+  // Inny adres dostawy
+  isDifferentShippingAddress Boolean @default(false) @map("is_different_shipping_address")
+  alternateShippingAddress   Json?   @map("alternate_shipping_address")
+
+  language        String      @default("pl")
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user            User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discount        Discount?   @relation(fields: [discountId], references: [id], onDelete: SetNull)
+  items           OrderItem[]
 
   @@map("orders")
 }
@@ -160,6 +206,8 @@ model OrderItem {
 model Discount {
   id          String        @id @default(cuid())
   code        String        @unique
+  namePl      String?       @map("name_pl")
+  nameEn      String?       @map("name_en")
   type        DiscountType
   value       Decimal       @db.Decimal(10, 2)
   validFrom   DateTime      @map("valid_from")
@@ -190,16 +238,24 @@ enum DiscountType {
   FIXED
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model HeroSettings {
-  id        String      @id @default(cuid())
-  title     String
-  subtitle  String?      @db.Text
-  buttonText String     @default("Odkryj") @map("button_text")
-  link      String      @default("/shop")
-  updatedAt DateTime    @updatedAt
-  createdAt DateTime    @default(now())
+  id           String      @id @default(cuid())
+  titlePl      String      @map("title")
+  titleEn      String?     @map("title_en")
+  subtitlePl   String?     @db.Text @map("subtitle")
+  subtitleEn   String?     @db.Text @map("subtitle_en")
+  buttonTextPl String      @default("Odkryj") @map("button_text")
+  buttonTextEn String?     @map("button_text_en")
+  link         String      @default("/shop")
+  updatedAt    DateTime    @updatedAt
+  createdAt    DateTime    @default(now())
   
-  images    HeroImage[]
+  images       HeroImage[]
 
   @@map("hero_settings")
 }
@@ -217,3 +273,12 @@ model HeroImage {
   @@map("hero_images")
 }
 
+model Newsletter {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  consent   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("newsletter")
+}

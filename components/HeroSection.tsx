@@ -12,9 +12,12 @@ type HeroImage = {
 
 type HeroSettings = {
   id: string;
-  title: string;
-  subtitle: string | null;
-  buttonText: string;
+  titlePl: string;
+  titleEn: string | null;
+  subtitlePl: string | null;
+  subtitleEn: string | null;
+  buttonTextPl: string;
+  buttonTextEn: string | null;
   link: string;
   images: HeroImage[];
 } | null;
@@ -44,9 +47,46 @@ export function HeroSection({ heroSettings }: Props) {
 
   if (!heroSettings || heroSettings.images.length === 0) {
     return (
-      <div className="relative w-full h-[calc(100svh-64px)] md:h-[calc(100vh-64px)] bg-neutral-100 flex items-center justify-center overflow-hidden">
-        <p className="text-neutral-400">Brak zdjęć w sekcji Hero</p>
-      </div>
+      <section className="relative w-full h-[calc(100svh-64px)] md:h-[calc(100vh-64px)] bg-[#EDE3DF] overflow-hidden">
+        {/* Background Logo - fills entire div */}
+        <div className="absolute inset-0 w-full h-full">
+          <Image
+            src="/logo.png"
+            alt="Syrenah"
+            fill
+            className="object-contain opacity-20"
+            sizes="100vw"
+          />
+        </div>
+
+        {/* Content - Always visible, centered */}
+        <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6">
+          <div
+            className={`transition-all duration-[1200ms] ease-out ${
+              mounted
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-5"
+            }`}
+          >
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-playfair italic text-black/90 mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.15)]">
+              {heroSettings?.titlePl || ""}
+            </h1>
+            {heroSettings?.subtitlePl && (
+              <p className="text-lg md:text-xl text-black/80 mb-8 font-serif drop-shadow-[0_2px_4px_rgba(0,0,0,0.1)]">
+                {heroSettings.subtitlePl}
+              </p>
+            )}
+            {heroSettings && (
+              <Link
+                href={heroSettings.link}
+                className="inline-block border border-black/30 bg-black/5 backdrop-blur-sm px-8 py-3 text-sm uppercase tracking-widest text-black/80 hover:bg-black hover:text-white transition-all duration-300"
+              >
+                {heroSettings.buttonTextPl}
+              </Link>
+            )}
+          </div>
+        </div>
+      </section>
     );
   }
 
@@ -70,18 +110,20 @@ export function HeroSection({ heroSettings }: Props) {
           >
             <Image
               src={image.imageUrl}
-              alt={`${heroSettings.title} - ${index + 1}`}
+              alt={`${heroSettings.titlePl} - ${index + 1}`}
               fill
               className="object-cover"
               priority={index === 0}
               sizes="100vw"
+              placeholder="blur"
+              blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI0VERTNERiIvPjwvc3ZnPg=="
             />
           </div>
         </div>
       ))}
 
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent z-10" />
+      {/* Gradient Overlay for text readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/20 to-transparent z-10" />
 
       {/* Content - Always visible, centered */}
       <div className="relative z-20 h-full flex flex-col items-center justify-center text-center px-6">
@@ -93,18 +135,18 @@ export function HeroSection({ heroSettings }: Props) {
           }`}
         >
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-playfair italic text-white mb-4 drop-shadow-lg">
-            {heroSettings.title}
+            {heroSettings.titlePl}
           </h1>
-          {heroSettings.subtitle && (
+          {heroSettings.subtitlePl && (
             <p className="text-lg md:text-xl text-white/90 mb-8 font-serif drop-shadow-md">
-              {heroSettings.subtitle}
+              {heroSettings.subtitlePl}
             </p>
           )}
           <Link
             href={heroSettings.link}
             className="inline-block border border-white/80 bg-white/10 backdrop-blur-sm px-8 py-3 text-sm uppercase tracking-widest text-white hover:bg-white hover:text-black transition-all duration-300"
           >
-            {heroSettings.buttonText}
+            {heroSettings.buttonTextPl}
           </Link>
         </div>
       </div>

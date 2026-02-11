@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { assertAdmin } from "@/lib/adminAuth";
 import { OrderStatus } from "@prisma/client";
+import { sendStatusUpdateEmail } from "@/lib/emails/sendStatusUpdateEmail";
 
 /**
  * GET /api/admin/orders/[id]
@@ -23,7 +24,14 @@ export async function GET(
       include: {
         items: {
           include: {
-            product: true,
+            product: {
+              include: {
+                images: {
+                  where: { isPrimary: true },
+                  take: 1,
+                },
+              },
+            },
           },
         },
       },
@@ -43,6 +51,23 @@ export async function GET(
       totalPln: Number(order.totalPln),
       totalEur: Number(order.totalEur),
       stripeSessionId: order.stripeSessionId || null,
+      shippingEmail: order.shippingEmail,
+      shippingName: order.shippingName,
+      shippingPhone: order.shippingPhone,
+      shippingMethod: order.shippingMethod,
+      shippingCost: order.shippingCost ? Number(order.shippingCost) : null,
+      shippingAddress: order.shippingAddress,
+
+      // Faktura
+      isInvoiceRequested: order.isInvoiceRequested,
+      companyName: order.companyName,
+      vatNumber: order.vatNumber,
+      billingAddress: order.billingAddress,
+
+      // Inny adres dostawy
+      isDifferentShippingAddress: order.isDifferentShippingAddress,
+      alternateShippingAddress: order.alternateShippingAddress,
+
       items: order.items.map((item) => ({
         id: item.id,
         quantity: item.quantity,
@@ -52,6 +77,7 @@ export async function GET(
           namePl: item.product.namePl,
           nameEn: item.product.nameEn,
           slug: item.product.slug,
+          imageUrl: item.product.images?.[0]?.url || null,
         },
       })),
     };
@@ -73,7 +99,7 @@ export async function GET(
 
 /**
  * PATCH /api/admin/orders/[id]
- * Aktualizuje status zamówienia
+ * Aktualizuje status zamówienia i wysyła powiadomienie email
  */
 export async function PATCH(
   req: Request,
@@ -84,7 +110,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
-    const { status } = body;
+    const { status, trackingNumber } = body;
 
     // Walidacja statusu
     const validStatuses: OrderStatus[] = [
@@ -103,12 +129,38 @@ export async function PATCH(
       );
     }
 
+    // Zaktualizuj zamówienie w bazie
     const order = await prisma.order.update({
       where: { id },
       data: { status: status as OrderStatus },
+      include: {
+        user: {
+          select: {
+            email: true,
+            name: true,
+          },
+        },
+      },
     });
 
-    return NextResponse.json({ success: true });
+    // Wyślij email o zmianie statusu (dla PROCESSING, SHIPPED, DELIVERED)
+    const emailResult = await sendStatusUpdateEmail({
+      order: {
+        id: order.id,
+        shippingEmail: order.shippingEmail,
+        shippingName: order.shippingName,
+        shippingMethod: order.shippingMethod,
+        user: order.user,
+      },
+      newStatus: status,
+      trackingNumber,
+    });
+
+    return NextResponse.json({
+      success: true,
+      emailSent: emailResult.success,
+      emailError: emailResult.error,
+    });
   } catch (error) {
     // assertAdmin rzuca Response, więc jeśli to Response, zwróć go
     if (error instanceof Response) {
@@ -135,4 +187,3 @@ export async function PATCH(
     );
   }
 }
-

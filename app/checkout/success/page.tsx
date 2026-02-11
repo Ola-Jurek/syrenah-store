@@ -1,30 +1,27 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/CartContext";
 
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
+  const hasProcessed = useRef(false);
   const { clearCart } = useCart();
+
+  // Natychmiast wyczyść localStorage (synchronicznie, bez czekania na efekty)
+  if (typeof window !== "undefined" && sessionId && !hasProcessed.current) {
+    localStorage.removeItem("cart");
+    localStorage.removeItem("syrenah_shipping");
+  }
 
   useEffect(() => {
     if (!sessionId) return;
+    if (hasProcessed.current) return;
 
-    console.log("CLEARING CART NOW");
-    // Wyczyść koszyk natychmiast po wejściu na stronę success
+    hasProcessed.current = true;
     clearCart();
-
-    // Opcjonalnie: wyślij request do API (webhook powinien już to obsłużyć)
-    fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId }),
-    }).catch((err) => {
-      // Ignoruj błędy - webhook już obsłużył zamówienie
-      console.log("Order API call failed (webhook should have handled it):", err);
-    });
   }, [sessionId, clearCart]);
 
   return (

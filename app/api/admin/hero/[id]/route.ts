@@ -22,9 +22,9 @@ export async function PATCH(
     const heroSettings = await prisma.heroSettings.update({
       where: { id },
       data: {
-        ...(title && { title }),
-        subtitle: subtitle !== undefined ? (subtitle || null) : undefined,
-        ...(buttonText && { buttonText }),
+        ...(title && { titlePl: title }),
+        subtitlePl: subtitle !== undefined ? (subtitle || null) : undefined,
+        ...(buttonText && { buttonTextPl: buttonText }),
         ...(link && { link }),
       },
       include: {

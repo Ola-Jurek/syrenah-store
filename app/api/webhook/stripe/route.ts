@@ -90,6 +90,10 @@ export async function POST(req: Request) {
       }>;
       console.log("Cart items count:", cart.length);
 
+      // Odczytaj userId z metadata (jeśli użytkownik był zalogowany przy checkout)
+      const userId = session.metadata?.userId || null;
+      console.log("User ID from metadata:", userId);
+
       // Wszystko w transakcji dla atomowości
       const order = await prisma.$transaction(async (tx) => {
         // Utwórz zamówienie z statusem PAID
@@ -100,6 +104,7 @@ export async function POST(req: Request) {
             status: OrderStatus.PAID,
             totalPln: new Prisma.Decimal(total),
             totalEur: new Prisma.Decimal(total),
+            ...(userId ? { userId } : {}),
           },
         });
 

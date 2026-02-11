@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export async function InstagramFeed() {
   // Beżowe placeholdery zamiast zdjęć z bazy
   const placeholderCount = 4;
@@ -12,8 +14,16 @@ export async function InstagramFeed() {
           {Array.from({ length: placeholderCount }).map((_, index) => (
             <div
               key={index}
-              className="aspect-square bg-[#C1A88C]/10 relative overflow-hidden"
-            />
+              className="aspect-square bg-[#EDE3DF] relative overflow-hidden flex items-center justify-center"
+            >
+              <Image
+                src="/logo.png"
+                alt="Syrenah"
+                width={80}
+                height={80}
+                className="opacity-20"
+              />
+            </div>
           ))}
         </div>
       </div>

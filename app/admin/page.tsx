@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Package, ShoppingBag, Folder, Image } from "lucide-react";
+import { Package, ShoppingBag, Folder, Image, Tag, Mail } from "lucide-react";
 
 export default async function AdminDashboard() {
   // Pobierz statystyki
@@ -34,9 +34,19 @@ export default async function AdminDashboard() {
       icon: Folder,
     },
     {
+      href: "/admin/discounts",
+      label: "RABATY",
+      icon: Tag,
+    },
+    {
       href: "/admin/hero",
       label: "HERO",
       icon: Image,
+    },
+    {
+      href: "/admin/newsletter",
+      label: "NEWSLETTER",
+      icon: Mail,
     },
   ];
 
