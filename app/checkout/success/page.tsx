@@ -1,12 +1,12 @@
 "use client";
 
-export const dynamic = "force-dynamic";
 
+import { Suspense } from 'react';
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/CartContext";
 
-export default function CheckoutSuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const hasProcessed = useRef(false);
@@ -44,5 +44,14 @@ export default function CheckoutSuccessPage() {
         Wróć do sklepu
       </a>
     </div>
+  );
+}
+
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<div>Ładowanie potwierdzenia...</div>}>
+      <SuccessContent />
+    </Suspense>
   );
 }

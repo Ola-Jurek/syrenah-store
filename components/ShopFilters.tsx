@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
@@ -147,3 +148,4 @@ export function ShopFilters({ currentFilter, currentSort, hasSaleProducts }: Pro
     </div>
   );
 }
+
