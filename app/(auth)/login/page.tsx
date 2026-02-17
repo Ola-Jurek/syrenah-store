@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { Suspense } from 'react';
 
-export default function LoginPage() {
+
+function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +45,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 pt-24 pb-12 bg-[#FDFBF7]">
       <div className="w-full max-w-sm">
-        {/* Nagłówek */}
         <div className="text-center mb-8">
           <h1 className="text-sm font-serif text-neutral-700 tracking-[0.2em] uppercase">
             Logowanie
@@ -116,5 +117,14 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] text-xs uppercase tracking-widest text-neutral-400">Ładowanie...</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
