@@ -42,14 +42,15 @@ export default function PolitykaPrywatnosciPage() {
             <h2 className="font-playfair text-xl text-black mb-4">I. Administrator danych osobowych</h2>
             <ol className="list-decimal list-inside space-y-3 text-sm text-black/70 leading-relaxed">
               <li>
-                Administratorem danych osobowych jest <span className="text-black font-medium">[Nazwa firmy Sp. z o.o.]</span>,
-                z siedzibą w <span className="text-black font-medium">[adres siedziby]</span>,
-                NIP: <span className="text-black font-medium">[numer NIP]</span>,
-                REGON: <span className="text-black font-medium">[numer REGON]</span> (dalej: „Administrator").
+                Administratorem danych osobowych jest{" "}
+                <span className="text-black font-medium">Syrenah sp. z o.o.</span>, z siedzibą przy{" "}
+                <span className="text-black font-medium">Ul. Słoneczna 42B/2, 55-311 Kostomłoty</span>, NIP:{" "}
+                <span className="text-black font-medium">[numer NIP]</span>, REGON:{" "}
+                <span className="text-black font-medium">[numer REGON]</span> (dalej: „Administrator").
               </li>
               <li>
                 Kontakt z Administratorem w sprawach dotyczących danych osobowych jest możliwy pod adresem e-mail:{" "}
-                <span className="text-black">contact@syrenah.com</span>.
+                <span className="text-black">info@syrenahthelabel.com</span>.
               </li>
             </ol>
           </div>

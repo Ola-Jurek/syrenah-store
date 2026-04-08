@@ -173,28 +173,28 @@ export function Header() {
 
                 <div className="flex flex-col flex-1 mt-6 px-10">
                   {/* Language Switcher - na górze */}
-                  <div className="flex items-center gap-2 pb-6 border-b border-[#C1A88C]/10">
+                  <div className="flex items-center gap-2 pb-6 border-b border-[#5c4433]/15">
                     <button
                       onClick={toggleLanguage}
-                      className="flex items-center gap-2 text-xs uppercase tracking-widest text-[#C1A88C] font-medium"
+                      className="flex items-center gap-2 text-[13px] uppercase tracking-widest text-[#5c4433] font-medium"
                     >
                       <span
                         className={cn(
                           "transition-colors",
                           language === "PL"
-                            ? "text-[#C1A88C]"
-                            : "text-[#C1A88C]/40"
+                            ? "text-[#3d2e24]"
+                            : "text-[#3d2e24]/45"
                         )}
                       >
                         PL
                       </span>
-                      <span className="text-[#C1A88C]/20">|</span>
+                      <span className="text-[#3d2e24]/25">|</span>
                       <span
                         className={cn(
                           "transition-colors",
                           language === "EN"
-                            ? "text-[#C1A88C]"
-                            : "text-[#C1A88C]/40"
+                            ? "text-[#3d2e24]"
+                            : "text-[#3d2e24]/45"
                         )}
                       >
                         EN
@@ -205,13 +205,13 @@ export function Header() {
                   {/* Wyszukiwarka */}
                   <form onSubmit={handleSearch} className="py-6">
                     <div className="flex items-center gap-3">
-                      <Search className="h-4 w-4 text-[#C1A88C] flex-shrink-0" />
+                      <Search className="h-4 w-4 text-[#5c4433] flex-shrink-0" />
                       <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={translations[language].searchPlaceholder}
-                        className="flex-1 bg-transparent border-none outline-none text-[#C1A88C] placeholder:text-[#C1A88C]/40 text-xs uppercase tracking-widest focus:outline-none"
+                        className="flex-1 bg-transparent border-none outline-none text-[#3d2e24] placeholder:text-[#3d2e24]/45 text-[13px] uppercase tracking-widest focus:outline-none"
                       />
                     </div>
                   </form>
@@ -223,16 +223,16 @@ export function Header() {
                       <button
                         onClick={() => setShopAccordionOpen(!shopAccordionOpen)}
                         className={cn(
-                          "flex items-center gap-2 text-xs uppercase tracking-widest font-medium transition-colors text-[#C1A88C] hover:text-[#C1A88C]/80 w-full text-left",
+                          "flex items-center gap-2 text-[13px] uppercase tracking-widest font-medium transition-colors text-[#4a392d] hover:text-[#3d2e24] w-full text-left",
                           pathname?.startsWith("/shop")
-                            ? "text-[#C1A88C]"
-                            : "text-[#C1A88C]/70"
+                            ? "text-[#3d2e24]"
+                            : "text-[#4a392d]/90"
                         )}
                       >
                         {translations[language].shop}
                         <ChevronDown
                           className={cn(
-                            "h-3 w-3 transition-transform duration-200",
+                            "h-3 w-3 text-[#4a392d] transition-transform duration-200",
                             shopAccordionOpen && "rotate-180"
                           )}
                         />
@@ -245,16 +245,16 @@ export function Header() {
                           shopAccordionOpen ? "max-h-96 opacity-100 mt-3" : "max-h-0 opacity-0"
                         )}
                       >
-                        <div className="flex flex-col gap-3 pl-4 border-l border-[#C1A88C]/10">
+                        <div className="flex flex-col gap-3 pl-4 border-l border-[#5c4433]/15">
                           {/* Link do wszystkich produktów */}
                           <Link
                             href="/shop"
                             onClick={() => setIsOpen(false)}
                             className={cn(
-                              "text-xs uppercase tracking-widest transition-colors",
+                              "text-[13px] uppercase tracking-widest transition-colors",
                               pathname === "/shop"
-                                ? "text-[#C1A88C] font-medium"
-                                : "text-[#C1A88C]/50 hover:text-[#C1A88C]/80"
+                                ? "text-[#3d2e24] font-medium"
+                                : "text-[#4a392d]/65 hover:text-[#3d2e24]"
                             )}
                           >
                             {translations[language].categories}
@@ -266,10 +266,10 @@ export function Header() {
                               href={`/shop/${cat.slug}`}
                               onClick={() => setIsOpen(false)}
                               className={cn(
-                                "text-xs uppercase tracking-widest transition-colors",
+                                "text-[13px] uppercase tracking-widest transition-colors",
                                 pathname === `/shop/${cat.slug}`
-                                  ? "text-[#C1A88C] font-medium"
-                                  : "text-[#C1A88C]/50 hover:text-[#C1A88C]/80"
+                                  ? "text-[#3d2e24] font-medium"
+                                  : "text-[#4a392d]/65 hover:text-[#3d2e24]"
                               )}
                             >
                               {language === "PL" ? cat.namePl.toUpperCase() : cat.nameEn.toUpperCase()}
@@ -284,10 +284,10 @@ export function Header() {
                       href="/o-nas"
                       onClick={() => setIsOpen(false)}
                       className={cn(
-                        "text-xs uppercase tracking-widest font-medium transition-colors text-[#C1A88C] hover:text-[#C1A88C]/80",
-                        pathname === "/about"
-                          ? "text-[#C1A88C]"
-                          : "text-[#C1A88C]/70"
+                        "text-[13px] uppercase tracking-widest font-medium transition-colors text-[#4a392d] hover:text-[#3d2e24]",
+                        pathname === "/o-nas"
+                          ? "text-[#3d2e24]"
+                          : "text-[#4a392d]/90"
                       )}
                     >
                       {translations[language].about}
@@ -298,11 +298,11 @@ export function Header() {
                   <div className="flex-1" />
 
                   {/* Konto – na samym dole menu mobilnego */}
-                  <div className="pt-6 pb-8 border-t border-[#C1A88C]/10">
+                  <div className="pt-6 pb-8 border-t border-[#5c4433]/15">
                     <Link
                       href={session ? "/account" : "/login"}
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center gap-3 text-xs uppercase tracking-widest font-medium text-[#C1A88C]/70 hover:text-[#C1A88C] transition-colors"
+                      className="flex items-center gap-3 text-[13px] uppercase tracking-widest font-medium text-[#4a392d]/90 hover:text-[#3d2e24] transition-colors"
                     >
                       <User className="h-4 w-4" />
                       {session ? "Moje konto" : "Zaloguj"}

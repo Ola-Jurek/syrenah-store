@@ -54,12 +54,13 @@ export default function ZwrotyIReklamacjePage() {
                 Aby dokonać zwrotu, należy:
                 <ul className="list-disc list-inside ml-4 mt-3 space-y-2">
                   <li>
-                    Przesłać oświadczenie o odstąpieniu od umowy na adres e-mail:{" "}
-                    <span className="text-black">contact@syrenah.com</span>, podając numer zamówienia.
+                    Przesłać wypełniony formularz zwrotu na adres e-mail:{" "}
+                    <span className="text-black">info@syrenahthelabel.com</span>, podając numer zamówienia.
                   </li>
                   <li>
-                    Zapakować produkt w oryginalne opakowanie i odesłać na adres:{" "}
-                    <span className="text-black font-medium">[adres do zwrotów]</span>.
+                    Koniecznie zapakować produkt w oryginalne opakowanie (wraz z kompletem zawartości i metkami)
+                    i odesłać przesyłkę na adres magazynu:{" "}
+                    <span className="text-black font-medium">ul. Polna 22, 57-120 Wiązów</span>.
                   </li>
                 </ul>
               </li>
@@ -74,9 +75,9 @@ export default function ZwrotyIReklamacjePage() {
               </li>
               <li>
                 Zwrot płatności nastąpi w terminie{" "}
-                <span className="text-black font-medium">14 dni</span> od dnia otrzymania oświadczenia
-                o odstąpieniu od umowy, tą samą metodą płatności, której użył Klient przy składaniu zamówienia.
-                Sprzedawca może wstrzymać się ze zwrotem płatności do czasu otrzymania zwracanego produktu.
+                <span className="text-black font-medium">14 dni</span> od dnia otrzymania formularza zwrotu,
+                tą samą metodą płatności, której użył Klient przy składaniu zamówienia. Sprzedawca może
+                wstrzymać się ze zwrotem płatności do czasu otrzymania zwracanego produktu.
               </li>
             </ol>
           </div>
@@ -98,8 +99,10 @@ export default function ZwrotyIReklamacjePage() {
               <li>
                 Reklamację można złożyć:
                 <ul className="list-disc list-inside ml-4 mt-3 space-y-2">
-                  <li>drogą elektroniczną na adres: <span className="text-black">contact@syrenah.com</span>,</li>
-                  <li>pisemnie na adres siedziby Sprzedawcy: <span className="text-black font-medium">[adres siedziby]</span>.</li>
+                  <li>
+                    wyłącznie drogą elektroniczną na adres:{" "}
+                    <span className="text-black">info@syrenahthelabel.com</span>.
+                  </li>
                 </ul>
               </li>
               <li>
@@ -144,7 +147,7 @@ export default function ZwrotyIReklamacjePage() {
               </li>
               <li>
                 Aby dokonać wymiany, skontaktuj się z nami pod adresem:{" "}
-                <span className="text-black">contact@syrenah.com</span>, podając numer zamówienia
+                <span className="text-black">info@syrenahthelabel.com</span>, podając numer zamówienia
                 i pożądany rozmiar.
               </li>
               <li>
@@ -156,24 +159,41 @@ export default function ZwrotyIReklamacjePage() {
             </ol>
           </div>
 
-          {/* Formularz */}
+          {/* Formularz zwrotu / kontakt */}
           <div className="mb-12 p-8 bg-[#FAF8F5] border border-[#E8E3D8] text-center">
-            <h3 className="font-playfair text-lg text-black mb-3">Potrzebujesz pomocy?</h3>
-            <p className="text-sm text-black/60 mb-4">
-              Skontaktuj się z nami — chętnie pomożemy w procesie zwrotu lub reklamacji.
+            <h3 className="font-playfair text-lg text-black mb-3">Formularz i kontakt</h3>
+            <p className="text-sm text-black/60 mb-2">
+              Adres magazynu do przesyłek zwrotnych:{" "}
+              <span className="text-black font-medium">ul. Polna 22, 57-120 Wiązów</span>.
             </p>
-            <a
-              href="/kontakt"
-              className="inline-block text-xs uppercase tracking-[0.2em] text-black/60 border border-black/20 px-8 py-3 hover:bg-black hover:text-white transition-colors duration-300"
-            >
-              Formularz kontaktowy
-            </a>
+            <p className="text-sm text-black/60 mb-6">
+              W sprawach zwrotów i reklamacji kontakt jest możliwy wyłącznie drogą mailową na adres{" "}
+              <span className="text-black">info@syrenahthelabel.com</span>.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <span
+                className="inline-block text-xs uppercase tracking-[0.2em] text-black/35 border border-black/15 px-8 py-3 cursor-default select-none"
+                title="Plik zostanie udostępniony po publikacji"
+              >
+                Pobierz formularz zwrotu/reklamacji
+              </span>
+              <a
+                href="/kontakt"
+                className="inline-block text-xs uppercase tracking-[0.2em] text-black/60 border border-black/20 px-8 py-3 hover:bg-black hover:text-white transition-colors duration-300"
+              >
+                Formularz kontaktowy
+              </a>
+            </div>
+            <p className="text-[11px] text-black/40 mt-4">
+              Plik PDF formularza będzie dostępny wkrótce — tymczasowo prosimy o zgłoszenie na adres{" "}
+              <span className="text-black/55">info@syrenahthelabel.com</span>.
+            </p>
           </div>
 
           {/* Data */}
           <div className="pt-8 border-t border-black/10">
             <p className="text-xs text-black/40 tracking-wide">
-              Ostatnia aktualizacja: Luty 2026
+              Ostatnia aktualizacja: Kwiecień 2026
             </p>
           </div>
 

@@ -47,10 +47,3 @@ function SuccessContent() {
   );
 }
 
-export default function CheckoutSuccessPage() {
-  return (
-    <Suspense fallback={<div>Ładowanie potwierdzenia...</div>}>
-      <SuccessContent />
-    </Suspense>
-  );
-}

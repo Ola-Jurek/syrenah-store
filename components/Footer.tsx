@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Instagram, Facebook } from "lucide-react";
+import { Instagram } from "lucide-react";
+import { TikTokIcon } from "@/components/icons/TikTokIcon";
 
 
 export function Footer() {
@@ -41,30 +42,30 @@ export function Footer() {
             </Link>
           </div>
 
-          {/* Column 2: Social (Instagram, Facebook, Pinterest) */}
+          {/* Column 2: Social */}
             <div className="flex flex-col space-y-3 items-center">
             <span className="text-xs tracking-wider text-foreground/60 uppercase">
                 Social
             </span>
 
             <a 
-                href="https://instagram.com" 
+                href="https://www.instagram.com/syrenah_the_label?igsh=MWJmZmdkbzVmcnY2Zg%3D%3D&utm_source=qr" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground transition"
+                aria-label="Instagram Syrenah"
             >
                 <Instagram className="h-5 w-5" />
-                
             </a>
 
             <a 
-                href="https://facebook.com" 
+                href="https://www.tiktok.com/@syrenah_the_label?_r=1&_t=ZN-94UxeTae7TK" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground transition"
+                aria-label="TikTok Syrenah"
             >
-                <Facebook className="h-5 w-5" />
-                
+                <TikTokIcon className="h-5 w-5" />
             </a>
 
             </div>
@@ -75,8 +76,8 @@ export function Footer() {
             <span className="text-xs tracking-wider text-foreground/60 uppercase">
               Dane sklepu
             </span>
-            <p className="text-sm text-foreground/70">Syrenah The Label</p>
-            <p className="text-sm text-foreground/70">contact@syrenah.com</p>
+            <p className="text-sm text-foreground/70">Syrenah</p>
+            <p className="text-sm text-foreground/70">info@syrenahthelabel.com</p>
           </div>
         </div>
 

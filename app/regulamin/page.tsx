@@ -31,18 +31,20 @@ export default function RegulaminPage() {
             <ol className="list-decimal list-inside space-y-3 text-sm text-black/70 leading-relaxed">
               <li>
                 Niniejszy Regulamin określa zasady korzystania ze sklepu internetowego Syrenah, dostępnego pod adresem{" "}
-                <span className="text-black">www.syrenah.com</span> (dalej: „Sklep").
+                <span className="text-black">www.syrenahthelabel.com</span> (dalej: „Sklep").
               </li>
               <li>
-                Właścicielem i operatorem Sklepu jest <span className="text-black font-medium">[Nazwa firmy Sp. z o.o.]</span>,
-                z siedzibą w <span className="text-black font-medium">[adres siedziby]</span>,
-                wpisana do rejestru przedsiębiorców prowadzonego przez Sąd Rejonowy w <span className="text-black font-medium">[miasto]</span>,
-                pod numerem KRS: <span className="text-black font-medium">[numer KRS]</span>,
-                NIP: <span className="text-black font-medium">[numer NIP]</span>,
-                REGON: <span className="text-black font-medium">[numer REGON]</span>.
+                Właścicielem i operatorem Sklepu jest{" "}
+                <span className="text-black font-medium">Syrenah sp. z o.o.</span>, z siedzibą przy{" "}
+                <span className="text-black font-medium">Ul. Słoneczna 42B/2, 55-311 Kostomłoty</span>,
+                wpisana do rejestru przedsiębiorców prowadzonego przez Sąd Rejonowy dla Wrocławia-Fabrycznej we Wrocławiu, pod numerem KRS:{" "}
+                <span className="text-black font-medium">0001160021</span>, NIP:{" "}
+                <span className="text-black font-medium">9131641193</span>, REGON:{" "}
+                <span className="text-black font-medium">541107549</span>.
               </li>
               <li>
-                Kontakt ze Sklepem możliwy jest pod adresem e-mail: <span className="text-black">contact@syrenah.com</span> lub telefonicznie pod numerem: <span className="text-black font-medium">[numer telefonu]</span>.
+                Kontakt ze Sklepem jest możliwy wyłącznie drogą elektroniczną, pod adresem e-mail:{" "}
+                <span className="text-black">info@syrenahthelabel.com</span>.
               </li>
               <li>
                 Korzystanie ze Sklepu oznacza akceptację niniejszego Regulaminu.
@@ -82,7 +84,11 @@ export default function RegulaminPage() {
           <div className="mb-12">
             <h2 className="font-playfair text-xl text-black mb-4">§ 4. Ceny i płatności</h2>
             <ol className="list-decimal list-inside space-y-3 text-sm text-black/70 leading-relaxed">
-              <li>Wszystkie ceny podane w Sklepie wyrażone są w złotych polskich (PLN) i zawierają podatek VAT.</li>
+              <li>Wszystkie ceny podane w Sklepie zawierają podatek VAT.</li>
+              <li>
+                Dla krajów członkowskich Unii Europejskiej walutą rozliczeniową jest{" "}
+                <span className="text-black font-medium">euro (EUR)</span>.
+              </li>
               <li>Cena Produktu podana w chwili składania zamówienia jest wiążąca dla obu stron.</li>
               <li>
                 Sklep umożliwia dokonanie płatności za pośrednictwem:
@@ -99,15 +105,8 @@ export default function RegulaminPage() {
           <div className="mb-12">
             <h2 className="font-playfair text-xl text-black mb-4">§ 5. Dostawa</h2>
             <ol className="list-decimal list-inside space-y-3 text-sm text-black/70 leading-relaxed">
-              <li>Dostawa Produktów odbywa się na terytorium Rzeczypospolitej Polskiej.</li>
-              <li>
-                Sklep realizuje dostawy za pośrednictwem:
-                <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
-                  <li>Kurier DPD,</li>
-                  <li>Paczkomat InPost,</li>
-                  <li>Kurier InPost.</li>
-                </ul>
-              </li>
+              <li>Dostawa Produktów odbywa się na terytorium całej Unii Europejskiej.</li>
+              <li>Realizacja dostaw następuje kurierem DHL.</li>
               <li>Przewidywany czas dostawy wynosi od 2 do 5 dni roboczych od momentu zaksięgowania płatności.</li>
               <li>Klient jest informowany o statusie przesyłki drogą e-mailową, w tym o nadaniu numeru przesyłki.</li>
             </ol>
@@ -122,8 +121,17 @@ export default function RegulaminPage() {
                 <span className="text-black font-medium">14 dni kalendarzowych</span> bez podawania przyczyny i bez ponoszenia kosztów, z wyjątkiem kosztów określonych w pkt. 5 poniżej.
               </li>
               <li>Bieg terminu do odstąpienia od umowy rozpoczyna się od dnia, w którym Konsument objął Produkt w posiadanie lub w którym wskazana przez niego osoba trzecia inna niż przewoźnik objęła Produkt w posiadanie.</li>
-              <li>Aby skorzystać z prawa odstąpienia od umowy, Konsument powinien poinformować Sprzedawcę o swojej decyzji w drodze jednoznacznego oświadczenia, przesłanego na adres e-mail: <span className="text-black">contact@syrenah.com</span>.</li>
-              <li>Sprzedawca niezwłocznie, nie później niż w terminie 14 dni od dnia otrzymania oświadczenia o odstąpieniu, zwróci Konsumentowi wszystkie dokonane przez niego płatności, w tym koszty dostawy (z wyjątkiem dodatkowych kosztów wynikających z wybranego przez Konsumenta sposobu dostawy innego niż najtańszy).</li>
+              <li>
+                Aby skorzystać z prawa odstąpienia od umowy, Konsument powinien poinformować Sprzedawcę o swojej
+                decyzji, przesyłając wypełniony formularz zwrotu na adres e-mail:{" "}
+                <span className="text-black">info@syrenahthelabel.com</span>.
+              </li>
+              <li>
+                Sprzedawca niezwłocznie, nie później niż w terminie 14 dni od dnia otrzymania formularza zwrotu,
+                zwróci Konsumentowi wszystkie dokonane przez niego płatności, w tym koszty dostawy (z wyjątkiem
+                dodatkowych kosztów wynikających z wybranego przez Konsumenta sposobu dostawy innego niż
+                najtańszy).
+              </li>
               <li>Konsument ponosi bezpośrednie koszty zwrotu Produktu.</li>
               <li>Produkt powinien zostać zwrócony w stanie niezmienionym, bez śladów użytkowania, z kompletnym opakowaniem i metkami.</li>
             </ol>
@@ -134,7 +142,7 @@ export default function RegulaminPage() {
             <h2 className="font-playfair text-xl text-black mb-4">§ 7. Reklamacje</h2>
             <ol className="list-decimal list-inside space-y-3 text-sm text-black/70 leading-relaxed">
               <li>Sprzedawca jest zobowiązany dostarczyć Klientowi Produkt wolny od wad.</li>
-              <li>Reklamacje można składać drogą elektroniczną na adres: <span className="text-black">contact@syrenah.com</span> lub pisemnie na adres siedziby Sprzedawcy.</li>
+              <li>Reklamacje można składać wyłącznie drogą elektroniczną na adres: <span className="text-black">info@syrenahthelabel.com</span>.</li>
               <li>Reklamacja powinna zawierać: opis wady, datę jej stwierdzenia, żądanie Klienta (naprawa, wymiana, obniżenie ceny lub odstąpienie od umowy) oraz dowód zakupu.</li>
               <li>Sprzedawca rozpatrzy reklamację w terminie 14 dni kalendarzowych od dnia jej otrzymania i poinformuje Klienta o sposobie jej rozpatrzenia.</li>
             </ol>
@@ -164,7 +172,7 @@ export default function RegulaminPage() {
           {/* Data */}
           <div className="pt-8 border-t border-black/10">
             <p className="text-xs text-black/40 tracking-wide">
-              Ostatnia aktualizacja: Luty 2026
+              Ostatnia aktualizacja: Kwiecień 2026
             </p>
           </div>
 

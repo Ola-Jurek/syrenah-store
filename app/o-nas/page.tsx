@@ -49,15 +49,12 @@ export default function ONasPage() {
           <p className="text-[11px] tracking-[0.3em] text-black/40 uppercase mb-6">
             Kim jesteśmy
           </p>
-          <h2 className="font-playfair text-2xl md:text-3xl text-black tracking-wide mb-8 leading-relaxed">
-            Tworzymy modę dla kobiet, które wiedzą, czego chcą
-          </h2>
           <div className="w-12 h-px bg-black/20 mx-auto mb-8" />
           <p className="text-sm md:text-base text-black/60 leading-[1.9] tracking-wide">
-            Syrenah to więcej niż marka odzieżowa — to filozofia stylu, w której luksus spotyka się
-            z codzienną pewnością siebie. Każdy nasz projekt powstaje z myślą o współczesnej kobiecie:
-            wymagającej, świadomej swoich potrzeb i niezależnej w swoich wyborach. Wierzymy, że prawdziwa
-            elegancja nie krzyczy — ona mówi cicho, ale zdecydowanie.
+            Tworzymy modę dla kobiet, które wiedzą czego chcą. Jesteśmy siostrami – Marta i Claudia. Razem
+            stworzyłyśmy Syrenah od zera. Zaczynając od samego początku, z ogromną determinacją uczymy się,
+            projektujemy i budujemy tę markę krok po kroku. Wierzymy, że kiedy ma się odwagę próbować, nie ma
+            rzeczy, których nie da się osiągnąć.
           </p>
         </div>
       </section>
@@ -77,9 +74,8 @@ export default function ONasPage() {
               </div>
               <h3 className="font-playfair text-lg text-black mb-3">Kunszt i jakość</h3>
               <p className="text-sm text-black/55 leading-relaxed">
-                Każdy detal ma znaczenie. Starannie dobieramy tkaniny, dbamy o perfekcyjne wykończenia
-                i precyzyjne kroje. Nasze kolekcje powstają w limitowanych seriach, co gwarantuje
-                wyjątkowy charakter każdego modelu.
+                Dbamy o jakość, detale i najwyższy poziom obsługi. Syrenah to marka, która daje kobietom
+                możliwość poczucia się wyjątkowo — bez kompromisów.
               </p>
             </div>
 
@@ -90,9 +86,9 @@ export default function ONasPage() {
               </div>
               <h3 className="font-playfair text-lg text-black mb-3">Pewność siebie</h3>
               <p className="text-sm text-black/55 leading-relaxed">
-                Projektujemy ubrania, które dodają odwagi. Syrenah to marka dla kobiet, które wchodzą
-                do pomieszczenia i nie muszą się przedstawiać — ich styl mówi sam za siebie.
-                Wierzymy, że moda jest formą ekspresji.
+                Nasza marka powstała z myślą o każdej kobiecie. Wierzymy, że styl i piękno nie mają jednego
+                rozmiaru, koloru ani definicji. Chcemy, aby każda kobieta – niezależnie od sylwetki, koloru skóry
+                czy wieku – mogła poczuć się w naszych projektach pewnie i wyjątkowo.
               </p>
             </div>
 
@@ -101,11 +97,10 @@ export default function ONasPage() {
               <div className="w-12 h-12 mx-auto mb-6 border border-black/10 rounded-full flex items-center justify-center">
                 <span className="font-playfair text-lg text-black/70">03</span>
               </div>
-              <h3 className="font-playfair text-lg text-black mb-3">Pasja tworzenia</h3>
+              <h3 className="font-playfair text-lg text-black mb-3">Symbolika syreny</h3>
               <p className="text-sm text-black/55 leading-relaxed">
-                Za każdą kolekcją stoi autentyczna pasja i setki godzin pracy kreatywnej.
-                Od pierwszego szkicu po finalny produkt — angażujemy serce w każdy etap.
-                Syrenah to marka tworzona z miłości do piękna.
+                Syrena jest symbolem kobiecej niezależności, siły i odwagi. To kobieta, która podąża własną
+                drogą, słucha swojej intuicji i nie boi się być sobą.
               </p>
             </div>
           </div>
@@ -119,9 +114,8 @@ export default function ONasPage() {
             Manifest
           </p>
           <blockquote className="font-playfair text-xl md:text-2xl text-black/80 leading-relaxed italic mb-8">
-            &ldquo;Syrenah to obietnica — że możesz być sobą, w najpiękniejszej wersji.
-            Że luksus nie jest przywilejem, lecz wyborem. Że elegancja to nie to, co nosisz,
-            ale to, jak się w tym czujesz.&rdquo;
+            &ldquo;Syrenah to manifest kobiecej siły. Wierzymy, że każda kobieta ma w sobie odwagę, by sięgać po
+            więcej. Bo kiedy wierzysz w siebie, nie ma rzeczy niemożliwych.&rdquo;
           </blockquote>
           <div className="w-12 h-px bg-black/20 mx-auto mb-6" />
           <p className="text-xs tracking-[0.2em] text-black/40 uppercase">

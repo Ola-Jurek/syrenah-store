@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     }
 
     // Wyślij e-mail na adres sklepu
-    const storeEmail = process.env.STORE_CONTACT_EMAIL || "contact@syrenah.com";
+    const storeEmail = process.env.STORE_CONTACT_EMAIL || "info@syrenahthelabel.com";
 
     await resend.emails.send({
       from: "Syrenah Store <onboarding@resend.dev>",

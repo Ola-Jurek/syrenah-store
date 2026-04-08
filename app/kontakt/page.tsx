@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Toaster, toast } from "sonner";
-import { Send, Mail, MapPin, Phone } from "lucide-react";
+import { Send, Mail, MapPin } from "lucide-react";
 
 export default function KontaktPage() {
   const [formData, setFormData] = useState({
@@ -107,21 +107,11 @@ export default function KontaktPage() {
                     <div>
                       <p className="text-sm font-medium text-black mb-1">E-mail</p>
                       <a
-                        href="mailto:contact@syrenah.com"
+                        href="mailto:info@syrenahthelabel.com"
                         className="text-sm text-black/55 hover:text-black transition"
                       >
-                        contact@syrenah.com
+                        info@syrenahthelabel.com
                       </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[#FAF8F5] border border-[#E8E3D8] flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Phone className="w-4 h-4 text-black/50" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-black mb-1">Telefon</p>
-                      <p className="text-sm text-black/55">[numer telefonu]</p>
                     </div>
                   </div>
 
@@ -132,9 +122,9 @@ export default function KontaktPage() {
                     <div>
                       <p className="text-sm font-medium text-black mb-1">Adres</p>
                       <p className="text-sm text-black/55 leading-relaxed">
-                        [Nazwa firmy Sp. z o.o.]<br />
-                        [ulica i numer]<br />
-                        [kod pocztowy, miasto]
+                        Syrenah sp. z o.o.<br />
+                        Ul. Słoneczna 42B/2<br />
+                        55-311 Kostomłoty
                       </p>
                     </div>
                   </div>
@@ -143,8 +133,7 @@ export default function KontaktPage() {
 
               <div className="pt-6 border-t border-black/10">
                 <p className="text-xs text-black/40 leading-relaxed">
-                  Odpowiadamy na wiadomości w ciągu 24 godzin w dni robocze.
-                  W przypadku pilnych spraw prosimy o kontakt telefoniczny.
+                  Odpowiadamy na wiadomości e-mail w ciągu 24 godzin w dni robocze.
                 </p>
               </div>
             </div>

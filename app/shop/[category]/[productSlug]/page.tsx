@@ -6,6 +6,7 @@ import { ProductGallery } from "@/components/ProductGallery";
 import { WishlistButton } from "@/components/WishlistButton";
 import { getEffectivePrice, extractDiscountInfo, extractDiscountLabel } from "@/lib/pricing";
 import { ProductBadge } from "@/components/ProductBadge";
+import { ProductSizeChart } from "@/components/ProductSizeChart";
 import type { Metadata } from "next";
 
 type Props = {
@@ -184,6 +185,10 @@ export default async function ProductPage({ params }: Props) {
               {product.descriptionPl}
             </p>
           )}
+
+          <div className="mb-8 flex justify-center md:justify-start">
+            <ProductSizeChart />
+          </div>
 
           {/* CTA */}
           <div className="mt-auto">
