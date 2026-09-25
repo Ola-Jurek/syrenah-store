@@ -25,8 +25,8 @@ export default function CheckoutPage() {
 
     const data = await res.json();
 
-    if (!data.url) {
-      alert(t("alerts.checkoutMissingBackendUrl"));
+    if (!res.ok || !data.url) {
+      alert(data.error || t("alerts.checkoutMissingBackendUrl"));
       return;
     }
 

@@ -252,8 +252,8 @@ export default function CheckoutReviewPage() {
 
       const data = await res.json();
 
-      if (!data.url) {
-        alert(t("alerts.checkoutNoPaymentUrl"));
+      if (!res.ok || !data.url) {
+        alert(data.error || t("alerts.checkoutNoPaymentUrl"));
         setIsProcessing(false);
         return;
       }

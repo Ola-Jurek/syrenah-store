@@ -9,6 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SizeChartEditor } from "@/components/admin/SizeChartEditor";
 import {
+  SizeStockFields,
+  sizeStocksPayload,
+  splitSizeLabels,
+} from "@/components/admin/SizeStockFields";
+import {
   draftsToSizeChart,
   sizeChartDraftError,
   sizeChartToDrafts,
@@ -83,6 +88,7 @@ export default function NewProductPage() {
   const [sizeChartColumns, setSizeChartColumns] = useState<SizeChartColumnDraft[]>(initialChart.columns);
   const [sizeChartRows, setSizeChartRows] = useState<SizeChartRowDraft[]>(initialChart.rows);
   const [sizeChartInvalid, setSizeChartInvalid] = useState(false);
+  const [sizeStocks, setSizeStocks] = useState<Record<string, string>>({});
   const [images, setImages] = useState<
     Array<{ url: string; altPl: string; altEn: string; isPrimary: boolean }>
   >([]);
@@ -301,12 +307,12 @@ export default function NewProductPage() {
 
     try {
       // Parsuj sizes i colors z tekstu oddzielonego przecinkami na tablice
-      const sizesArray = formData.sizes
-        ? formData.sizes.split(",").map(s => s.trim()).filter(s => s.length > 0)
-        : [];
+      const sizesArray = splitSizeLabels(formData.sizes);
       const colorsArray = formData.colors
         ? formData.colors.split(",").map(c => c.trim()).filter(c => c.length > 0)
         : [];
+      const sizeStockRows = sizeStocksPayload(formData.sizes, sizeStocks);
+      const stockTotal = sizeStockRows.reduce((sum, row) => sum + row.stock, 0);
 
       const body = {
         ...formData,
@@ -314,11 +320,12 @@ export default function NewProductPage() {
         priceEur: parseFloat(formData.priceEur || formData.pricePln),
         salePricePln: formData.salePricePln ? parseFloat(formData.salePricePln) : null,
         salePriceEur: formData.salePriceEur ? parseFloat(formData.salePriceEur) : null,
-        stock: parseInt(formData.stock),
+        stock: sizesArray.length > 0 ? stockTotal : parseInt(formData.stock),
         sku: formData.sku || null,
         descriptionPl: formData.descriptionPl || null,
         descriptionEn: formData.descriptionEn || null,
         sizes: sizesArray.length > 0 ? sizesArray : null,
+        sizeStocks: sizeStockRows,
         colors: colorsArray.length > 0 ? colorsArray : null,
         sizeChart: draftsToSizeChart(sizeChartColumns, sizeChartRows),
         images: images.filter((img) => img.url.trim() !== ""),
@@ -566,6 +573,7 @@ export default function NewProductPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {splitSizeLabels(formData.sizes).length === 0 && (
               <div>
                 <Label htmlFor="stock" className="text-black/70">
                   Stan magazynowy *
@@ -573,6 +581,7 @@ export default function NewProductPage() {
                 <Input
                   id="stock"
                   type="number"
+                  min={0}
                   value={formData.stock}
                   onChange={(e) =>
                     setFormData({ ...formData, stock: e.target.value })
@@ -581,6 +590,7 @@ export default function NewProductPage() {
                   className="mt-1 border-black/20"
                 />
               </div>
+              )}
 
               <div>
                 <Label htmlFor="sku" className="text-black/70">
@@ -628,6 +638,16 @@ export default function NewProductPage() {
                 />
               </div>
             </div>
+
+            {splitSizeLabels(formData.sizes).length > 0 && (
+              <div className="mt-4 border-t border-black/10 pt-4">
+                <SizeStockFields
+                  sizesText={formData.sizes}
+                  values={sizeStocks}
+                  onChange={setSizeStocks}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 

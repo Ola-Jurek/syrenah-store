@@ -7,6 +7,7 @@ import {
   extractDiscountInfo,
   extractDiscountLabel,
 } from "@/lib/pricing";
+import { sellableStock } from "@/lib/size-stock";
 
 export default async function Home() {
   const heroSettings = await prisma.heroSettings.findFirst({
@@ -42,6 +43,7 @@ export default async function Home() {
         },
         take: 1,
       },
+      sizeStocks: { select: { size: true, stock: true } },
     },
   });
 
@@ -66,7 +68,7 @@ export default async function Home() {
       imageAlt: primaryImage?.altPl ?? null,
       imageAltEn: primaryImage?.altEn ?? null,
       createdAt: product.createdAt.toISOString(),
-      stock: product.stock,
+      stock: sellableStock(product.stock, product.sizes, product.sizeStocks),
       originalPrice: pricing.originalPricePln.toFixed(2),
       finalPrice: pricing.finalPricePln.toFixed(2),
       originalPriceEur: pricing.originalPriceEur.toFixed(2),

@@ -103,7 +103,7 @@ export async function POST(req: Request) {
           street: invoiceData.street,
           postalCode: invoiceData.postalCode,
           city: invoiceData.city,
-        } : null,
+        } : Prisma.DbNull,
 
         // Inny adres dostawy
         isDifferentShippingAddress: !!alternateShippingData,
@@ -123,6 +123,7 @@ export async function POST(req: Request) {
       price: number;
       priceEur?: number;
       name: string;
+      size?: string;
     }>;
 
     for (const item of cart) {
@@ -131,6 +132,7 @@ export async function POST(req: Request) {
           orderId: order.id,
           productId: item.productId,
           quantity: item.quantity,
+          size: item.size || null,
           pricePln: new Prisma.Decimal(item.price),
           priceEur: new Prisma.Decimal(
             item.priceEur != null ? item.priceEur : item.price

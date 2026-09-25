@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { assertAdmin } from "@/lib/adminAuth";
+import { excelResponse, excelWorkbook } from "@/lib/excel-export";
 
 export async function GET(req: Request) {
   try {
     assertAdmin(req);
   } catch (response) {
-    return response as NextResponse;
+    if (response instanceof Response) return response;
+    throw response;
   }
 
   try {
@@ -18,21 +20,29 @@ export async function GET(req: Request) {
     });
 
     // Eksport CSV
-    if (format === "csv") {
-      const csvHeader = "Email,Data zapisania,Zgoda";
-      const csvRows = subscribers.map(
-        (s) =>
-          `"${s.email}","${s.createdAt.toISOString()}","${s.consent ? "Tak" : "Nie"}"`
+    if (format === "csv" || format === "xls") {
+      const html = excelWorkbook(
+        ["Email", "Data zapisania", "Zgoda"],
+        subscribers.map((subscriber) => [
+          subscriber.email,
+          new Intl.DateTimeFormat("pl-PL", {
+            timeZone: "Europe/Warsaw",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+            .format(subscriber.createdAt)
+            .replace(",", ""),
+          subscriber.consent ? "Tak" : "Nie",
+        ])
       );
-      const csv = [csvHeader, ...csvRows].join("\n");
 
-      return new NextResponse(csv, {
-        status: 200,
-        headers: {
-          "Content-Type": "text/csv; charset=utf-8",
-          "Content-Disposition": `attachment; filename="newsletter_${new Date().toISOString().split("T")[0]}.csv"`,
-        },
-      });
+      return excelResponse(
+        `newsletter_${new Date().toISOString().split("T")[0]}.xlsx`,
+        html
+      );
     }
 
     return NextResponse.json({

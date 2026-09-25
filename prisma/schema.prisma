@@ -82,12 +82,27 @@ model Product {
 
   category      Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   images        Image[]
+  sizeStocks    ProductSizeStock[]
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
   orderItems    OrderItem[]
   discounts     Discount[]
 
   @@map("products")
+}
+
+model ProductSizeStock {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  size      String
+  stock     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, size])
+  @@map("product_size_stocks")
 }
 
 model Image {
@@ -193,6 +208,7 @@ model OrderItem {
   orderId   String   @map("order_id")
   productId String   @map("product_id")
   quantity  Int
+  size      String?
   pricePln  Decimal  @map("price_pln") @db.Decimal(10, 2)
   priceEur  Decimal  @map("price_eur") @db.Decimal(10, 2)
   createdAt DateTime @default(now())

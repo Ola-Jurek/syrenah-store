@@ -5,6 +5,11 @@ import { prisma } from "@/lib/prisma";
 import { assertAdmin } from "@/lib/adminAuth";
 import { Prisma } from "@prisma/client";
 import { parseSizeChart } from "@/lib/size-chart";
+import {
+  parseSizeLabels,
+  sellableStock,
+  syncProductSizeStocks,
+} from "@/lib/size-stock";
 
 /**
  * GET /api/admin/products
@@ -31,6 +36,9 @@ export async function GET(req: Request) {
         images: {
           where: { isPrimary: true },
           take: 1,
+        },
+        sizeStocks: {
+          select: { size: true, stock: true },
         },
         discounts: {
           where: {
@@ -63,7 +71,7 @@ export async function GET(req: Request) {
         priceEur: Number(product.priceEur),
         salePricePln: product.salePricePln ? Number(product.salePricePln) : null,
         salePriceEur: product.salePriceEur ? Number(product.salePriceEur) : null,
-        stock: product.stock,
+        stock: sellableStock(product.stock, product.sizes, product.sizeStocks),
         sku: product.sku || null,
         slug: product.slug,
         category: product.category,
@@ -117,6 +125,7 @@ export async function POST(req: Request) {
       slug,
       categoryId,
       sizes,
+      sizeStocks,
       colors,
       sizeChart,
       images,
@@ -144,6 +153,7 @@ export async function POST(req: Request) {
     }
 
     const chart = parseSizeChart(sizeChart);
+    const sizeLabels = parseSizeLabels(sizes);
 
     // Utwórz produkt z obrazami w transakcji
     const product = await prisma.$transaction(async (tx) => {
@@ -157,12 +167,12 @@ export async function POST(req: Request) {
           priceEur: new Prisma.Decimal(priceEur || pricePln),
           salePricePln: salePricePln ? new Prisma.Decimal(salePricePln) : null,
           salePriceEur: salePriceEur ? new Prisma.Decimal(salePriceEur) : null,
-          stock: parseInt(stock),
+          stock: sizeLabels.length > 0 ? 0 : parseInt(stock),
           sku: sku || null,
           slug,
           categoryId,
-          sizes: sizes && Array.isArray(sizes) && sizes.length > 0 ? sizes : null,
-          colors: colors && Array.isArray(colors) && colors.length > 0 ? colors : null,
+          sizes: sizeLabels.length > 0 ? sizeLabels : Prisma.DbNull,
+          colors: colors && Array.isArray(colors) && colors.length > 0 ? colors : Prisma.DbNull,
           sizeChart: chart ?? Prisma.DbNull,
           // Przypisz rabat, jeśli został wybrany
           ...(discountId ? {
@@ -172,6 +182,19 @@ export async function POST(req: Request) {
           } : {}),
         },
       });
+
+      const sizeTotal = await syncProductSizeStocks(
+        tx,
+        newProduct.id,
+        sizeLabels,
+        sizeStocks
+      );
+      if (sizeTotal !== null) {
+        await tx.product.update({
+          where: { id: newProduct.id },
+          data: { stock: sizeTotal },
+        });
+      }
 
       // Jeśli są obrazy, utwórz je
       if (images && Array.isArray(images) && images.length > 0) {

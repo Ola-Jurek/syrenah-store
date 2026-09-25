@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getEffectivePrice, extractDiscountInfo } from "@/lib/pricing";
 import { ProductPageView } from "@/components/ProductPageView";
 import { parseSizeChart } from "@/lib/size-chart";
+import { alignSizeStocks, parseSizeLabels, sellableStock } from "@/lib/size-stock";
 import type { Metadata } from "next";
 
 type Props = {
@@ -82,6 +83,9 @@ export default async function ProductPage({ params }: Props) {
         },
         take: 1,
       },
+      sizeStocks: {
+        select: { size: true, stock: true },
+      },
     },
   });
 
@@ -89,16 +93,13 @@ export default async function ProductPage({ params }: Props) {
     notFound();
   }
 
-  const sizes = product.sizes
-    ? ((typeof product.sizes === "string"
-        ? JSON.parse(product.sizes)
-        : product.sizes) as string[])
-    : [];
+  const sizes = parseSizeLabels(product.sizes);
   const colors = product.colors
     ? ((typeof product.colors === "string"
         ? JSON.parse(product.colors)
         : product.colors) as string[])
     : [];
+  const sizeStocks = alignSizeStocks(sizes, product.sizeStocks);
 
   const discountInfo = extractDiscountInfo(product.discounts);
   const pricing = getEffectivePrice({
@@ -118,8 +119,9 @@ export default async function ProductPage({ params }: Props) {
         slug: product.slug,
         descriptionPl: product.descriptionPl,
         descriptionEn: product.descriptionEn,
-        stock: product.stock,
+        stock: sellableStock(product.stock, product.sizes, product.sizeStocks),
         sizes,
+        sizeStocks,
         colors,
         sizeChart: parseSizeChart(product.sizeChart),
         createdAt: product.createdAt.toISOString(),

@@ -28,6 +28,7 @@ type ProductPageViewProps = {
     descriptionEn: string | null;
     stock: number;
     sizes: string[];
+    sizeStocks: Array<{ size: string; stock: number }>;
     colors: string[];
     sizeChart: SizeChart | null;
     createdAt: string;
@@ -168,6 +169,7 @@ export function ProductPageView({ product, pricing }: ProductPageViewProps) {
               originalPricePln={pricing.originalPricePln}
               originalPriceEur={pricing.originalPriceEur}
               stock={product.stock}
+              sizeStocks={product.sizeStocks}
               sizes={product.sizes}
               colors={product.colors}
               slug={product.slug}

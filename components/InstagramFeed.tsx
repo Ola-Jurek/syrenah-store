@@ -96,7 +96,7 @@ export function InstagramFeed() {
         <h2 className="mb-10 flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo_release_your_inner_siren.svg"
+            src="/logo_release_your_inner_siren.svg?v=4"
             alt={t("instagram.title")}
             className="h-auto w-full max-w-[200px]"
           />

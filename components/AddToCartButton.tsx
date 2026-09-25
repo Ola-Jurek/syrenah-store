@@ -18,6 +18,7 @@ type Props = {
   originalPricePln?: number;
   originalPriceEur?: number;
   stock?: number;
+  sizeStocks?: Array<{ size: string; stock: number }>;
   sizes?: string[];
   colors?: string[];
   slug?: string;
@@ -35,6 +36,7 @@ export function AddToCartButton({
   originalPricePln,
   originalPriceEur,
   stock = 1,
+  sizeStocks = [],
   sizes = [],
   colors = [],
   slug,
@@ -49,12 +51,17 @@ export function AddToCartButton({
   const [selectedColor, setSelectedColor] = useState<string>("");
   const [sizeError, setSizeError] = useState(false);
 
-  const isOutOfStock = stock === 0;
   const hasSizes = sizes && sizes.length > 0;
   const hasColors = colors && colors.length > 0;
+  const stockBySize = new Map(sizeStocks.map((row) => [row.size, row.stock]));
+  const selectedSizeStock = hasSizes
+    ? stockBySize.get(selectedSize) ?? 0
+    : stock;
+  const isOutOfStock = hasSizes ? stock <= 0 : stock === 0;
+  const selectedUnavailable = hasSizes && !!selectedSize && selectedSizeStock <= 0;
 
   const handleClick = async () => {
-    if (isOutOfStock) return;
+    if (isOutOfStock || selectedUnavailable) return;
 
     if (hasSizes && !selectedSize) {
       setSizeError(true);
@@ -95,24 +102,31 @@ export function AddToCartButton({
             {i18n.size}
           </label>
           <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-            {sizes.map((size) => (
+            {sizes.map((size) => {
+              const available = stockBySize.get(size) ?? 0;
+              const soldOut = available <= 0;
+              return (
               <button
                 key={size}
                 type="button"
+                disabled={soldOut}
                 onClick={() => {
                   setSelectedSize(size);
                   setSizeError(false);
                 }}
                 className={cn(
                   "w-10 h-10 rounded-full border-2 text-xs uppercase tracking-widest transition-all",
-                  selectedSize === size
+                  soldOut
+                    ? "opacity-40 cursor-not-allowed line-through border-black/20 text-black/40"
+                    : selectedSize === size
                     ? "bg-[#C1A88C] text-white border-[#C1A88C]"
                     : "bg-transparent text-black border-[#C1A88C]/40 hover:border-[#C1A88C]"
                 )}
               >
                 {size}
               </button>
-            ))}
+              );
+            })}
           </div>
           {sizeError && (
             <p className="mt-2 text-xs text-[#C1A88C] text-center md:text-left">
@@ -150,10 +164,10 @@ export function AddToCartButton({
       <button
         type="button"
         onClick={handleClick}
-        disabled={isOutOfStock || isLoading}
+        disabled={isOutOfStock || selectedUnavailable || isLoading}
         className={cn(
           "mt-auto w-full border py-4 text-sm tracking-wide uppercase transition-all duration-150",
-          isOutOfStock
+          isOutOfStock || selectedUnavailable
             ? "opacity-50 cursor-not-allowed bg-gray-100 border-gray-300"
             : isLoading
               ? "opacity-75 cursor-wait border-[#C1A88C] bg-[#C1A88C]/10"
@@ -186,7 +200,7 @@ export function AddToCartButton({
             </svg>
             {i18n.adding}
           </span>
-        ) : isOutOfStock ? (
+        ) : isOutOfStock || selectedUnavailable ? (
           i18n.outOfStock
         ) : (
           i18n.addToCart

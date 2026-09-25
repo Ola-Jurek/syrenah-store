@@ -98,6 +98,7 @@ export async function POST(req: Request) {
         priceEur?: number;
         name: string;
         nameEn?: string;
+        size?: string;
       }>;
       console.log("Cart items count:", cart.length);
 
@@ -128,6 +129,7 @@ export async function POST(req: Request) {
               orderId: newOrder.id,
               productId: item.productId,
               quantity: item.quantity ?? 1,
+              size: item.size || null,
               pricePln: new Prisma.Decimal(item.price),
               priceEur: new Prisma.Decimal(
                 item.priceEur != null ? item.priceEur : item.price
@@ -135,15 +137,35 @@ export async function POST(req: Request) {
             },
           });
 
-          // Zmniejsz stock produktu
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                decrement: item.quantity ?? 1,
+          const qty = item.quantity ?? 1;
+          if (item.size) {
+            const sizeRow = await tx.productSizeStock.findUnique({
+              where: {
+                productId_size: {
+                  productId: item.productId,
+                  size: item.size,
+                },
               },
-            },
-          });
+            });
+            const decrement = Math.min(qty, sizeRow?.stock ?? 0);
+            if (sizeRow && decrement > 0) {
+              await tx.productSizeStock.update({
+                where: { id: sizeRow.id },
+                data: { stock: { decrement } },
+              });
+              await tx.product.update({
+                where: { id: item.productId },
+                data: { stock: { decrement } },
+              });
+            }
+          } else {
+            await tx.product.update({
+              where: { id: item.productId },
+              data: {
+                stock: { decrement: qty },
+              },
+            });
+          }
         }
 
         return newOrder;

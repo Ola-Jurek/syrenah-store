@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEffectivePrice, extractDiscountInfo } from "@/lib/pricing";
+import { stockForSize } from "@/lib/size-stock";
 
 // GET /api/cart — pobierz koszyk zalogowanego użytkownika
 export async function GET() {
@@ -33,6 +34,7 @@ export async function GET() {
             },
             take: 1,
           },
+          sizeStocks: { select: { size: true, stock: true } },
         },
       },
     },
@@ -92,7 +94,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Upsert — jeśli istnieje, zsumuj ilości
+  const qty = Math.max(1, Number(quantity) || 1);
+
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: { sizeStocks: { select: { size: true, stock: true } } },
+  });
+  if (!product) {
+    return NextResponse.json({ error: "Product not found" }, { status: 404 });
+  }
+
   const existing = await prisma.cartItem.findFirst({
     where: {
       userId: session.user.id,
@@ -102,10 +113,24 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  const nextQty = (existing?.quantity ?? 0) + qty;
+  const availability = stockForSize(
+    product.stock,
+    product.sizes,
+    product.sizeStocks,
+    size
+  );
+  if (availability.error || availability.available < nextQty) {
+    return NextResponse.json(
+      { error: availability.error || "Za mało sztuk na stanie" },
+      { status: 400 }
+    );
+  }
+
   if (existing) {
     const updated = await prisma.cartItem.update({
       where: { id: existing.id },
-      data: { quantity: existing.quantity + quantity },
+      data: { quantity: nextQty },
     });
     return NextResponse.json({ item: updated });
   }
@@ -114,7 +139,7 @@ export async function POST(req: NextRequest) {
     data: {
       userId: session.user.id,
       productId,
-      quantity,
+      quantity: qty,
       size: size ?? null,
       color: color ?? null,
     },

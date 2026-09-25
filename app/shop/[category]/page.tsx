@@ -6,6 +6,7 @@ import {
   extractDiscountInfo,
   extractDiscountLabel,
 } from "@/lib/pricing";
+import { sellableStock } from "@/lib/size-stock";
 
 type Props = {
   params: Promise<{
@@ -34,6 +35,7 @@ export default async function CategoryPage({ params }: Props) {
             },
             take: 1,
           },
+          sizeStocks: { select: { size: true, stock: true } },
         },
       },
     },
@@ -64,7 +66,7 @@ export default async function CategoryPage({ params }: Props) {
       imageAlt: primaryImage?.altPl ?? null,
       imageAltEn: primaryImage?.altEn ?? null,
       createdAt: product.createdAt.toISOString(),
-      stock: product.stock,
+      stock: sellableStock(product.stock, product.sizes, product.sizeStocks),
       originalPrice: pricing.originalPricePln.toFixed(2),
       finalPrice: pricing.finalPricePln.toFixed(2),
       originalPriceEur: pricing.originalPriceEur.toFixed(2),

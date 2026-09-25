@@ -1,3 +1,4 @@
+import path from "path";
 import type { NextConfig } from "next";
 
 function getSupabaseHostname(): string | null {
@@ -13,6 +14,11 @@ function getSupabaseHostname(): string | null {
 const supabaseHostname = getSupabaseHostname();
 
 const nextConfig: NextConfig = {
+  // Nad sklepem leży drugi package-lock. Bez tego Turbopack bierze
+  // node_modules z katalogu nadrzędnego i ładuje stary klient Prisma.
+  turbopack: {
+    root: path.join(__dirname),
+  },
   images: {
     remotePatterns: [
       ...(supabaseHostname

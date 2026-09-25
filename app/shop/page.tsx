@@ -11,6 +11,7 @@ import { ShopBanner } from "@/components/ShopBanner";
 import { ShopSearchHeader } from "@/components/ShopSearchHeader";
 import { ShopEmpty } from "@/components/ShopEmpty";
 import { ShopNoSearchResults } from "@/components/ShopNoSearchResults";
+import { sellableStock } from "@/lib/size-stock";
 
 type Props = {
   searchParams: Promise<{ search?: string; sort?: string; filter?: string }>;
@@ -37,7 +38,8 @@ const productInclude = {
     },
     take: 1,
   },
-} as const;
+  sizeStocks: { select: { size: true, stock: true } },
+};
 
 function mapProductToCardProps(product: {
   id: string;
@@ -45,6 +47,8 @@ function mapProductToCardProps(product: {
   nameEn: string;
   slug: string;
   stock: number;
+  sizes: unknown;
+  sizeStocks: Array<{ size: string; stock: number }>;
   createdAt: Date;
   salePricePln: unknown;
   salePriceEur: unknown;
@@ -73,7 +77,7 @@ function mapProductToCardProps(product: {
     imageAlt: primaryImage?.altPl ?? null,
     imageAltEn: primaryImage?.altEn ?? null,
     createdAt: product.createdAt.toISOString(),
-    stock: product.stock,
+    stock: sellableStock(product.stock, product.sizes, product.sizeStocks),
     originalPrice: pricing.originalPricePln.toFixed(2),
     finalPrice: pricing.finalPricePln.toFixed(2),
     originalPriceEur: pricing.originalPriceEur.toFixed(2),

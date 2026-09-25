@@ -18,6 +18,7 @@ import {
 type OrderItem = {
   id: string;
   quantity: number;
+  size: string | null;
   pricePln: number;
   product: {
     id: string;
@@ -606,6 +607,7 @@ export default function AdminOrderDetailPage() {
                     <td className="py-3 px-3">
                       <p className="text-sm font-medium text-black">
                         {item.product.namePl}
+                        {item.size ? ` · ${item.size}` : ""}
                       </p>
                       {item.product.nameEn && (
                         <p className="text-[11px] text-black/40">
@@ -653,6 +655,7 @@ export default function AdminOrderDetailPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-black truncate">
                     {item.product.namePl}
+                    {item.size ? ` · ${item.size}` : ""}
                   </p>
                   <p className="text-xs text-black/50">
                     {item.pricePln.toFixed(2)} zł × {item.quantity}

@@ -98,7 +98,7 @@ export default function AdminNewsletterPage() {
     if (!token) return;
 
     try {
-      const res = await fetch("/api/admin/newsletter?format=csv", {
+      const res = await fetch("/api/admin/newsletter?format=xls", {
         headers: {
           "x-admin-token": token,
         },
@@ -112,7 +112,7 @@ export default function AdminNewsletterPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `newsletter_${new Date().toISOString().split("T")[0]}.csv`;
+      a.download = `newsletter_${new Date().toISOString().split("T")[0]}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -152,7 +152,7 @@ export default function AdminNewsletterPage() {
           className="w-full rounded-none bg-[#C1A88C] px-6 py-2.5 text-xs uppercase tracking-widest text-white hover:bg-[#B09A7C] sm:w-auto"
         >
           <Download className="mr-2 h-3.5 w-3.5" />
-          Eksportuj do CSV
+          Eksportuj do Excela
         </Button>
       </div>
 

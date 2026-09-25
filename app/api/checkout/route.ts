@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEffectivePrice, extractDiscountInfo } from "@/lib/pricing";
+import { stockForSize } from "@/lib/size-stock";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -43,6 +44,7 @@ export async function POST(req: Request) {
           },
           take: 1,
         },
+        sizeStocks: { select: { size: true, stock: true } },
       },
     });
 
@@ -85,6 +87,7 @@ export async function POST(req: Request) {
       price: number;
       priceEur: number;
       quantity: number;
+      size?: string;
     }> = [];
 
     const lineItems: any[] = [];
@@ -95,6 +98,24 @@ export async function POST(req: Request) {
       if (!product) {
         return NextResponse.json(
           { error: `Product not found: ${item.productId}` },
+          { status: 400 }
+        );
+      }
+
+      const requestedQty = Math.max(1, Number(item.quantity) || 1);
+      const availability = stockForSize(
+        product.stock,
+        product.sizes,
+        product.sizeStocks,
+        item.size
+      );
+      if (availability.error || availability.available < requestedQty) {
+        return NextResponse.json(
+          {
+            error: availability.error
+              ? `${product.namePl}: ${availability.error}`
+              : `${product.namePl}${item.size ? ` (${item.size})` : ""}: za mało sztuk na stanie`,
+          },
           { status: 400 }
         );
       }
@@ -113,7 +134,7 @@ export async function POST(req: Request) {
 
       // Regularna cena (do obliczenia zniżki z kodu koszyka)
       const regularPrice = Number(product.pricePln);
-      totalRegularPrice += regularPrice * item.quantity;
+      totalRegularPrice += regularPrice * requestedQty;
 
       // Jeśli jest kod rabatowy z koszyka — oblicz cenę od regularnej
       let cartCodePrice = regularPrice;
@@ -160,18 +181,19 @@ export async function POST(req: Request) {
         nameEn: product.nameEn,
         price: finalPrice,
         priceEur: finalPriceEur,
-        quantity: item.quantity,
+        quantity: requestedQty,
+        ...(item.size ? { size: String(item.size) } : {}),
       });
 
       lineItems.push({
         price_data: {
           currency: "pln",
           product_data: {
-            name: product.namePl,
+            name: item.size ? `${product.namePl} (${item.size})` : product.namePl,
           },
           unit_amount: Math.round(finalPrice * 100),
         },
-        quantity: item.quantity,
+        quantity: requestedQty,
       });
     }
 
@@ -201,7 +223,7 @@ export async function POST(req: Request) {
             price_data: {
               currency: "pln",
               product_data: {
-                name: vi.name,
+                name: vi.size ? `${vi.name} (${vi.size})` : vi.name,
               },
               unit_amount: Math.max(1, Math.round(adjustedPrice * 100)), // min 1 grosz
             },

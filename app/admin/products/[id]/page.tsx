@@ -9,6 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SizeChartEditor } from "@/components/admin/SizeChartEditor";
 import {
+  SizeStockFields,
+  sizeStocksPayload,
+  splitSizeLabels,
+} from "@/components/admin/SizeStockFields";
+import {
   draftsToSizeChart,
   parseSizeChart,
   sizeChartDraftError,
@@ -73,6 +78,7 @@ type Product = {
   images: Image[];
   discounts: DiscountAssignment[];
   sizes?: unknown;
+  sizeStocks?: Array<{ size: string; stock: number }>;
   colors?: unknown;
   sizeChart?: unknown;
 };
@@ -126,6 +132,7 @@ export default function EditProductPage() {
   const [sizeChartColumns, setSizeChartColumns] = useState<SizeChartColumnDraft[]>([]);
   const [sizeChartRows, setSizeChartRows] = useState<SizeChartRowDraft[]>([]);
   const [sizeChartInvalid, setSizeChartInvalid] = useState(false);
+  const [sizeStocks, setSizeStocks] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -216,6 +223,11 @@ export default function EditProductPage() {
         const chartDraft = sizeChartToDrafts(parseSizeChart(productData.product.sizeChart));
         setSizeChartColumns(chartDraft.columns);
         setSizeChartRows(chartDraft.rows);
+        const stockMap: Record<string, string> = {};
+        for (const row of productData.product.sizeStocks ?? []) {
+          stockMap[row.size] = String(row.stock);
+        }
+        setSizeStocks(stockMap);
 
         // Set images
         setImages(
@@ -436,12 +448,12 @@ export default function EditProductPage() {
 
     try {
       // Parsuj sizes i colors z tekstu oddzielonego przecinkami na tablice
-      const sizesArray = formData.sizes
-        ? formData.sizes.split(",").map(s => s.trim()).filter(s => s.length > 0)
-        : [];
+      const sizesArray = splitSizeLabels(formData.sizes);
       const colorsArray = formData.colors
         ? formData.colors.split(",").map(c => c.trim()).filter(c => c.length > 0)
         : [];
+      const sizeStockRows = sizeStocksPayload(formData.sizes, sizeStocks);
+      const stockTotal = sizeStockRows.reduce((sum, row) => sum + row.stock, 0);
 
       // Puste URL: nowe pomijamy, istniejące w DB oznaczamy do usunięcia
       const imagesPayload = images
@@ -461,11 +473,12 @@ export default function EditProductPage() {
         priceEur: parseFloat(formData.priceEur || formData.pricePln),
         salePricePln: formData.salePricePln ? parseFloat(formData.salePricePln) : null,
         salePriceEur: formData.salePriceEur ? parseFloat(formData.salePriceEur) : null,
-        stock: parseInt(formData.stock),
+        stock: sizesArray.length > 0 ? stockTotal : parseInt(formData.stock),
         sku: formData.sku || null,
         descriptionPl: formData.descriptionPl || null,
         descriptionEn: formData.descriptionEn || null,
         sizes: sizesArray.length > 0 ? sizesArray : null,
+        sizeStocks: sizeStockRows,
         colors: colorsArray.length > 0 ? colorsArray : null,
         sizeChart: draftsToSizeChart(sizeChartColumns, sizeChartRows),
         images: imagesPayload,
@@ -781,6 +794,7 @@ export default function EditProductPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {splitSizeLabels(formData.sizes).length === 0 && (
               <div>
                 <Label htmlFor="stock" className="text-black/70">
                   Stan magazynowy *
@@ -788,6 +802,7 @@ export default function EditProductPage() {
                 <Input
                   id="stock"
                   type="number"
+                  min={0}
                   value={formData.stock}
                   onChange={(e) =>
                     setFormData({ ...formData, stock: e.target.value })
@@ -796,6 +811,7 @@ export default function EditProductPage() {
                   className="mt-1 border-black/20"
                 />
               </div>
+              )}
 
               <div>
                 <Label htmlFor="sku" className="text-black/70">
@@ -843,6 +859,19 @@ export default function EditProductPage() {
                 />
               </div>
             </div>
+
+            {splitSizeLabels(formData.sizes).length > 0 && (
+              <div className="mt-4 border-t border-black/10 pt-4">
+                <SizeStockFields
+                  sizesText={formData.sizes}
+                  values={sizeStocks}
+                  onChange={setSizeStocks}
+                />
+                <p className="text-xs text-black/50 mt-2">
+                  Łączny stan zapisany wcześniej: {formData.stock || "0"}. Rozpisz go na rozmiary powyżej i zapisz produkt.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
