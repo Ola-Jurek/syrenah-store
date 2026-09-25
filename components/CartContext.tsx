@@ -12,17 +12,33 @@ import { useSession } from "next-auth/react";
 
 type CartItem = {
   productId: string;
+  /** @deprecated używaj namePl / nameEn — zostaje dla starych koszyków w localStorage */
   name: string;
+  namePl?: string;
+  nameEn?: string;
   /** Cena ostateczna (finalPrice) — to jest kwota, którą klient płaci */
   price: number;
+  /** Cena w EUR (wyświetlanie dla locale en) */
+  priceEur?: number;
   /** Cena regularna (oryginalna, bez rabatów) — do wyświetlania przekreślonej ceny */
   originalPrice?: number;
+  originalPriceEur?: number;
   quantity: number;
   size?: string;
   color?: string;
   slug?: string;
   categorySlug?: string;
 };
+
+/** Nazwa produktu w koszyku wg locale */
+export function getCartItemName(
+  item: Pick<CartItem, "name" | "namePl" | "nameEn">,
+  locale: string
+): string {
+  if (locale === "en" && item.nameEn?.trim()) return item.nameEn;
+  if (item.namePl?.trim()) return item.namePl;
+  return item.name;
+}
 
 type CartContextType = {
   items: CartItem[];

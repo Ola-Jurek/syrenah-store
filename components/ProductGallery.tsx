@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import type { Locale } from "@/lib/locale";
 
 type ImageType = {
   id: string;
@@ -14,12 +15,19 @@ type ImageType = {
 type Props = {
   images: ImageType[];
   productName: string;
+  locale?: Locale;
 };
 
-export function ProductGallery({ images, productName }: Props) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+function pickAlt(img: ImageType, productName: string, locale: Locale) {
+  if (locale === "en" && img.altEn?.trim()) return img.altEn;
+  return img.altPl || productName;
+}
 
-  if (images.length === 0) {
+export function ProductGallery({ images, productName, locale = "pl" }: Props) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const validImages = images.filter((img) => img.url?.trim());
+
+  if (validImages.length === 0) {
     return (
       <div className="aspect-[3/4] bg-[#EDE3DF] rounded-xl flex items-center justify-center">
         <Image
@@ -33,8 +41,8 @@ export function ProductGallery({ images, productName }: Props) {
     );
   }
 
-  const primaryImage = images.find((img) => img.isPrimary) || images[0];
-  const displayImage = images[selectedIndex] || primaryImage;
+  const primaryImage = validImages.find((img) => img.isPrimary) || validImages[0];
+  const displayImage = validImages[selectedIndex] || primaryImage;
 
   return (
     <div className="w-full">
@@ -42,7 +50,7 @@ export function ProductGallery({ images, productName }: Props) {
       <div className="aspect-[3/4] bg-[#EDE3DF] rounded-xl overflow-hidden mb-4 relative max-h-[80vh]">
         <Image
           src={displayImage.url}
-          alt={displayImage.altPl || productName}
+          alt={pickAlt(displayImage, productName, locale)}
           fill
           className="object-cover"
           sizes="(max-width: 768px) 100vw, 50vw"
@@ -51,9 +59,9 @@ export function ProductGallery({ images, productName }: Props) {
       </div>
 
       {/* Thumbnails */}
-      {images.length > 1 && (
+      {validImages.length > 1 && (
         <div className="flex gap-2 overflow-x-auto">
-          {images.map((img, index) => (
+          {validImages.map((img, index) => (
             <button
               key={img.id}
               onClick={() => setSelectedIndex(index)}
@@ -66,7 +74,7 @@ export function ProductGallery({ images, productName }: Props) {
               <div className="relative w-full h-full bg-[#EDE3DF]">
                 <Image
                   src={img.url}
-                  alt={img.altPl || productName}
+                  alt={pickAlt(img, productName, locale)}
                   fill
                   className="object-cover"
                   sizes="80px"

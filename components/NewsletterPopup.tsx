@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { areCookiesAccepted } from "@/components/CookieBanner";
+import { useLanguage } from "@/components/LanguageContext";
 
 export function NewsletterPopup() {
+  const { messages } = useLanguage();
+  const n = messages.newsletter;
   const [isVisible, setIsVisible] = useState(false);
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
@@ -52,7 +55,7 @@ export function NewsletterPopup() {
 
     if (!consent) {
       setStatus("error");
-      setMessage("Zaznacz zgodę na przetwarzanie danych.");
+      setMessage(n.consentError);
       return;
     }
 
@@ -72,11 +75,11 @@ export function NewsletterPopup() {
         setMessage(data.message);
       } else {
         setStatus("error");
-        setMessage(data.error || "Wystąpił błąd.");
+        setMessage(data.error || n.errorGeneric);
       }
     } catch {
       setStatus("error");
-      setMessage("Wystąpił błąd. Spróbuj ponownie.");
+      setMessage(n.errorGeneric);
     }
   };
 
@@ -133,14 +136,14 @@ export function NewsletterPopup() {
                 </svg>
               </div>
               <h3 className="font-serif text-lg text-neutral-800 mb-2">
-                Dziękujemy!
+                {n.thanksTitle}
               </h3>
               <p className="text-sm text-neutral-500">{message}</p>
               <button
                 onClick={() => setIsVisible(false)}
                 className="mt-6 text-xs text-[#C1A88C] hover:text-[#B09A7C] underline underline-offset-2 transition-colors"
               >
-                Zamknij
+                {n.close}
               </button>
             </div>
           ) : (
@@ -150,15 +153,12 @@ export function NewsletterPopup() {
               <div className="w-8 h-px bg-[#C1A88C] mx-auto mb-6" />
 
               <h2 className="font-serif text-xl text-neutral-800 text-center mb-3">
-                Bądź częścią naszej historii
+                {n.headline}
               </h2>
               <p className="text-sm text-neutral-500 text-center leading-relaxed mb-8">
-                Zapisz się do newslettera, by otrzymywać informacje o nowych
-                kolekcjach i wyjątkowych ofertach.
+                {n.blurb}
                 <br />
-                <span className="text-[#C1A88C]">
-                  Dołącz do Syrenah Girls 🤍
-                </span>
+                <span className="text-[#C1A88C]">{n.joinTagline}</span>
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -166,7 +166,7 @@ export function NewsletterPopup() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Twój adres e-mail"
+                  placeholder={n.emailPlaceholder}
                   required
                   className="w-full px-4 py-3 text-sm border border-[#E8E3D8] bg-white text-neutral-700 placeholder:text-neutral-300 focus:outline-none focus:border-[#C1A88C] transition-colors"
                 />
@@ -201,8 +201,7 @@ export function NewsletterPopup() {
                     className="text-xs text-neutral-500 leading-relaxed"
                     onClick={() => setConsent(!consent)}
                   >
-                    Wyrażam zgodę na przetwarzanie moich danych osobowych w celu
-                    otrzymywania newslettera.
+                    {n.consent}
                   </span>
                 </label>
 
@@ -219,10 +218,10 @@ export function NewsletterPopup() {
                   {status === "loading" ? (
                     <span className="flex items-center justify-center gap-2">
                       <div className="w-3 h-3 border border-white/50 border-t-white rounded-full animate-spin" />
-                      Zapisywanie...
+                      {n.saving}
                     </span>
                   ) : (
-                    "Zapisz się"
+                    n.submit
                   )}
                 </button>
               </form>
@@ -232,7 +231,7 @@ export function NewsletterPopup() {
                 onClick={() => setIsVisible(false)}
                 className="block mx-auto mt-4 text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
               >
-                Nie, dziękuję
+                {n.noThanks}
               </button>
             </>
           )}

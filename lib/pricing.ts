@@ -102,7 +102,8 @@ export function extractDiscountInfo(
  * - Jeśli brak rabatu → zwraca null (badge pokaże "SALE" z salePrice)
  */
 export function extractDiscountLabel(
-  discounts: Array<{ type: string; value: any; namePl?: string | null }> | undefined | null
+  discounts: Array<{ type: string; value: any; namePl?: string | null }> | undefined | null,
+  fixedCurrency: "PLN" | "EUR" = "PLN"
 ): string | null {
   if (!discounts || discounts.length === 0) return null;
   const d = discounts[0];
@@ -115,5 +116,6 @@ export function extractDiscountLabel(
   if (d.type === "PERCENTAGE") {
     return `-${val}%`;
   }
-  return `-${val.toFixed(0)} PLN`;
+  const suffix = fixedCurrency === "EUR" ? "EUR" : "PLN";
+  return `-${val.toFixed(0)} ${suffix}`;
 }

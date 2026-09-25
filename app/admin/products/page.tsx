@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,15 @@ type ProductsResponse = {
   products: Product[];
 };
 
+type CategoriesResponse = {
+  categories: Category[];
+};
+
+type StockFilter = "all" | "out" | "low" | "in";
+type SortOption = "newest" | "stock-asc" | "stock-desc" | "name";
+
+const LOW_STOCK_THRESHOLD = 5;
+
 function getAdminToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("adminToken");
@@ -52,11 +61,39 @@ function promptAdminToken(): string | null {
   return null;
 }
 
+function stockClass(stock: number): string {
+  if (stock <= 0) return "text-red-600 font-medium";
+  if (stock <= LOW_STOCK_THRESHOLD) return "text-amber-600 font-medium";
+  return "text-black/80";
+}
+
+function getDiscountLabel(product: Product): string | null {
+  if (product.activeDiscount) {
+    const d = product.activeDiscount;
+    const name = d.namePl ? `${d.namePl} ` : "";
+    return d.type === "PERCENTAGE"
+      ? `${name}-${d.value}%`
+      : `${name}-${d.value.toFixed(0)} zł`;
+  }
+  if (product.salePricePln && product.pricePln > 0) {
+    const diff = product.pricePln - product.salePricePln;
+    const pct = Math.round((diff / product.pricePln) * 100);
+    return `-${pct}% (${product.salePricePln.toFixed(2)} zł)`;
+  }
+  return null;
+}
+
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tokenChecked, setTokenChecked] = useState(false);
+
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [stockFilter, setStockFilter] = useState<StockFilter>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const token = getAdminToken();
@@ -74,7 +111,7 @@ export default function AdminProductsPage() {
   useEffect(() => {
     if (!tokenChecked) return;
 
-    async function fetchProducts() {
+    async function fetchData() {
       const token = getAdminToken();
       if (!token) {
         setError("Brak tokena admina");
@@ -83,37 +120,110 @@ export default function AdminProductsPage() {
       }
 
       try {
-        const res = await fetch("/api/admin/products", {
-          headers: {
-            "x-admin-token": token,
-          },
-        });
+        const [productsRes, categoriesRes] = await Promise.all([
+          fetch("/api/admin/products", {
+            headers: { "x-admin-token": token },
+          }),
+          fetch("/api/admin/categories", {
+            headers: { "x-admin-token": token },
+          }),
+        ]);
 
-        if (res.status === 401) {
+        if (productsRes.status === 401 || categoriesRes.status === 401) {
           localStorage.removeItem("adminToken");
           setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
           const newToken = promptAdminToken();
           if (newToken) {
-            fetchProducts();
+            fetchData();
           }
           return;
         }
 
-        if (!res.ok) {
+        if (!productsRes.ok) {
           throw new Error("Błąd pobierania produktów");
         }
 
-        const data: ProductsResponse = await res.json();
-        setProducts(data.products);
+        const productsData: ProductsResponse = await productsRes.json();
+        setProducts(productsData.products);
+
+        if (categoriesRes.ok) {
+          const categoriesData: CategoriesResponse = await categoriesRes.json();
+          setCategories(categoriesData.categories);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Błąd pobierania produktów");
+        setError(
+          err instanceof Error ? err.message : "Błąd pobierania produktów"
+        );
       } finally {
         setLoading(false);
       }
     }
 
-    fetchProducts();
+    fetchData();
   }, [tokenChecked]);
+
+  const filteredProducts = useMemo(() => {
+    let list = [...products];
+
+    if (categoryFilter !== "all") {
+      list = list.filter((p) => p.category.id === categoryFilter);
+    }
+
+    if (stockFilter === "out") {
+      list = list.filter((p) => p.stock <= 0);
+    } else if (stockFilter === "low") {
+      list = list.filter((p) => p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD);
+    } else if (stockFilter === "in") {
+      list = list.filter((p) => p.stock > 0);
+    }
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (p) =>
+          p.namePl.toLowerCase().includes(q) ||
+          p.nameEn.toLowerCase().includes(q) ||
+          p.category.namePl.toLowerCase().includes(q)
+      );
+    }
+
+    if (sortBy === "stock-asc") {
+      list.sort((a, b) => a.stock - b.stock || a.namePl.localeCompare(b.namePl));
+    } else if (sortBy === "stock-desc") {
+      list.sort((a, b) => b.stock - a.stock || a.namePl.localeCompare(b.namePl));
+    } else if (sortBy === "name") {
+      list.sort((a, b) => a.namePl.localeCompare(b.namePl, "pl"));
+    }
+    // "newest" — kolejność z API (createdAt desc)
+
+    return list;
+  }, [products, categoryFilter, stockFilter, sortBy, search]);
+
+  const stockCounts = useMemo(() => {
+    const inCategory =
+      categoryFilter === "all"
+        ? products
+        : products.filter((p) => p.category.id === categoryFilter);
+    return {
+      out: inCategory.filter((p) => p.stock <= 0).length,
+      low: inCategory.filter(
+        (p) => p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD
+      ).length,
+    };
+  }, [products, categoryFilter]);
+
+  const hasActiveFilters =
+    categoryFilter !== "all" ||
+    stockFilter !== "all" ||
+    sortBy !== "newest" ||
+    search.trim() !== "";
+
+  const resetFilters = () => {
+    setCategoryFilter("all");
+    setStockFilter("all");
+    setSortBy("newest");
+    setSearch("");
+  };
 
   if (loading) {
     return (
@@ -127,13 +237,116 @@ export default function AdminProductsPage() {
     );
   }
 
+  const selectClass =
+    "px-3 py-2 text-sm border border-black/15 rounded-md bg-white text-black focus:outline-none focus:ring-1 focus:ring-black/20";
+
   return (
     <>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <h1 className="text-2xl font-medium text-black">Produkty</h1>
         <Button asChild className="bg-black text-white hover:bg-black/90">
           <Link href="/admin/products/new">Nowy produkt</Link>
         </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="mb-6 space-y-3">
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex-1 min-w-[160px]">
+            <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">
+              Szukaj
+            </label>
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Nazwa produktu..."
+              className={`${selectClass} w-full`}
+            />
+          </div>
+
+          <div className="min-w-[160px]">
+            <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">
+              Kategoria
+            </label>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className={`${selectClass} w-full`}
+            >
+              <option value="all">Wszystkie</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.namePl}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="min-w-[160px]">
+            <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">
+              Stan magazynowy
+            </label>
+            <select
+              value={stockFilter}
+              onChange={(e) => setStockFilter(e.target.value as StockFilter)}
+              className={`${selectClass} w-full`}
+            >
+              <option value="all">Wszystkie</option>
+              <option value="out">Brak (0)</option>
+              <option value="low">Niski (1–{LOW_STOCK_THRESHOLD})</option>
+              <option value="in">Dostępne (&gt;0)</option>
+            </select>
+          </div>
+
+          <div className="min-w-[160px]">
+            <label className="block text-[10px] uppercase tracking-wider text-black/40 mb-1">
+              Sortuj
+            </label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className={`${selectClass} w-full`}
+            >
+              <option value="newest">Najnowsze</option>
+              <option value="stock-asc">Stock: od najmniejszego</option>
+              <option value="stock-desc">Stock: od największego</option>
+              <option value="name">Nazwa A–Z</option>
+            </select>
+          </div>
+
+          {hasActiveFilters && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={resetFilters}
+              className="border-black/20 text-black/60"
+            >
+              Wyczyść
+            </Button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-3 text-xs text-black/50">
+          <span>
+            Pokazano{" "}
+            <span className="text-black/80 font-medium">
+              {filteredProducts.length}
+            </span>{" "}
+            z {products.length}
+          </span>
+          {stockCounts.out > 0 && (
+            <span className="text-red-600">
+              Brak na stanie: {stockCounts.out}
+            </span>
+          )}
+          {stockCounts.low > 0 && (
+            <span className="text-amber-600">
+              Niski stock: {stockCounts.low}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Desktop Table */}
@@ -162,32 +375,22 @@ export default function AdminProductsPage() {
             </tr>
           </thead>
           <tbody>
-            {products.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-12 text-center text-black/40">
-                  Brak produktów
+                  Brak produktów spełniających filtry
                 </td>
               </tr>
             ) : (
-              products.map((product) => {
-                const hasPromo = !!product.activeDiscount || !!product.salePricePln;
-
-                let discountLabel: string | null = null;
-                if (product.activeDiscount) {
-                  const d = product.activeDiscount;
-                  const name = d.namePl ? `${d.namePl} ` : "";
-                  discountLabel =
-                    d.type === "PERCENTAGE"
-                      ? `${name}-${d.value}%`
-                      : `${name}-${d.value.toFixed(0)} zł`;
-                } else if (product.salePricePln && product.pricePln > 0) {
-                  const diff = product.pricePln - product.salePricePln;
-                  const pct = Math.round((diff / product.pricePln) * 100);
-                  discountLabel = `-${pct}% (${product.salePricePln.toFixed(2)} zł)`;
-                }
+              filteredProducts.map((product) => {
+                const discountLabel = getDiscountLabel(product);
+                const hasPromo = !!discountLabel;
 
                 return (
-                  <tr key={product.id} className="border-b border-black/5 hover:bg-black/5 transition-colors">
+                  <tr
+                    key={product.id}
+                    className="border-b border-black/5 hover:bg-black/5 transition-colors"
+                  >
                     <td className="py-4 px-4 text-sm text-black/80">
                       {product.namePl}
                     </td>
@@ -207,12 +410,21 @@ export default function AdminProductsPage() {
                         <span className="text-black/20 text-xs">—</span>
                       )}
                     </td>
-                    <td className="py-4 px-4 text-sm text-right text-black/80">
+                    <td
+                      className={`py-4 px-4 text-sm text-right ${stockClass(product.stock)}`}
+                    >
                       {product.stock}
                     </td>
                     <td className="py-4 px-4 text-right">
-                      <Button asChild variant="outline" size="sm" className="border-black/20 text-black/70 hover:bg-black/5">
-                        <Link href={`/admin/products/${product.id}`}>Edytuj</Link>
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="border-black/20 text-black/70 hover:bg-black/5"
+                      >
+                        <Link href={`/admin/products/${product.id}`}>
+                          Edytuj
+                        </Link>
                       </Button>
                     </td>
                   </tr>
@@ -225,27 +437,14 @@ export default function AdminProductsPage() {
 
       {/* Mobile Card List */}
       <div className="md:hidden space-y-4">
-        {products.length === 0 ? (
+        {filteredProducts.length === 0 ? (
           <div className="text-center text-black/40 py-12">
-            Brak produktów
+            Brak produktów spełniających filtry
           </div>
         ) : (
-          products.map((product) => {
-            const hasPromo = !!product.activeDiscount || !!product.salePricePln;
-
-            let discountLabel: string | null = null;
-            if (product.activeDiscount) {
-              const d = product.activeDiscount;
-              const name = d.namePl ? `${d.namePl} ` : "";
-              discountLabel =
-                d.type === "PERCENTAGE"
-                  ? `${name}-${d.value}%`
-                  : `${name}-${d.value.toFixed(0)} zł`;
-            } else if (product.salePricePln && product.pricePln > 0) {
-              const diff = product.pricePln - product.salePricePln;
-              const pct = Math.round((diff / product.pricePln) * 100);
-              discountLabel = `-${pct}% (${product.salePricePln.toFixed(2)} zł)`;
-            }
+          filteredProducts.map((product) => {
+            const discountLabel = getDiscountLabel(product);
+            const hasPromo = !!discountLabel;
 
             return (
               <Card key={product.id} className="border-black/10 bg-white">
@@ -255,7 +454,7 @@ export default function AdminProductsPage() {
                       <CardTitle className="text-base mb-1 text-black">
                         {product.namePl}
                       </CardTitle>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm text-black/50">
                           {product.category.namePl}
                         </p>
@@ -267,7 +466,7 @@ export default function AdminProductsPage() {
                         )}
                       </div>
                     </div>
-                    {product.primaryImage && (
+                    {product.primaryImage?.url && (
                       <img
                         src={product.primaryImage.url}
                         alt={product.namePl}
@@ -286,12 +485,19 @@ export default function AdminProductsPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-black/50">Stock</p>
-                      <p className="text-base font-medium text-black">
+                      <p
+                        className={`text-base font-medium ${stockClass(product.stock)}`}
+                      >
                         {product.stock}
                       </p>
                     </div>
                   </div>
-                  <Button asChild variant="outline" size="sm" className="w-full border-black/20 text-black/70 hover:bg-black/5">
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-black/20 text-black/70 hover:bg-black/5"
+                  >
                     <Link href={`/admin/products/${product.id}`}>Edytuj</Link>
                   </Button>
                 </CardContent>
@@ -303,4 +509,3 @@ export default function AdminProductsPage() {
     </>
   );
 }
-

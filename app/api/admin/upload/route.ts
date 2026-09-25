@@ -4,8 +4,10 @@ import { NextResponse } from "next/server";
 import { assertAdmin } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_VIDEO_SIZE = 30 * 1024 * 1024; // 30MB
+const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const VIDEO_TYPES = ["video/mp4", "video/webm"];
 
 /**
  * POST /api/admin/upload
@@ -17,6 +19,7 @@ export async function POST(req: Request) {
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
+    const purpose = formData.get("purpose");
 
     if (!file) {
       return NextResponse.json(
@@ -25,18 +28,31 @@ export async function POST(req: Request) {
       );
     }
 
-    // Walidacja typu pliku
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    const isVideo = VIDEO_TYPES.includes(file.type);
+    const isImage = IMAGE_TYPES.includes(file.type);
+
+    if (isVideo && purpose !== "hero") {
       return NextResponse.json(
-        { error: "Invalid file type. Only JPEG, PNG, and WebP are allowed." },
+        { error: "Filmy można wgrywać tylko do hero." },
         { status: 400 }
       );
     }
 
-    // Walidacja rozmiaru
-    if (file.size > MAX_FILE_SIZE) {
+    if (!isImage && !isVideo) {
       return NextResponse.json(
-        { error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+        { error: "Dozwolone są JPEG, PNG, WebP oraz filmy MP4 i WebM." },
+        { status: 400 }
+      );
+    }
+
+    const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        {
+          error: isVideo
+            ? "Film jest za duży. Maksymalnie 30 MB."
+            : "Plik jest za duży. Maksymalnie 5 MB.",
+        },
         { status: 400 }
       );
     }

@@ -7,6 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SizeChartEditor } from "@/components/admin/SizeChartEditor";
+import {
+  draftsToSizeChart,
+  sizeChartDraftError,
+  sizeChartToDrafts,
+  type SizeChartColumnDraft,
+  type SizeChartRowDraft,
+} from "@/lib/size-chart";
 
 type Category = {
   id: string;
@@ -82,6 +90,10 @@ export default function NewProductPage() {
     discountId: "",
   });
 
+  const initialChart = sizeChartToDrafts(null);
+  const [sizeChartColumns, setSizeChartColumns] = useState<SizeChartColumnDraft[]>(initialChart.columns);
+  const [sizeChartRows, setSizeChartRows] = useState<SizeChartRowDraft[]>(initialChart.rows);
+  const [sizeChartInvalid, setSizeChartInvalid] = useState(false);
   const [images, setImages] = useState<
     Array<{ url: string; altPl: string; altEn: string; isPrimary: boolean }>
   >([]);
@@ -149,7 +161,15 @@ export default function NewProductPage() {
   };
 
   const handleAddImage = () => {
-    setImages([...images, { url: "", altPl: "", altEn: "", isPrimary: false }]);
+    setImages((prev) => [
+      ...prev,
+      {
+        url: "",
+        altPl: "",
+        altEn: "",
+        isPrimary: prev.length === 0,
+      },
+    ]);
   };
 
   const handleFileUpload = async (file: File, index: number) => {
@@ -159,7 +179,7 @@ export default function NewProductPage() {
       return;
     }
 
-    setUploading({ ...uploading, [index]: true });
+    setUploading((prev) => ({ ...prev, [index]: true }));
     setUploadError(null);
 
     try {
@@ -176,7 +196,6 @@ export default function NewProductPage() {
 
       if (res.status === 401) {
         setUploadError("Nieautoryzowany dostęp");
-        setUploading({ ...uploading, [index]: false });
         return;
       }
 
@@ -186,13 +205,57 @@ export default function NewProductPage() {
       }
 
       const data = await res.json();
-      const newImages = [...images];
-      newImages[index] = { ...newImages[index], url: data.url };
-      setImages(newImages);
+      setImages((prev) =>
+        prev.map((img, i) => (i === index ? { ...img, url: data.url } : img))
+      );
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Błąd przesyłania pliku");
     } finally {
-      setUploading({ ...uploading, [index]: false });
+      setUploading((prev) => ({ ...prev, [index]: false }));
+    }
+  };
+
+  const handleFirstFileUpload = async (file: File) => {
+    const token = getAdminToken();
+    if (!token) {
+      setUploadError("Brak tokena admina");
+      return;
+    }
+
+    setImages([{ url: "", altPl: "", altEn: "", isPrimary: true }]);
+    setUploading({ 0: true });
+    setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: {
+          "x-admin-token": token,
+        },
+        body: formData,
+      });
+
+      if (res.status === 401) {
+        setUploadError("Nieautoryzowany dostęp");
+        setImages([]);
+        return;
+      }
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Błąd przesyłania pliku");
+      }
+
+      const data = await res.json();
+      setImages([{ url: data.url, altPl: "", altEn: "", isPrimary: true }]);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Błąd przesyłania pliku");
+      setImages([]);
+    } finally {
+      setUploading({ 0: false });
     }
   };
 
@@ -231,6 +294,22 @@ export default function NewProductPage() {
       return;
     }
 
+    if (Object.values(uploading).some(Boolean)) {
+      setError("Poczekaj na zakończenie przesyłania zdjęcia");
+      setSaving(false);
+      return;
+    }
+
+    const chartError = sizeChartDraftError(sizeChartColumns, sizeChartRows);
+    if (chartError) {
+      setSizeChartInvalid(true);
+      setError(chartError);
+      setSaving(false);
+      document.getElementById("size-chart-editor")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    setSizeChartInvalid(false);
+
     try {
       // Parsuj sizes i colors z tekstu oddzielonego przecinkami na tablice
       const sizesArray = formData.sizes
@@ -252,6 +331,7 @@ export default function NewProductPage() {
         descriptionEn: formData.descriptionEn || null,
         sizes: sizesArray.length > 0 ? sizesArray : null,
         colors: colorsArray.length > 0 ? colorsArray : null,
+        sizeChart: draftsToSizeChart(sizeChartColumns, sizeChartRows),
         images: images.filter((img) => img.url.trim() !== ""),
         discountId: formData.discountId || null,
       };
@@ -562,6 +642,15 @@ export default function NewProductPage() {
           </CardContent>
         </Card>
 
+        <SizeChartEditor
+          columns={sizeChartColumns}
+          rows={sizeChartRows}
+          sizesText={formData.sizes}
+          showSizeError={sizeChartInvalid}
+          onColumnsChange={setSizeChartColumns}
+          onRowsChange={setSizeChartRows}
+        />
+
         {/* Rabat */}
         <Card className="mb-6 border-black/10 bg-white">
           <CardHeader>
@@ -629,9 +718,7 @@ export default function NewProductPage() {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const newIndex = images.length;
-                        handleAddImage();
-                        setTimeout(() => handleFileUpload(file, newIndex), 0);
+                        handleFirstFileUpload(file);
                       }
                       e.target.value = "";
                     }}

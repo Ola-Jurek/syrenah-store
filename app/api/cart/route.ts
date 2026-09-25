@@ -17,7 +17,10 @@ export async function GET() {
     include: {
       product: {
         include: {
-          images: { where: { isPrimary: true }, take: 1 },
+          images: {
+            orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+            take: 5,
+          },
           category: { select: { slug: true } },
           discounts: {
             where: {
@@ -46,17 +49,25 @@ export async function GET() {
       discount: discountInfo,
     });
 
+    const image =
+      item.product.images.find((img) => img.url?.trim()) ||
+      item.product.images[0];
+
     return {
       productId: item.productId,
       name: item.product.namePl,
+      namePl: item.product.namePl,
+      nameEn: item.product.nameEn,
       price: pricing.finalPricePln,
+      priceEur: pricing.finalPriceEur,
       originalPrice: pricing.originalPricePln,
+      originalPriceEur: pricing.originalPriceEur,
       quantity: item.quantity,
       size: item.size ?? undefined,
       color: item.color ?? undefined,
       slug: item.product.slug,
       categorySlug: item.product.category.slug,
-      imageUrl: item.product.images[0]?.url ?? null,
+      imageUrl: image?.url?.trim() || null,
     };
   });
 

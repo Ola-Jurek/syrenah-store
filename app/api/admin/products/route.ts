@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { assertAdmin } from "@/lib/adminAuth";
 import { Prisma } from "@prisma/client";
+import { parseSizeChart } from "@/lib/size-chart";
 
 /**
  * GET /api/admin/products
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
     const now = new Date();
 
     const products = await prisma.product.findMany({
-      take: 50,
+      take: 500,
       orderBy: { createdAt: "desc" },
       include: {
         category: {
@@ -117,6 +118,7 @@ export async function POST(req: Request) {
       categoryId,
       sizes,
       colors,
+      sizeChart,
       images,
       discountId,
     } = body;
@@ -141,6 +143,8 @@ export async function POST(req: Request) {
       );
     }
 
+    const chart = parseSizeChart(sizeChart);
+
     // Utwórz produkt z obrazami w transakcji
     const product = await prisma.$transaction(async (tx) => {
       const newProduct = await tx.product.create({
@@ -159,6 +163,7 @@ export async function POST(req: Request) {
           categoryId,
           sizes: sizes && Array.isArray(sizes) && sizes.length > 0 ? sizes : null,
           colors: colors && Array.isArray(colors) && colors.length > 0 ? colors : null,
+          sizeChart: chart ?? Prisma.DbNull,
           // Przypisz rabat, jeśli został wybrany
           ...(discountId ? {
             discounts: {
@@ -171,21 +176,25 @@ export async function POST(req: Request) {
       // Jeśli są obrazy, utwórz je
       if (images && Array.isArray(images) && images.length > 0) {
         let hasPrimary = false;
-        const imageData = images.map((img: any, index: number) => {
-          const isPrimary = img.isPrimary === true || (!hasPrimary && index === 0);
-          if (isPrimary) hasPrimary = true;
-          return {
-            url: img.url,
-            altPl: img.altPl || null,
-            altEn: img.altEn || null,
-            isPrimary,
-            productId: newProduct.id,
-          };
-        });
+        const imageData = images
+          .filter((img: any) => typeof img.url === "string" && img.url.trim() !== "")
+          .map((img: any, index: number) => {
+            const isPrimary = img.isPrimary === true || (!hasPrimary && index === 0);
+            if (isPrimary) hasPrimary = true;
+            return {
+              url: img.url.trim(),
+              altPl: img.altPl || null,
+              altEn: img.altEn || null,
+              isPrimary,
+              productId: newProduct.id,
+            };
+          });
 
-        await tx.image.createMany({
-          data: imageData,
-        });
+        if (imageData.length > 0) {
+          await tx.image.createMany({
+            data: imageData,
+          });
+        }
       }
 
       return newProduct;

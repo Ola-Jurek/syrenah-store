@@ -6,22 +6,26 @@ import Image from "next/image";
 import { WishlistButton } from "@/components/WishlistButton";
 import { ProductBadge, useIsSoldOut } from "@/components/ProductBadge";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/components/LanguageContext";
+import { formatMoney } from "@/lib/format-price";
 
 type Props = {
   product: {
     id: string;
     namePl: string;
+    nameEn: string;
     slug: string;
     image?: string | null;
     imageAlt?: string | null;
+    imageAltEn?: string | null;
     createdAt?: string | Date;
     stock?: number;
-    /** Cena regularna (pricePln) */
     originalPrice: string;
-    /** Cena ostateczna po uwzględnieniu salePrice i Discount */
     finalPrice: string;
-    /** Etykieta rabatu z Discount (np. "WALENTYNKI" lub "-10%") */
-    discountLabel?: string | null;
+    originalPriceEur: string;
+    finalPriceEur: string;
+    discountLabelPl?: string | null;
+    discountLabelEn?: string | null;
   };
   categorySlug: string;
 };
@@ -29,14 +33,34 @@ type Props = {
 export function ProductCard({ product, categorySlug }: Props) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const isSoldOut = useIsSoldOut(product.stock);
+  const { locale } = useLanguage();
 
-  const original = parseFloat(product.originalPrice);
-  const final = parseFloat(product.finalPrice);
+  const name =
+    locale === "en" && product.nameEn?.trim()
+      ? product.nameEn
+      : product.namePl;
+
+  const alt =
+    locale === "en" && product.imageAltEn?.trim()
+      ? product.imageAltEn
+      : product.imageAlt || name;
+
+  const originalPln = parseFloat(product.originalPrice);
+  const finalPln = parseFloat(product.finalPrice);
+  const originalEur = parseFloat(product.originalPriceEur);
+  const finalEur = parseFloat(product.finalPriceEur);
+
+  const original = locale === "en" ? originalEur : originalPln;
+  const final = locale === "en" ? finalEur : finalPln;
   const hasPriceReduction = final < original;
+
+  const discountLabel =
+    locale === "en"
+      ? product.discountLabelEn ?? product.discountLabelPl
+      : product.discountLabelPl;
 
   return (
     <div className="group relative">
-      {/* Wishlist Heart – always visible on mobile, hover on desktop */}
       <div className="absolute top-2 right-2 z-10 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
         <WishlistButton
           productId={product.id}
@@ -45,12 +69,11 @@ export function ProductCard({ product, categorySlug }: Props) {
         />
       </div>
 
-      {/* Product Badge */}
       <ProductBadge
         createdAt={product.createdAt}
         stock={product.stock}
         hasPriceReduction={hasPriceReduction}
-        discountLabel={product.discountLabel}
+        discountLabel={discountLabel}
       />
 
       <Link href={`/shop/${categorySlug}/${product.slug}`}>
@@ -60,7 +83,6 @@ export function ProductCard({ product, categorySlug }: Props) {
             isSoldOut && "after:absolute after:inset-0 after:bg-white/30 after:z-[1]"
           )}
         >
-          {/* Skeleton loader */}
           {product.image && !imageLoaded && (
             <div className="absolute inset-0 bg-[#C1A88C]/10 animate-pulse z-[2]" />
           )}
@@ -68,7 +90,7 @@ export function ProductCard({ product, categorySlug }: Props) {
           {product.image ? (
             <Image
               src={product.image}
-              alt={product.imageAlt || product.namePl}
+              alt={alt}
               fill
               className={cn(
                 "object-cover transition-all duration-500",
@@ -98,7 +120,7 @@ export function ProductCard({ product, categorySlug }: Props) {
               isSoldOut && "text-black/40"
             )}
           >
-            {product.namePl.toUpperCase()}
+            {name.toUpperCase()}
           </h2>
           <div className="flex items-center justify-center gap-2">
             {hasPriceReduction && (
@@ -108,7 +130,7 @@ export function ProductCard({ product, categorySlug }: Props) {
                   isSoldOut && "text-black/20"
                 )}
               >
-                {original.toFixed(2)} PLN
+                {formatMoney(original, locale)}
               </span>
             )}
             <span
@@ -118,7 +140,7 @@ export function ProductCard({ product, categorySlug }: Props) {
                 isSoldOut && "text-black/30"
               )}
             >
-              {final.toFixed(2)} PLN
+              {formatMoney(final, locale)}
             </span>
           </div>
         </div>

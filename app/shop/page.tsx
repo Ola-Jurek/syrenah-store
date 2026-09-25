@@ -2,13 +2,20 @@ import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/ProductCard";
 import { ShopFilters } from "@/components/ShopFilters";
-import { getEffectivePrice, extractDiscountInfo, extractDiscountLabel } from "@/lib/pricing";
+import {
+  getEffectivePrice,
+  extractDiscountInfo,
+  extractDiscountLabel,
+} from "@/lib/pricing";
+import { ShopBanner } from "@/components/ShopBanner";
+import { ShopSearchHeader } from "@/components/ShopSearchHeader";
+import { ShopEmpty } from "@/components/ShopEmpty";
+import { ShopNoSearchResults } from "@/components/ShopNoSearchResults";
 
 type Props = {
   searchParams: Promise<{ search?: string; sort?: string; filter?: string }>;
 };
 
-// Wspólne include dla produktu z cenami i rabatami
 const productInclude = {
   category: {
     select: {
@@ -19,27 +26,36 @@ const productInclude = {
     },
   },
   images: {
-    where: { isPrimary: true },
-    take: 1,
+    orderBy: [{ isPrimary: "desc" as const }, { createdAt: "asc" as const }],
+    take: 5,
   },
   discounts: {
     where: {
       isActive: true,
       validFrom: { lte: new Date() },
-      OR: [
-        { validUntil: null },
-        { validUntil: { gte: new Date() } },
-      ],
+      OR: [{ validUntil: null }, { validUntil: { gte: new Date() } }],
     },
     take: 1,
   },
 } as const;
 
-/** Mapuje produkt z bazy na props dla ProductCard */
-function mapProductToCardProps(product: any) {
-  const primaryImage = product.images[0];
+function mapProductToCardProps(product: {
+  id: string;
+  namePl: string;
+  nameEn: string;
+  slug: string;
+  stock: number;
+  createdAt: Date;
+  salePricePln: unknown;
+  salePriceEur: unknown;
+  pricePln: unknown;
+  priceEur: unknown;
+  images: Array<{ url: string; altPl: string | null; altEn: string | null }>;
+  discounts: Array<{ type: string; value: unknown; namePl?: string | null }>;
+}) {
+  const primaryImage =
+    product.images.find((img) => img.url?.trim()) || product.images[0];
   const discountInfo = extractDiscountInfo(product.discounts);
-  const discountLabel = extractDiscountLabel(product.discounts);
   const pricing = getEffectivePrice({
     pricePln: Number(product.pricePln),
     priceEur: Number(product.priceEur),
@@ -51,37 +67,37 @@ function mapProductToCardProps(product: any) {
   return {
     id: product.id,
     namePl: product.namePl,
+    nameEn: product.nameEn,
     slug: product.slug,
     image: primaryImage?.url ?? null,
     imageAlt: primaryImage?.altPl ?? null,
+    imageAltEn: primaryImage?.altEn ?? null,
     createdAt: product.createdAt.toISOString(),
     stock: product.stock,
     originalPrice: pricing.originalPricePln.toFixed(2),
     finalPrice: pricing.finalPricePln.toFixed(2),
-    discountLabel,
+    originalPriceEur: pricing.originalPriceEur.toFixed(2),
+    finalPriceEur: pricing.finalPriceEur.toFixed(2),
+    discountLabelPl: extractDiscountLabel(product.discounts, "PLN"),
+    discountLabelEn: extractDiscountLabel(product.discounts, "EUR"),
   };
 }
 
 export default async function ShopPage({ searchParams }: Props) {
   const { search, sort, filter } = await searchParams;
 
-  // ─── Baner: widoczny tylko gdy istnieje aktywny Discount z kodem ───
   const activeDiscountWithCode = await prisma.discount.findFirst({
     where: {
       isActive: true,
       code: { not: "" },
       validFrom: { lte: new Date() },
-      OR: [
-        { validUntil: null },
-        { validUntil: { gte: new Date() } },
-      ],
+      OR: [{ validUntil: null }, { validUntil: { gte: new Date() } }],
     },
     select: { id: true, code: true, namePl: true, type: true, value: true },
   });
 
   const showBanner = !!activeDiscountWithCode;
 
-  // ─── Sprawdź czy są produkty wyprzedażowe (dla filtra WYPRZEDAŻ) ───
   const now = new Date();
   const saleProductsCount = await prisma.product.count({
     where: {
@@ -92,10 +108,7 @@ export default async function ShopPage({ searchParams }: Props) {
             some: {
               isActive: true,
               validFrom: { lte: now },
-              OR: [
-                { validUntil: null },
-                { validUntil: { gte: now } },
-              ],
+              OR: [{ validUntil: null }, { validUntil: { gte: now } }],
             },
           },
         },
@@ -104,7 +117,6 @@ export default async function ShopPage({ searchParams }: Props) {
   });
   const hasSaleProducts = saleProductsCount > 0;
 
-  // ─── Wyniki wyszukiwania ───
   if (search) {
     const searchTerm = decodeURIComponent(search);
     const products = await prisma.product.findMany({
@@ -126,18 +138,10 @@ export default async function ShopPage({ searchParams }: Props) {
         {showBanner && <ShopBanner discount={activeDiscountWithCode} />}
 
         <div className="px-6 pb-16 max-w-7xl mx-auto pt-8">
-          <h1 className="text-xs uppercase tracking-widest mb-4 text-black font-medium">
-            WYNIKI WYSZUKIWANIA: &quot;{searchTerm.toUpperCase()}&quot;
-          </h1>
-          <p className="text-xs text-black/60 mb-12">
-            Znaleziono {products.length}{" "}
-            {products.length === 1 ? "produkt" : "produktów"}
-          </p>
+          <ShopSearchHeader term={searchTerm} count={products.length} />
 
           {products.length === 0 ? (
-            <p className="text-muted-foreground">
-              Nie znaleziono produktów dla frazy &quot;{searchTerm}&quot;
-            </p>
+            <ShopNoSearchResults term={searchTerm} />
           ) : (
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
               {products.map((product) => (
@@ -154,17 +158,14 @@ export default async function ShopPage({ searchParams }: Props) {
     );
   }
 
-  // ─── Filtrowanie ───
   const currentFilter = filter || "all";
 
-  let whereClause: any = {};
+  let whereClause: Record<string, unknown> = {};
 
   if (currentFilter === "new") {
-    // Produkty z ostatnich 14 dni
     const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
     whereClause = { createdAt: { gte: twoWeeksAgo } };
   } else if (currentFilter === "sale") {
-    // Produkty z salePrice LUB z przypisanym aktywnym Discount
     whereClause = {
       OR: [
         { salePricePln: { not: null } },
@@ -173,10 +174,7 @@ export default async function ShopPage({ searchParams }: Props) {
             some: {
               isActive: true,
               validFrom: { lte: now },
-              OR: [
-                { validUntil: null },
-                { validUntil: { gte: now } },
-              ],
+              OR: [{ validUntil: null }, { validUntil: { gte: now } }],
             },
           },
         },
@@ -184,7 +182,6 @@ export default async function ShopPage({ searchParams }: Props) {
     };
   }
 
-  // ─── Sortowanie ───
   let orderBy: Record<string, string> = { createdAt: "desc" };
   if (sort === "price_asc") {
     orderBy = { pricePln: "asc" };
@@ -203,8 +200,11 @@ export default async function ShopPage({ searchParams }: Props) {
       {showBanner && <ShopBanner discount={activeDiscountWithCode} />}
 
       <div className="px-6 pb-16 max-w-7xl mx-auto pt-8">
-        {/* Pasek filtrów */}
-        <Suspense fallback={<div className="h-12 mb-8 border-b border-[#C1A88C]/10 animate-pulse" />}>
+        <Suspense
+          fallback={
+            <div className="h-12 mb-8 border-b border-[#C1A88C]/10 animate-pulse" />
+          }
+        >
           <ShopFilters
             currentFilter={currentFilter}
             currentSort={sort || "newest"}
@@ -212,11 +212,8 @@ export default async function ShopPage({ searchParams }: Props) {
           />
         </Suspense>
 
-        {/* Siatka produktów */}
         {products.length === 0 ? (
-          <p className="text-muted-foreground">
-            Produkty w przygotowaniu ✨
-          </p>
+          <ShopEmpty />
         ) : (
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-6">
             {products.map((product) => (
@@ -228,42 +225,6 @@ export default async function ShopPage({ searchParams }: Props) {
             ))}
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Baner promocyjny — beżowy pasek (server component) ───
-function ShopBanner({
-  discount,
-}: {
-  discount: { code: string; namePl: string | null; type: string; value: any } | null;
-}) {
-  if (!discount) return null;
-
-  const label = discount.namePl?.trim() || "";
-  const val = Number(discount.value);
-  const discountText =
-    discount.type === "PERCENTAGE" ? `-${val}%` : `-${val.toFixed(0)} PLN`;
-
-  // Tekst główny (nazwa rabatu lub wartość)
-  const mainText = label || discountText;
-  const codeText = `KOD: ${discount.code.toUpperCase()}`;
-
-  return (
-    <div className="w-full bg-[#EDE3DF] py-4 md:py-5 px-6">
-      {/* Desktop: jedna linia */}
-      <p className="hidden md:block text-center uppercase tracking-[0.2em] text-black/80 text-base lg:text-lg font-medium">
-        {mainText} · {codeText}
-      </p>
-      {/* Mobile: dwie linie */}
-      <div className="flex flex-col items-center gap-0.5 md:hidden">
-        <span className="uppercase tracking-[0.2em] text-black/80 text-sm font-medium">
-          {mainText}
-        </span>
-        <span className="uppercase tracking-[0.15em] text-black/60 text-xs">
-          {codeText}
-        </span>
       </div>
     </div>
   );

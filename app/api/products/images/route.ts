@@ -30,16 +30,21 @@ export async function GET(req: Request) {
       },
       include: {
         images: {
-          where: { isPrimary: true },
-          take: 1,
+          orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
         },
       },
     });
 
-    const images = products.map((product) => ({
-      productId: product.id,
-      imageUrl: product.images[0]?.url || null,
-    }));
+    const images = products.map((product) => {
+      const primary =
+        product.images.find((img) => img.isPrimary && img.url?.trim()) ||
+        product.images.find((img) => img.url?.trim()) ||
+        null;
+      return {
+        productId: product.id,
+        imageUrl: primary?.url || null,
+      };
+    });
 
     return NextResponse.json(images);
   } catch (error) {

@@ -2,12 +2,22 @@
 
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/components/CartContext";
+import { useCart, getCartItemName } from "@/components/CartContext";
 import { useSession } from "next-auth/react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import { Tag } from "lucide-react";
+import { useLanguage } from "@/components/LanguageContext";
+import {
+  cartSubtotals,
+  formatCheckoutMoney,
+  plnToEurUsingRatio,
+} from "@/lib/checkout-currency";
+import {
+  SHIPPING_COUNTRIES,
+  isPolandCountry,
+} from "@/lib/shipping-countries";
 
 type ShippingFormData = {
   fullName: string;
@@ -15,6 +25,7 @@ type ShippingFormData = {
   street: string;
   postalCode: string;
   city: string;
+  country: string;
   phone: string;
   shippingMethod: "courier" | "parcel_locker";
 
@@ -32,6 +43,7 @@ type ShippingFormData = {
   altStreet: string;
   altPostalCode: string;
   altCity: string;
+  altCountry: string;
   altPhone: string;
 };
 
@@ -41,21 +53,6 @@ type SelectedLocker = {
   city: string;
   postalCode: string;
 };
-
-const SHIPPING_METHODS = [
-  {
-    id: "courier" as const,
-    label: "Kurier",
-    description: "Dostawa pod drzwi w 1–2 dni robocze",
-    price: 15,
-  },
-  {
-    id: "parcel_locker" as const,
-    label: "Paczkomat",
-    description: "Odbiór w wybranym paczkomacie 24/7",
-    price: 10,
-  },
-];
 
 /* ────────── Checkbox komponent ────────── */
 function StyledCheckbox({
@@ -106,11 +103,36 @@ const inputBase =
 const inputOk = "border-[#E8E3D8] focus:border-[#C1A88C]";
 const inputErr = "border-red-300 focus:border-red-400";
 
+function formatPolishPostal(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 5);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+}
+
 export default function ShippingPage() {
   const router = useRouter();
   const { items } = useCart();
   const { data: session } = useSession();
+  const { locale, t } = useLanguage();
   const [isReady, setIsReady] = useState(false);
+
+  const SHIPPING_METHODS = useMemo(
+    () => [
+      {
+        id: "courier" as const,
+        label: t("checkoutFlow.courierLabel"),
+        description: t("checkoutFlow.courierDesc"),
+        price: 19,
+      },
+      {
+        id: "parcel_locker" as const,
+        label: t("checkoutFlow.lockerLabel"),
+        description: t("checkoutFlow.lockerDesc"),
+        price: 19,
+      },
+    ],
+    [t]
+  );
 
   // Paczkomat
   const [selectedLocker, setSelectedLocker] = useState<SelectedLocker | null>(
@@ -150,6 +172,7 @@ export default function ShippingPage() {
       street: "",
       postalCode: "",
       city: "",
+      country: "PL",
       phone: "",
       shippingMethod: "courier",
       wantInvoice: false,
@@ -163,6 +186,7 @@ export default function ShippingPage() {
       altStreet: "",
       altPostalCode: "",
       altCity: "",
+      altCountry: "PL",
       altPhone: "",
     },
   });
@@ -201,6 +225,7 @@ export default function ShippingPage() {
         if (parsed.street) setValue("street", parsed.street);
         if (parsed.postalCode) setValue("postalCode", parsed.postalCode);
         if (parsed.city) setValue("city", parsed.city);
+        if (parsed.country) setValue("country", parsed.country);
         if (parsed.phone) setValue("phone", parsed.phone);
         if (parsed.shippingMethod)
           setValue("shippingMethod", parsed.shippingMethod);
@@ -222,6 +247,7 @@ export default function ShippingPage() {
         if (parsed.altPostalCode)
           setValue("altPostalCode", parsed.altPostalCode);
         if (parsed.altCity) setValue("altCity", parsed.altCity);
+        if (parsed.altCountry) setValue("altCountry", parsed.altCountry);
         if (parsed.altPhone) setValue("altPhone", parsed.altPhone);
 
         // Odtwórz dane paczkomatu
@@ -266,14 +292,27 @@ export default function ShippingPage() {
   const selectedMethod = watch("shippingMethod");
   const wantInvoice = watch("wantInvoice");
   const differentShipping = watch("differentShipping");
+  const country = watch("country");
+  const altCountry = watch("altCountry");
+  const shipsToPoland = isPolandCountry(country);
+  const altShipsToPoland = isPolandCountry(altCountry);
 
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  useEffect(() => {
+    if (!shipsToPoland && selectedMethod === "parcel_locker") {
+      setValue("shippingMethod", "courier");
+    }
+  }, [shipsToPoland, selectedMethod, setValue]);
+
+  const { subPln: subtotal, subEur: subtotalEur, canUseEur } =
+    cartSubtotals(items);
 
   const shippingCost =
-    SHIPPING_METHODS.find((m) => m.id === selectedMethod)?.price ?? 15;
+    SHIPPING_METHODS.find((m) => m.id === selectedMethod)?.price ?? 19;
+
+  const shippingEur =
+    canUseEur && subtotal > 0
+      ? plnToEurUsingRatio(shippingCost, subtotal, subtotalEur)
+      : null;
 
   // Rabat
   const hasCartDiscount =
@@ -285,21 +324,37 @@ export default function ShippingPage() {
   const effectiveDiscount = subtotal - effectiveProductTotal;
   const total = effectiveProductTotal + shippingCost;
 
+  const effectiveDiscountEur =
+    canUseEur && subtotal > 0
+      ? Math.round(
+          (effectiveDiscount * (subtotalEur / subtotal)) * 100
+        ) / 100
+      : null;
+
+  const totalEurDisplay =
+    canUseEur && subtotal > 0
+      ? Math.round(
+          (effectiveProductTotal * (subtotalEur / subtotal) +
+            (shippingEur ?? 0)) *
+            100
+        ) / 100
+      : null;
+
   // Pusty koszyk — wróć
   if (items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-[#FDFBF7]">
         <h1 className="font-serif text-xl text-neutral-800 mb-3">
-          Twój koszyk jest pusty
+          {t("checkoutFlow.emptyCartTitle")}
         </h1>
         <p className="text-xs text-neutral-400 mb-8">
-          Dodaj produkty, aby przejść do zamówienia.
+          {t("checkoutFlow.emptyCartHint")}
         </p>
         <Link
           href="/shop"
           className="border border-neutral-900 px-8 py-3 text-xs uppercase tracking-widest text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors"
         >
-          Wróć do sklepu
+          {t("checkoutFlow.backToShop")}
         </Link>
       </div>
     );
@@ -323,7 +378,7 @@ export default function ShippingPage() {
 
     // Walidacja paczkomatu
     if (data.shippingMethod === "parcel_locker" && !selectedLocker) {
-      setLockerError("Wybierz paczkomat przed kontynuacją");
+      setLockerError(t("checkoutFlow.pickLockerFirst"));
       return;
     }
 
@@ -362,10 +417,10 @@ export default function ShippingPage() {
         {/* Nagłówek */}
         <div className="text-center mb-10">
           <h1 className="font-serif text-2xl text-neutral-800 mb-2">
-            Dane dostawy
+            {t("checkoutFlow.shippingTitle")}
           </h1>
           <p className="text-xs text-neutral-400">
-            Podaj adres, na który wyślemy Twoje zamówienie.
+            {t("checkoutFlow.shippingSubtitle")}
           </p>
         </div>
 
@@ -379,21 +434,21 @@ export default function ShippingPage() {
                   htmlFor="fullName"
                   className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
                 >
-                  Imię i nazwisko
+                  {t("checkoutFlow.fullName")}
                 </label>
                 <input
                   id="fullName"
                   type="text"
                   autoComplete="name"
-                  placeholder="Anna Kowalska"
+                  placeholder={t("checkoutFlow.phFullName")}
                   className={`${inputBase} ${
                     errors.fullName ? inputErr : inputOk
                   }`}
                   {...register("fullName", {
-                    required: "Imię i nazwisko jest wymagane",
+                    required: t("checkoutValidation.fullNameRequired"),
                     minLength: {
                       value: 3,
-                      message: "Minimum 3 znaki",
+                      message: t("checkoutValidation.fullNameMin"),
                     },
                   })}
                 />
@@ -410,21 +465,21 @@ export default function ShippingPage() {
                   htmlFor="email"
                   className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
                 >
-                  Adres email
+                  {t("checkoutFlow.email")}
                 </label>
                 <input
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="anna@example.com"
+                  placeholder={t("checkoutFlow.phEmail")}
                   className={`${inputBase} ${
                     errors.email ? inputErr : inputOk
                   }`}
                   {...register("email", {
-                    required: "Email jest wymagany",
+                    required: t("checkoutValidation.emailRequired"),
                     pattern: {
                       value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: "Nieprawidłowy adres email",
+                      message: t("checkoutValidation.emailInvalid"),
                     },
                   })}
                 />
@@ -441,22 +496,22 @@ export default function ShippingPage() {
                   htmlFor="phone"
                   className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
                 >
-                  Numer telefonu
+                  {t("checkoutFlow.phone")}
                 </label>
                 <input
                   id="phone"
                   type="tel"
                   inputMode="numeric"
                   autoComplete="tel"
-                  placeholder="600 123 456"
+                  placeholder={t("checkoutFlow.phPhone")}
                   className={`${inputBase} ${
                     errors.phone ? inputErr : inputOk
                   }`}
                   {...register("phone", {
-                    required: "Numer telefonu jest wymagany",
+                    required: t("checkoutValidation.phoneRequired"),
                     pattern: {
                       value: /^[\d\s\-+()]{7,15}$/,
-                      message: "Nieprawidłowy numer telefonu",
+                      message: t("checkoutValidation.phoneInvalid"),
                     },
                   })}
                 />
@@ -467,13 +522,167 @@ export default function ShippingPage() {
                 )}
               </div>
 
+              {/* Adres dostawy */}
+              <div className="space-y-5 pt-4">
+                <p className="text-xs uppercase tracking-widest text-neutral-500">
+                  {t("checkoutFlow.addressHeading")}
+                </p>
+
+                <div>
+                  <label
+                    htmlFor="country"
+                    className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
+                  >
+                    {t("checkoutFlow.country")}
+                  </label>
+                  <select
+                    id="country"
+                    autoComplete="country"
+                    className={`${inputBase} ${
+                      errors.country ? inputErr : inputOk
+                    }`}
+                    {...register("country", {
+                      required: t("checkoutValidation.countryRequired"),
+                    })}
+                  >
+                    {SHIPPING_COUNTRIES.map((item) => (
+                      <option key={item.code} value={item.code}>
+                        {locale === "en" ? item.en : item.pl}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.country && (
+                    <p className="mt-1.5 text-xs text-red-400">
+                      {errors.country.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="street"
+                    className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
+                  >
+                    {t("checkoutFlow.street")}
+                  </label>
+                  <input
+                    id="street"
+                    type="text"
+                    autoComplete="street-address"
+                    placeholder={t("checkoutFlow.phStreet")}
+                    className={`${inputBase} ${
+                      errors.street ? inputErr : inputOk
+                    }`}
+                    {...register("street", {
+                      required: t("checkoutValidation.streetRequired"),
+                      minLength: {
+                        value: 3,
+                        message: t("checkoutValidation.streetMin"),
+                      },
+                    })}
+                  />
+                  {errors.street && (
+                    <p className="mt-1.5 text-xs text-red-400">
+                      {errors.street.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-[140px_1fr] gap-4">
+                  <div>
+                    <label
+                      htmlFor="postalCode"
+                      className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
+                    >
+                      {t("checkoutFlow.postalCode")}
+                    </label>
+                    <input
+                      id="postalCode"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="postal-code"
+                      placeholder={
+                        shipsToPoland ? t("checkoutFlow.phPostalCode") : ""
+                      }
+                      className={`${inputBase} ${
+                        errors.postalCode ? inputErr : inputOk
+                      }`}
+                        {...register("postalCode", {
+                        required: t("checkoutValidation.postalRequired"),
+                        onChange: (event) => {
+                          if (!shipsToPoland) return;
+                          const formatted = formatPolishPostal(
+                            event.target.value
+                          );
+                          if (formatted !== event.target.value) {
+                            setValue("postalCode", formatted, {
+                              shouldValidate: true,
+                            });
+                          }
+                        },
+                        ...(shipsToPoland
+                          ? {
+                              pattern: {
+                                value: /^\d{2}-\d{3}$/,
+                                message: t("checkoutValidation.postalFormat"),
+                              },
+                            }
+                          : {
+                              minLength: {
+                                value: 2,
+                                message: t("checkoutValidation.postalMin"),
+                              },
+                            }),
+                      })}
+                    />
+                    {errors.postalCode && (
+                      <p className="mt-1.5 text-xs text-red-400">
+                        {errors.postalCode.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="city"
+                      className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
+                    >
+                      {t("checkoutFlow.city")}
+                    </label>
+                    <input
+                      id="city"
+                      type="text"
+                      autoComplete="address-level2"
+                      placeholder={t("checkoutFlow.phCity")}
+                      className={`${inputBase} ${
+                        errors.city ? inputErr : inputOk
+                      }`}
+                      {...register("city", {
+                        required: t("checkoutValidation.cityRequired"),
+                        minLength: {
+                          value: 2,
+                          message: t("checkoutValidation.cityMin"),
+                        },
+                      })}
+                    />
+                    {errors.city && (
+                      <p className="mt-1.5 text-xs text-red-400">
+                        {errors.city.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Metoda dostawy */}
               <div className="pt-4">
                 <p className="text-xs uppercase tracking-widest text-neutral-500 mb-4">
-                  Metoda dostawy
+                  {t("checkoutFlow.shippingMethodHeading")}
                 </p>
                 <div className="space-y-3">
-                  {SHIPPING_METHODS.map((method) => (
+                  {SHIPPING_METHODS.filter(
+                    (method) => method.id !== "parcel_locker" || shipsToPoland
+                  ).map((method) => (
                     <label
                       key={method.id}
                       className={`flex items-center gap-4 p-4 border cursor-pointer transition-all ${
@@ -509,127 +718,28 @@ export default function ShippingPage() {
                         </p>
                       </div>
                       <span className="text-sm font-serif text-neutral-700">
-                        {method.price.toFixed(2)} zł
+                        {formatCheckoutMoney(
+                          method.price,
+                          canUseEur && subtotal > 0
+                            ? plnToEurUsingRatio(
+                                method.price,
+                                subtotal,
+                                subtotalEur
+                              )
+                            : null,
+                          locale
+                        )}
                       </span>
                     </label>
                   ))}
                 </div>
               </div>
 
-              {/* Pola adresowe — tylko dla kuriera */}
-              {selectedMethod === "courier" && (
-                <div className="space-y-5 pt-2">
-                  {/* Ulica */}
-                  <div>
-                    <label
-                      htmlFor="street"
-                      className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
-                    >
-                      Ulica i numer
-                    </label>
-                    <input
-                      id="street"
-                      type="text"
-                      autoComplete="street-address"
-                      placeholder="ul. Marszałkowska 1/2"
-                      className={`${inputBase} ${
-                        errors.street ? inputErr : inputOk
-                      }`}
-                      {...register("street", {
-                        required:
-                          selectedMethod === "courier"
-                            ? "Ulica jest wymagana"
-                            : false,
-                        minLength: {
-                          value: 3,
-                          message: "Minimum 3 znaki",
-                        },
-                      })}
-                    />
-                    {errors.street && (
-                      <p className="mt-1.5 text-xs text-red-400">
-                        {errors.street.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Kod pocztowy + Miasto */}
-                  <div className="grid grid-cols-[140px_1fr] gap-4">
-                    <div>
-                      <label
-                        htmlFor="postalCode"
-                        className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
-                      >
-                        Kod pocztowy
-                      </label>
-                      <input
-                        id="postalCode"
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="postal-code"
-                        placeholder="00-001"
-                        className={`${inputBase} ${
-                          errors.postalCode ? inputErr : inputOk
-                        }`}
-                        {...register("postalCode", {
-                          required:
-                            selectedMethod === "courier"
-                              ? "Kod pocztowy jest wymagany"
-                              : false,
-                          pattern: {
-                            value: /^\d{2}-\d{3}$/,
-                            message: "Format: 00-000",
-                          },
-                        })}
-                      />
-                      {errors.postalCode && (
-                        <p className="mt-1.5 text-xs text-red-400">
-                          {errors.postalCode.message}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="city"
-                        className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
-                      >
-                        Miasto
-                      </label>
-                      <input
-                        id="city"
-                        type="text"
-                        autoComplete="address-level2"
-                        placeholder="Warszawa"
-                        className={`${inputBase} ${
-                          errors.city ? inputErr : inputOk
-                        }`}
-                        {...register("city", {
-                          required:
-                            selectedMethod === "courier"
-                              ? "Miasto jest wymagane"
-                              : false,
-                          minLength: {
-                            value: 2,
-                            message: "Minimum 2 znaki",
-                          },
-                        })}
-                      />
-                      {errors.city && (
-                        <p className="mt-1.5 text-xs text-red-400">
-                          {errors.city.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Wybór paczkomatu — tylko dla paczkomat */}
               {selectedMethod === "parcel_locker" && (
                 <div className="space-y-3 pt-2">
                   <p className="text-xs uppercase tracking-widest text-neutral-500">
-                    Wybrany paczkomat
+                    {t("checkoutFlow.lockerSelectedTitle")}
                   </p>
 
                   {selectedLocker ? (
@@ -670,7 +780,7 @@ export default function ShippingPage() {
                         onClick={() => setShowGeowidget(true)}
                         className="text-xs text-[#C1A88C] hover:text-[#B09A7C] underline underline-offset-2 transition-colors flex-shrink-0"
                       >
-                        Zmień
+                        {t("checkoutFlow.change")}
                       </button>
                     </div>
                   ) : (
@@ -701,10 +811,10 @@ export default function ShippingPage() {
                         />
                       </svg>
                       <span className="text-sm font-medium text-[#C1A88C]">
-                        Wybierz Paczkomat
+                        {t("checkoutFlow.lockerPickTitle")}
                       </span>
                       <span className="text-[10px] text-neutral-400">
-                        Kliknij, aby otworzyć mapę paczkomatów
+                        {t("checkoutFlow.lockerMapHint")}
                       </span>
                     </button>
                   )}
@@ -720,7 +830,7 @@ export default function ShippingPage() {
                 <StyledCheckbox
                   checked={wantInvoice}
                   onChange={(v) => setValue("wantInvoice", v)}
-                  label="Chcę otrzymać fakturę VAT"
+                  label={t("checkoutFlow.wantInvoice")}
                 />
 
                 {wantInvoice && (
@@ -728,17 +838,17 @@ export default function ShippingPage() {
                     {/* Nazwa firmy */}
                     <div>
                       <label className="block text-xs uppercase tracking-widest text-neutral-500 mb-2">
-                        Nazwa firmy
+                        {t("checkoutFlow.companyName")}
                       </label>
                       <input
                         type="text"
-                        placeholder="Moja Firma Sp. z o.o."
+                        placeholder={t("checkoutFlow.phCompanyName")}
                         className={`${inputBase} ${
                           errors.companyName ? inputErr : inputOk
                         }`}
                         {...register("companyName", {
                           required: wantInvoice
-                            ? "Nazwa firmy jest wymagana"
+                            ? t("checkoutValidation.companyNameRequired")
                             : false,
                         })}
                       />
@@ -752,20 +862,22 @@ export default function ShippingPage() {
                     {/* NIP */}
                     <div>
                       <label className="block text-xs uppercase tracking-widest text-neutral-500 mb-2">
-                        NIP
+                        {t("checkoutFlow.vatNumberField")}
                       </label>
                       <input
                         type="text"
                         inputMode="numeric"
-                        placeholder="1234567890"
+                        placeholder={t("checkoutFlow.phVatNumber")}
                         className={`${inputBase} ${
                           errors.vatNumber ? inputErr : inputOk
                         }`}
                         {...register("vatNumber", {
-                          required: wantInvoice ? "NIP jest wymagany" : false,
+                          required: wantInvoice
+                            ? t("checkoutValidation.vatRequired")
+                            : false,
                           pattern: {
                             value: /^[\d\-]{10,13}$/,
-                            message: "Nieprawidłowy NIP",
+                            message: t("checkoutValidation.vatInvalid"),
                           },
                         })}
                       />
@@ -779,17 +891,17 @@ export default function ShippingPage() {
                     {/* Adres firmy — ulica */}
                     <div>
                       <label className="block text-xs uppercase tracking-widest text-neutral-500 mb-2">
-                        Adres firmy
+                        {t("checkoutFlow.companyAddress")}
                       </label>
                       <input
                         type="text"
-                        placeholder="ul. Biznesowa 10"
+                        placeholder={t("checkoutFlow.phCompanyStreet")}
                         className={`${inputBase} ${
                           errors.companyStreet ? inputErr : inputOk
                         }`}
                         {...register("companyStreet", {
                           required: wantInvoice
-                            ? "Adres firmy jest wymagany"
+                            ? t("checkoutValidation.companyStreetRequired")
                             : false,
                         })}
                       />
@@ -803,23 +915,38 @@ export default function ShippingPage() {
                     {/* Kod + Miasto firmy */}
                     <div className="grid grid-cols-[140px_1fr] gap-4">
                       <div>
-                        <label className="block text-xs uppercase tracking-widest text-neutral-500 mb-2">
-                          Kod pocztowy
+                        <label
+                          htmlFor="companyPostalCode"
+                          className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
+                        >
+                          {t("checkoutFlow.postalCode")}
                         </label>
                         <input
+                          id="companyPostalCode"
                           type="text"
                           inputMode="numeric"
-                          placeholder="00-001"
+                          autoComplete="postal-code"
+                          placeholder={t("checkoutFlow.phPostalCode")}
                           className={`${inputBase} ${
                             errors.companyPostalCode ? inputErr : inputOk
                           }`}
                           {...register("companyPostalCode", {
                             required: wantInvoice
-                              ? "Kod pocztowy jest wymagany"
+                              ? t("checkoutValidation.companyPostalRequired")
                               : false,
                             pattern: {
                               value: /^\d{2}-\d{3}$/,
-                              message: "Format: 00-000",
+                              message: t("checkoutValidation.postalFormat"),
+                            },
+                            onChange: (event) => {
+                              const formatted = formatPolishPostal(
+                                event.target.value
+                              );
+                              if (formatted !== event.target.value) {
+                                setValue("companyPostalCode", formatted, {
+                                  shouldValidate: true,
+                                });
+                              }
                             },
                           })}
                         />
@@ -831,17 +958,17 @@ export default function ShippingPage() {
                       </div>
                       <div>
                         <label className="block text-xs uppercase tracking-widest text-neutral-500 mb-2">
-                          Miasto
+                          {t("checkoutFlow.city")}
                         </label>
                         <input
                           type="text"
-                          placeholder="Warszawa"
+                          placeholder={t("checkoutFlow.phCity")}
                           className={`${inputBase} ${
                             errors.companyCity ? inputErr : inputOk
                           }`}
                           {...register("companyCity", {
                             required: wantInvoice
-                              ? "Miasto jest wymagane"
+                              ? t("checkoutValidation.companyCityRequired")
                               : false,
                           })}
                         />
@@ -861,7 +988,7 @@ export default function ShippingPage() {
                 <StyledCheckbox
                   checked={differentShipping}
                   onChange={(v) => setValue("differentShipping", v)}
-                  label="Inny adres dostawy"
+                  label={t("checkoutFlow.differentShipping")}
                 />
 
                 {differentShipping && (
@@ -869,17 +996,17 @@ export default function ShippingPage() {
                     {/* Imię i Nazwisko odbiorcy */}
                     <div>
                       <label className="block text-xs uppercase tracking-widest text-neutral-500 mb-2">
-                        Imię i nazwisko odbiorcy
+                        {t("checkoutFlow.receiverName")}
                       </label>
                       <input
                         type="text"
-                        placeholder="Jan Nowak"
+                        placeholder={t("checkoutFlow.phReceiverName")}
                         className={`${inputBase} ${
                           errors.altFullName ? inputErr : inputOk
                         }`}
                         {...register("altFullName", {
                           required: differentShipping
-                            ? "Imię i nazwisko odbiorcy jest wymagane"
+                            ? t("checkoutValidation.altNameRequired")
                             : false,
                         })}
                       />
@@ -890,20 +1017,48 @@ export default function ShippingPage() {
                       )}
                     </div>
 
+                    <div>
+                      <label className="block text-xs uppercase tracking-widest text-neutral-500 mb-2">
+                        {t("checkoutFlow.country")}
+                      </label>
+                      <select
+                        autoComplete="country"
+                        className={`${inputBase} ${
+                          errors.altCountry ? inputErr : inputOk
+                        }`}
+                        {...register("altCountry", {
+                          required: differentShipping
+                            ? t("checkoutValidation.countryRequired")
+                            : false,
+                        })}
+                      >
+                        {SHIPPING_COUNTRIES.map((item) => (
+                          <option key={item.code} value={item.code}>
+                            {locale === "en" ? item.en : item.pl}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.altCountry && (
+                        <p className="mt-1.5 text-xs text-red-400">
+                          {errors.altCountry.message}
+                        </p>
+                      )}
+                    </div>
+
                     {/* Ulica */}
                     <div>
                       <label className="block text-xs uppercase tracking-widest text-neutral-500 mb-2">
-                        Ulica i numer
+                        {t("checkoutFlow.street")}
                       </label>
                       <input
                         type="text"
-                        placeholder="ul. Kwiatowa 5/3"
+                        placeholder={t("checkoutFlow.phAltStreet")}
                         className={`${inputBase} ${
                           errors.altStreet ? inputErr : inputOk
                         }`}
                         {...register("altStreet", {
                           required: differentShipping
-                            ? "Ulica jest wymagana"
+                            ? t("checkoutValidation.altStreetRequired")
                             : false,
                         })}
                       />
@@ -917,24 +1072,53 @@ export default function ShippingPage() {
                     {/* Kod + Miasto */}
                     <div className="grid grid-cols-[140px_1fr] gap-4">
                       <div>
-                        <label className="block text-xs uppercase tracking-widest text-neutral-500 mb-2">
-                          Kod pocztowy
+                        <label
+                          htmlFor="altPostalCode"
+                          className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
+                        >
+                          {t("checkoutFlow.postalCode")}
                         </label>
                         <input
+                          id="altPostalCode"
                           type="text"
                           inputMode="numeric"
-                          placeholder="00-001"
+                          autoComplete="postal-code"
+                          placeholder={
+                            altShipsToPoland
+                              ? t("checkoutFlow.phPostalCode")
+                              : ""
+                          }
                           className={`${inputBase} ${
                             errors.altPostalCode ? inputErr : inputOk
                           }`}
                           {...register("altPostalCode", {
                             required: differentShipping
-                              ? "Kod pocztowy jest wymagany"
+                              ? t("checkoutValidation.altPostalRequired")
                               : false,
-                            pattern: {
-                              value: /^\d{2}-\d{3}$/,
-                              message: "Format: 00-000",
+                            onChange: (event) => {
+                              if (!altShipsToPoland) return;
+                              const formatted = formatPolishPostal(
+                                event.target.value
+                              );
+                              if (formatted !== event.target.value) {
+                                setValue("altPostalCode", formatted, {
+                                  shouldValidate: true,
+                                });
+                              }
                             },
+                            ...(altShipsToPoland
+                              ? {
+                                  pattern: {
+                                    value: /^\d{2}-\d{3}$/,
+                                    message: t("checkoutValidation.postalFormat"),
+                                  },
+                                }
+                              : {
+                                  minLength: {
+                                    value: 2,
+                                    message: t("checkoutValidation.postalMin"),
+                                  },
+                                }),
                           })}
                         />
                         {errors.altPostalCode && (
@@ -945,17 +1129,17 @@ export default function ShippingPage() {
                       </div>
                       <div>
                         <label className="block text-xs uppercase tracking-widest text-neutral-500 mb-2">
-                          Miasto
+                          {t("checkoutFlow.city")}
                         </label>
                         <input
                           type="text"
-                          placeholder="Kraków"
+                          placeholder={t("checkoutFlow.phAltCity")}
                           className={`${inputBase} ${
                             errors.altCity ? inputErr : inputOk
                           }`}
                           {...register("altCity", {
                             required: differentShipping
-                              ? "Miasto jest wymagane"
+                              ? t("checkoutValidation.altCityRequired")
                               : false,
                           })}
                         />
@@ -969,20 +1153,25 @@ export default function ShippingPage() {
 
                     {/* Telefon odbiorcy */}
                     <div>
-                      <label className="block text-xs uppercase tracking-widest text-neutral-500 mb-2">
-                        Telefon odbiorcy
+                      <label
+                        htmlFor="altPhone"
+                        className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
+                      >
+                        {t("checkoutFlow.receiverPhone")}
                       </label>
                       <input
+                        id="altPhone"
                         type="tel"
                         inputMode="numeric"
-                        placeholder="600 987 654"
+                        autoComplete="tel"
+                        placeholder={t("checkoutFlow.phAltPhone")}
                         className={`${inputBase} ${
                           errors.altPhone ? inputErr : inputOk
                         }`}
                         {...register("altPhone", {
                           pattern: {
                             value: /^[\d\s\-+()]{7,15}$/,
-                            message: "Nieprawidłowy numer telefonu",
+                            message: t("checkoutValidation.altPhoneInvalid"),
                           },
                         })}
                       />
@@ -1001,7 +1190,7 @@ export default function ShippingPage() {
             <div className="md:sticky md:top-28 h-fit">
               <div className="bg-white border border-[#E8E3D8] p-6">
                 <h2 className="text-xs uppercase tracking-widest text-neutral-500 mb-5">
-                  Twoje zamówienie
+                  {t("checkoutFlow.orderSidebarTitle")}
                 </h2>
 
                 <ul className="space-y-3 mb-5">
@@ -1014,7 +1203,7 @@ export default function ShippingPage() {
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-neutral-700 truncate">
-                          {item.name}
+                          {getCartItemName(item, locale)}
                           {item.size && (
                             <span className="text-neutral-400">
                               {" "}
@@ -1027,7 +1216,13 @@ export default function ShippingPage() {
                         </p>
                       </div>
                       <p className="font-serif text-neutral-700 ml-4 flex-shrink-0">
-                        {(item.price * item.quantity).toFixed(2)} zł
+                        {formatCheckoutMoney(
+                          item.price * item.quantity,
+                          item.priceEur != null
+                            ? item.priceEur * item.quantity
+                            : null,
+                          locale
+                        )}
                       </p>
                     </li>
                   ))}
@@ -1035,32 +1230,50 @@ export default function ShippingPage() {
 
                 <div className="border-t border-[#E8E3D8] pt-4 space-y-2">
                   <div className="flex justify-between text-xs text-neutral-500">
-                    <span>Produkty</span>
-                    <span>{subtotal.toFixed(2)} zł</span>
+                    <span>{t("checkoutFlow.summaryProducts")}</span>
+                    <span>
+                      {formatCheckoutMoney(
+                        subtotal,
+                        canUseEur ? subtotalEur : null,
+                        locale
+                      )}
+                    </span>
                   </div>
 
                   {effectiveDiscount > 0 && appliedDiscount && (
                     <div className="flex justify-between text-xs">
                       <span className="text-[#C1A88C] flex items-center gap-1">
                         <Tag className="h-3 w-3" />
-                        Rabat ({appliedDiscount.code})
+                        {t("checkoutFlow.summaryDiscount")} (
+                        {appliedDiscount.code})
                       </span>
                       <span className="text-[#C1A88C] font-medium">
-                        -{effectiveDiscount.toFixed(2)} zł
+                        -
+                        {formatCheckoutMoney(
+                          effectiveDiscount,
+                          effectiveDiscountEur,
+                          locale
+                        )}
                       </span>
                     </div>
                   )}
 
                   <div className="flex justify-between text-xs text-neutral-500">
-                    <span>Dostawa</span>
-                    <span>{shippingCost.toFixed(2)} zł</span>
+                    <span>{t("checkoutFlow.summaryShipping")}</span>
+                    <span>
+                      {formatCheckoutMoney(
+                        shippingCost,
+                        shippingEur,
+                        locale
+                      )}
+                    </span>
                   </div>
                   <div className="border-t border-[#E8E3D8] pt-3 flex justify-between">
                     <span className="text-xs uppercase tracking-widest text-neutral-600">
-                      Razem
+                      {t("checkoutFlow.summaryTotal")}
                     </span>
                     <span className="font-serif text-lg text-neutral-800">
-                      {total.toFixed(2)} zł
+                      {formatCheckoutMoney(total, totalEurDisplay, locale)}
                     </span>
                   </div>
                 </div>
@@ -1106,21 +1319,21 @@ export default function ShippingPage() {
                       if (!acceptTerms) setTermsError(false);
                     }}
                   >
-                    Akceptuję{" "}
+                    {t("checkoutFlow.termsAcceptBefore")}{" "}
                     <Link
                       href="/regulamin"
                       className="text-[#C1A88C] underline underline-offset-2 hover:text-[#B09A7C]"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      regulamin sklepu
+                      {t("checkoutFlow.termsStore")}
                     </Link>{" "}
-                    oraz{" "}
+                    {t("checkoutFlow.termsAnd")}{" "}
                     <Link
                       href="/polityka-prywatnosci"
                       className="text-[#C1A88C] underline underline-offset-2 hover:text-[#B09A7C]"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      politykę prywatności
+                      {t("checkoutFlow.termsPrivacy")}
                     </Link>
                     .
                   </span>
@@ -1133,13 +1346,15 @@ export default function ShippingPage() {
                 disabled={isSubmitting}
                 className="w-full mt-5 bg-[#C1A88C] text-white py-3.5 text-xs uppercase tracking-widest hover:bg-[#B09A7C] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? "Przetwarzanie..." : "Przejdź do podsumowania"}
+                {isSubmitting
+                  ? t("common.processing")
+                  : t("checkoutFlow.continueToReview")}
               </button>
 
               {/* Komunikat o regulaminie */}
               {termsError && (
                 <p className="text-center text-xs text-red-400 mt-2">
-                  Zaakceptuj regulamin, żeby przejść dalej.
+                  {t("checkoutFlow.termsError")}
                 </p>
               )}
 
@@ -1148,7 +1363,7 @@ export default function ShippingPage() {
                 href="/cart"
                 className="block text-center mt-4 text-xs text-neutral-400 hover:text-neutral-600 transition-colors underline underline-offset-2"
               >
-                ← Wróć do koszyka
+                {t("checkoutFlow.backToCart")}
               </Link>
             </div>
           </div>
@@ -1170,10 +1385,10 @@ export default function ShippingPage() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-[#E8E3D8] flex-shrink-0">
               <div>
                 <h2 className="font-serif text-lg text-neutral-800">
-                  Wybierz Paczkomat
+                  {t("checkoutFlow.lockerModalTitle")}
                 </h2>
                 <p className="text-xs text-neutral-400 mt-0.5">
-                  Znajdź najbliższy paczkomat InPost
+                  {t("checkoutFlow.lockerModalSubtitle")}
                 </p>
               </div>
               <button
@@ -1211,7 +1426,7 @@ export default function ShippingPage() {
               <inpost-geowidget
                 onpoint="__inpostPointSelected"
                 token={process.env.NEXT_PUBLIC_INPOST_GEOWIDGET_TOKEN || ""}
-                language="pl"
+                language={locale === "en" ? "en" : "pl"}
                 config="parcelCollect"
                 style={{
                   display: "block",

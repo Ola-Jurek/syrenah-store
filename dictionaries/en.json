@@ -1,0 +1,686 @@
+{
+  "nav": {
+    "home": "HOME",
+    "shop": "SHOP",
+    "about": "ABOUT",
+    "contact": "CONTACT",
+    "collections": "COLLECTIONS",
+    "searchPlaceholder": "SEARCH...",
+    "categories": "CATEGORIES",
+    "login": "Sign in",
+    "myAccount": "My account",
+    "mobileMenuTitle": "Main menu",
+    "openMenu": "Open menu",
+    "wishlistAria": "Wishlist",
+    "cartAria": "Cart",
+    "accountAria": "Account",
+    "logoAlt": "Syrenah",
+    "searchAria": "Search the store"
+  },
+  "footer": {
+    "info": "Information",
+    "about": "About us",
+    "contact": "Contact",
+    "terms": "Terms & Conditions",
+    "privacy": "Privacy policy",
+    "returns": "Returns & complaints",
+    "social": "Social",
+    "shopData": "Store details",
+    "copyright": "All rights reserved.",
+    "instagramAria": "Syrenah on Instagram",
+    "tiktokAria": "Syrenah on TikTok"
+  },
+  "home": {
+    "newest": "NEW ARRIVALS",
+    "seeAll": "View all"
+  },
+  "instagram": {
+    "title": "INSTAGRAM",
+    "openProfile": "Open Syrenah on Instagram",
+    "openPost": "View post on Instagram"
+  },
+  "shop": {
+    "codePrefix": "CODE:",
+    "preparing": "New pieces in the making ✨",
+    "searchTitle": "SEARCH RESULTS:",
+    "foundOne": "Found",
+    "product": "product",
+    "products": "products",
+    "noResults": "No products found for",
+    "filterAll": "ALL",
+    "filterNew": "NEW IN",
+    "filterSale": "SALE",
+    "sortNewest": "Newest",
+    "sortPriceAsc": "Price: low to high",
+    "sortPriceDesc": "Price: high to low",
+    "sortPriceLabel": "Price",
+    "sortReset": "Reset"
+  },
+  "product": {
+    "shopCrumb": "SHOP",
+    "size": "Size",
+    "color": "Colour",
+    "addToCart": "Add to cart",
+    "outOfStock": "Out of stock",
+    "selectSize": "Please select a size",
+    "adding": "Adding...",
+    "addedModalTitle": "Product added to cart",
+    "continueShopping": "Continue shopping",
+    "goToCart": "Go to cart"
+  },
+  "sizeChart": {
+    "trigger": "Size guide",
+    "title": "Size guide",
+    "subtitle": "measurements in cm",
+    "srDescription": "Length, hips, chest and waist of this product in centimetres.",
+    "colSize": "Size",
+    "colLength": "Length",
+    "colHips": "Hips",
+    "colChest": "Chest",
+    "colWaist": "Waist",
+    "caption": "Size chart, measurements in centimetres",
+    "footnote": "Measurements for this product, in centimetres.",
+    "unitCm": "cm",
+    "unitIn": "in",
+    "subtitleIn": "measurements in inches",
+    "captionIn": "Size chart, measurements in inches",
+    "footnoteIn": "Converted from centimetres. 1 inch = 2.54 cm.",
+    "srDescriptionIn": "Length, hips, chest and waist of this product in inches."
+  },
+  "about": {
+    "metaTitle": "About us",
+    "heroKicker": "Our story",
+    "heroTitle": "Syrenah",
+    "heroLead": "Elegance born from passion. Fashion that celebrates what makes you unique.",
+    "missionKicker": "Who we are",
+    "missionBody": "We create fashion for women who know what they want. We are sisters — Marta and Claudia. Together we built Syrenah from the ground up. From day one, with determination, we learn, design and grow this brand step by step. We believe that when you dare to try, nothing is out of reach.",
+    "valuesKicker": "Our values",
+    "v1Title": "Craftsmanship & quality",
+    "v1Body": "We care about quality, detail and a premium experience. Syrenah is a brand that lets women feel exceptional — without compromise.",
+    "v2Title": "Confidence",
+    "v2Body": "Our brand was created with every woman in mind. We believe style and beauty have no single size, colour or definition. We want every woman — whatever her shape, skin tone or age — to feel confident and special in our designs.",
+    "v3Title": "The mermaid symbol",
+    "v3Body": "The mermaid stands for feminine independence, strength and courage. She follows her own path, trusts her intuition and is not afraid to be herself.",
+    "manifestKicker": "Manifesto",
+    "manifestQuote": "“Syrenah is a manifesto of feminine strength. We believe every woman has the courage to reach higher. Because when you believe in yourself, nothing is impossible.”",
+    "manifestSignoff": "The Syrenah team",
+    "ctaTitle": "Discover the collection",
+    "ctaShop": "Shop now"
+  },
+  "contact": {
+    "metaTitle": "Contact",
+    "kicker": "Write to us",
+    "title": "Contact",
+    "intro": "Questions about an order, a product or a collaboration? We will be glad to help — use the form below and we will get back to you as soon as we can.",
+    "infoKicker": "Details",
+    "emailLabel": "Email",
+    "addressLabel": "Address",
+    "addressLines": "Syrenah sp. z o.o.\nUl. Słoneczna 42B/2\n55-311 Kostomłoty, Poland",
+    "responseNote": "We respond to emails within 24 hours on business days.",
+    "nameLabel": "Full name",
+    "emailFieldLabel": "Email address",
+    "subjectLabel": "Subject",
+    "messageLabel": "Message",
+    "subjectPlaceholder": "Choose a subject...",
+    "subjectProduct": "Product enquiry",
+    "subjectOrder": "Order status",
+    "subjectReturn": "Return or exchange",
+    "subjectComplaint": "Complaint",
+    "subjectCoop": "Collaboration",
+    "subjectOther": "Other",
+    "messagePlaceholder": "Tell us how we can help...",
+    "submit": "Send message",
+    "submitting": "Sending...",
+    "toastFillRequired": "Please fill in all required fields.",
+    "toastMessageShort": "Your message must be at least 10 characters.",
+    "toastSuccess": "Message sent! We will reply as soon as possible.",
+    "toastError": "Something went wrong while sending your message.",
+    "toastNetwork": "Connection error. Please try again later."
+  },
+  "cookie": {
+    "textPrefix": "We use cookies to give you the best experience. By using the store you accept our",
+    "privacyLink": "privacy policy",
+    "accept": "Accept"
+  },
+  "newsletter": {
+    "close": "Close",
+    "title": "Newsletter",
+    "subtitle": "Subscribe and stay in the loop",
+    "emailPlaceholder": "Your email address",
+    "consent": "I agree to the processing of my personal data in order to receive the newsletter.",
+    "submit": "Subscribe",
+    "consentError": "Please accept the consent to proceed.",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "thanksTitle": "Thank you!",
+    "headline": "Be part of our story",
+    "blurb": "Subscribe to hear about new collections and special offers.",
+    "joinTagline": "Join the Syrenah Girls \u2661",
+    "saving": "Saving...",
+    "noThanks": "No, thank you"
+  },
+  "auth": {
+    "loginTitle": "Sign in",
+    "loginSubtitle": "Sign in to your account",
+    "registerTitle": "Create account",
+    "registerSubtitle": "Create your Syrenah account",
+    "email": "Email address",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "submitLogin": "Sign in",
+    "submitRegister": "Register",
+    "noAccount": "Don’t have an account?",
+    "hasAccount": "Already have an account?",
+    "registerLink": "Register",
+    "loginLink": "Sign in",
+    "invalidCreds": "Invalid email or password",
+    "unexpectedError": "An unexpected error occurred",
+    "passwordMismatch": "Passwords do not match",
+    "registerSuccess": "Account created. You can sign in now.",
+    "registerHeroTitle": "Create an account",
+    "registerHeroSubtitle": "Join Syrenah Store",
+    "name": "First name",
+    "repeatPasswordLabel": "Confirm password",
+    "passwordMin": "Password must be at least 6 characters",
+    "registerError": "Something went wrong during registration",
+    "registerAutoLoginFail": "Account created, but automatic sign-in failed. Please go to the login page.",
+    "loggingIn": "Signing in...",
+    "registering": "Registering...",
+    "placeholderPassword": "Enter password",
+    "placeholderPasswordHint": "Min. 6 characters",
+    "placeholderRepeatPassword": "Repeat password",
+    "placeholderName": "Anna"
+  },
+  "cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty.",
+    "continueShopping": "Continue shopping",
+    "subtotal": "Subtotal",
+    "discountCode": "Discount code",
+    "apply": "Apply",
+    "removeDiscount": "Remove code",
+    "removeDiscountTitle": "Remove discount code",
+    "total": "Total",
+    "checkout": "Checkout",
+    "remove": "Remove",
+    "size": "Size",
+    "color": "Colour",
+    "productsLine": "Items",
+    "discountLine": "Discount",
+    "youSave": "you save",
+    "placeholderCode": "Enter code...",
+    "applying": "...",
+    "checkoutButton": "Continue to summary"
+  },
+  "wishlist": {
+    "title": "Wishlist",
+    "empty": "Your wishlist is empty",
+    "browse": "Browse the shop",
+    "loading": "Loading...",
+    "crumbWishlist": "Wishlist",
+    "discover": "Discover products",
+    "removeAria": "Remove from wishlist"
+  },
+  "regulamin": {
+    "kicker": "Legal",
+    "title": "Terms & Conditions",
+    "updated": "Last updated: April 2026",
+    "sections": [
+      {
+        "title": "§ 1. General provisions",
+        "ordered": true,
+        "items": [
+          "These Terms & Conditions govern the use of the Syrenah online store available at www.syrenahthelabel.com (hereinafter: the “Store”).",
+          "The Store is owned and operated by Syrenah sp. z o.o., with its registered office at Ul. Słoneczna 42B/2, 55-311 Kostomłoty, Poland, entered in the register of entrepreneurs kept by the District Court for Wrocław-Fabryczna in Wrocław under KRS number 0001160021, NIP: 9131641193, REGON: 541107549.",
+          "The Store can be contacted exclusively by email at info@syrenahthelabel.com.",
+          "Use of the Store constitutes acceptance of these Terms & Conditions.",
+          "The Terms & Conditions are made available free of charge via the Store in a form that allows them to be downloaded, saved and printed."
+        ]
+      },
+      {
+        "title": "§ 2. Definitions",
+        "ordered": false,
+        "items": [
+          "Customer — a natural person with full legal capacity, a legal person or an organisational unit that makes or intends to make a purchase in the Store.",
+          "Consumer — a Customer who is a natural person entering into a legal transaction with the Seller that is not directly related to their business or professional activity.",
+          "Product — movable goods offered in the Store that are the subject of a sales contract.",
+          "Order — a declaration of intent by the Customer to conclude a sales contract for a Product with the Seller.",
+          "Account — an individual customer account in the Store enabling additional functionality."
+        ]
+      },
+      {
+        "title": "§ 3. Placing orders",
+        "ordered": true,
+        "items": [
+          "Orders may be placed 24 hours a day, 7 days a week via the Store website.",
+          "Placing an order requires: selecting a Product, adding it to the cart, providing shipping details, choosing a delivery method and completing payment.",
+          "Orders may be placed both by registered Customers and without registration (as a guest).",
+          "After placing an order, the Customer receives an email confirmation with the order number.",
+          "The sales contract is concluded when the Seller confirms the order.",
+          "The Seller reserves the right to refuse to fulfil an order if the Customer provides false or incomplete data."
+        ]
+      },
+      {
+        "title": "§ 4. Prices and payment",
+        "ordered": true,
+        "items": [
+          "All prices shown in the Store include VAT.",
+          "For EU Member States, the settlement currency is the euro (EUR).",
+          "The Product price at the time the order is placed is binding on both parties.",
+          {
+            "lead": "The Store enables payment via:",
+            "sub": [
+              "the Stripe online payment system (payment cards, BLIK, bank transfers),",
+              "other payment methods made available during checkout."
+            ]
+          },
+          "Delivery costs are added to the order total and shown to the Customer before the purchase is finalised."
+        ]
+      },
+      {
+        "title": "§ 5. Delivery",
+        "ordered": true,
+        "items": [
+          "Products are delivered throughout the European Union.",
+          "Delivery is carried out by DHL courier.",
+          "Estimated delivery time is 2–5 business days from the moment payment is credited.",
+          "The Customer is informed of the shipment status by email, including the tracking number once the parcel is dispatched."
+        ]
+      },
+      {
+        "title": "§ 6. Right of withdrawal",
+        "ordered": true,
+        "items": [
+          "The Consumer has the right to withdraw from a distance contract within 14 calendar days without giving any reason and without incurring costs, except for the costs referred to in point 5 below.",
+          "The withdrawal period begins on the day on which the Consumer acquires possession of the Product or on which a third party other than the carrier, indicated by the Consumer, acquires possession of the Product.",
+          "To exercise the right of withdrawal, the Consumer should inform the Seller of their decision by sending the completed return form to info@syrenahthelabel.com.",
+          "The Seller shall refund all payments received from the Consumer, including delivery costs (except for additional costs resulting from the Consumer’s choice of a delivery method other than the cheapest standard delivery), without undue delay and in any event no later than 14 days from receipt of the return form.",
+          "The Consumer shall bear the direct cost of returning the Product.",
+          "The Product must be returned unchanged, unused, with complete packaging and tags."
+        ]
+      },
+      {
+        "title": "§ 7. Complaints",
+        "ordered": true,
+        "items": [
+          "The Seller is obliged to deliver a Product free from defects.",
+          "Complaints may be submitted exclusively by email to info@syrenahthelabel.com.",
+          "A complaint should include: a description of the defect, the date it was discovered, the Customer’s request (repair, replacement, price reduction or withdrawal from the contract) and proof of purchase.",
+          "The Seller will process the complaint within 14 calendar days of receipt and inform the Customer of the outcome."
+        ]
+      },
+      {
+        "title": "§ 8. Personal data",
+        "ordered": true,
+        "items": [
+          "The Seller is the controller of Customers’ personal data.",
+          "Personal data are processed in accordance with Regulation (EU) 2016/679 (GDPR) and applicable national data protection laws.",
+          "Further information on data processing is available in the Privacy Policy published on the Store website."
+        ]
+      },
+      {
+        "title": "§ 9. Final provisions",
+        "ordered": true,
+        "items": [
+          "The Seller reserves the right to amend these Terms & Conditions. Customers will be informed of any changes by publication of a new version on the Store website.",
+          "Matters not regulated herein shall be governed by Polish law, in particular the Civil Code and consumer protection legislation.",
+          "Any disputes arising from contracts concluded under these Terms & Conditions shall be resolved by the court having jurisdiction over the Seller’s seat, without prejudice to mandatory provisions granting Consumers jurisdiction under the law.",
+          "These Terms & Conditions enter into force on the date of publication on the Store website."
+        ]
+      }
+    ]
+  },
+  "polityka": {
+    "kicker": "Legal",
+    "title": "Privacy Policy",
+    "updated": "Last updated: February 2026",
+    "intro": "This Privacy Policy describes how Syrenah, the online store available at www.syrenahthelabel.com, processes and protects personal data. We respect our customers’ privacy and process personal data in accordance with applicable law, in particular Regulation (EU) 2016/679 (GDPR).",
+    "sections": [
+      {
+        "title": "I. Data controller",
+        "ordered": true,
+        "items": [
+          "The controller of your personal data is Syrenah sp. z o.o., with its registered office at Ul. Słoneczna 42B/2, 55-311 Kostomłoty, Poland, NIP: 9131641193, REGON: 541107549 (hereinafter: the “Controller”).",
+          "You can contact the Controller regarding personal data at info@syrenahthelabel.com."
+        ]
+      },
+      {
+        "title": "II. Purposes and legal bases for processing",
+        "ordered": false,
+        "intro": "Personal data are processed for the following purposes:",
+        "items": [
+          "Order fulfilment — necessary for performing the sales contract (Art. 6(1)(b) GDPR), including name, delivery address, email, phone number and invoicing details.",
+          "Customer account — based on your consent (Art. 6(1)(a) GDPR). You may delete your account at any time.",
+          "Direct marketing — for the newsletter, based on your voluntary consent (Art. 6(1)(a) GDPR). Consent may be withdrawn at any time.",
+          "Handling enquiries and complaints — based on the Controller’s legitimate interest (Art. 6(1)(f) GDPR).",
+          "Legal obligations — where required by law, in particular tax and accounting rules (Art. 6(1)(c) GDPR)."
+        ]
+      },
+      {
+        "title": "III. Retention periods",
+        "ordered": false,
+        "items": [
+          "Order-related data are kept for the period required by tax law (5 years after the end of the tax year).",
+          "Account data are kept until you delete your account.",
+          "Data processed on the basis of consent are kept until consent is withdrawn.",
+          "Complaint-related data are kept for the time necessary to handle the complaint and any related claims."
+        ]
+      },
+      {
+        "title": "IV. Data subject rights",
+        "ordered": false,
+        "intro": "Each Customer has the right to:",
+        "items": [
+          "access their personal data,",
+          "rectify inaccurate data,",
+          "erasure (“right to be forgotten”),",
+          "restriction of processing,",
+          "data portability,",
+          "object to processing,",
+          "withdraw consent at any time (without affecting the lawfulness of processing before withdrawal),",
+          "lodge a complaint with the President of the Polish Personal Data Protection Office (ul. Stawki 2, 00-193 Warsaw)."
+        ]
+      },
+      {
+        "title": "V. Recipients of data",
+        "ordered": false,
+        "intro": "Personal data may be shared with:",
+        "items": [
+          "courier and logistics operators (DPD, InPost) — for delivery,",
+          "the payment operator (Stripe) — for payment processing,",
+          "hosting and IT infrastructure providers,",
+          "transactional email providers (Resend),",
+          "entities entitled to receive data under applicable law."
+        ]
+      },
+      {
+        "title": "VI. Cookies",
+        "ordered": true,
+        "items": [
+          "The Store uses cookies to ensure proper operation, analyse traffic and personalise content.",
+          {
+            "lead": "Types of cookies used:",
+            "sub": [
+              "Strictly necessary — required for the Store to function (session, cart, authentication).",
+              "Analytics — help us understand how customers use the Store.",
+              "Marketing — used to display personalised advertising content."
+            ]
+          },
+          "You can change cookie settings in your browser at any time, including blocking cookies."
+        ]
+      },
+      {
+        "title": "VII. Security",
+        "ordered": false,
+        "paragraphs": [
+          "The Controller applies appropriate technical and organisational measures to protect personal data against unauthorised access, loss, damage or destruction. Communication with the Store is encrypted using SSL/TLS. Payment data are processed solely by the certified payment operator (Stripe) and are not stored on the Store’s servers."
+        ]
+      },
+      {
+        "title": "VIII. Changes to this Privacy Policy",
+        "ordered": false,
+        "paragraphs": [
+          "The Controller may update this Privacy Policy. Customers will be informed by publication of the updated version on the Store website. Continued use of the Store after changes constitutes acceptance of the updated Policy."
+        ]
+      }
+    ]
+  },
+  "zwroty": {
+    "kicker": "Legal",
+    "title": "Returns & Complaints",
+    "updated": "Last updated: April 2026",
+    "intro": "We want you to be fully satisfied with your purchase. If a product does not meet your expectations, you may return it or make a complaint. Below you will find detailed information on returns and complaints.",
+    "returnsTitle": "Returns — right of withdrawal",
+    "returnsItems": [
+      "Under the Consumer Rights Act, a Consumer may withdraw from a distance contract within 14 calendar days of receiving the parcel, without giving a reason.",
+      {
+        "lead": "To return a product, you must:",
+        "sub": [
+          "Send the completed return form to info@syrenahthelabel.com, stating your order number.",
+          "Pack the product in its original packaging (with all contents and tags) and send the parcel to our warehouse at: ul. Polna 22, 57-120 Wiązów, Poland."
+        ]
+      },
+      "Return conditions: the product must be unused, undamaged, with complete packaging and original tags. Items showing signs of use, damaged by the Customer or without tags cannot be returned.",
+      "The cost of returning the product is borne by the Customer, unless the return is due to the Seller’s fault (e.g. defective or incorrect item).",
+      "Refunds will be made within 14 days of receipt of the return form, using the same payment method used for the order. The Seller may withhold the refund until the returned product is received."
+    ],
+    "complaintsTitle": "Complaints",
+    "complaintsItems": [
+      "The Seller is liable for physical and legal defects of the Product under the Civil Code (statutory warranty).",
+      {
+        "lead": "A complaint may be submitted:",
+        "sub": [
+          "exclusively by email to info@syrenahthelabel.com."
+        ]
+      },
+      {
+        "lead": "The complaint should include:",
+        "sub": [
+          "the Customer’s full name,",
+          "order number,",
+          "description of the defect,",
+          "date the defect was discovered,",
+          "the Customer’s request (repair, replacement, price reduction or withdrawal from the contract),",
+          "photos documenting the defect (recommended)."
+        ]
+      },
+      "The complaint will be processed within 14 calendar days of receipt. The Customer will be informed of the outcome by email.",
+      "If the complaint is upheld, the Seller will, depending on the Customer’s request, repair or replace the Product, reduce the price or refund the full purchase amount.",
+      "If the complaint is upheld, the Seller bears the cost of shipping the defective Product."
+    ],
+    "exchangeTitle": "Size exchange",
+    "exchangeItems": [
+      "If the size does not fit, we offer a one-time exchange for another size (subject to availability).",
+      "To request an exchange, contact us at info@syrenahthelabel.com with your order number and desired size.",
+      "The Customer bears the shipping costs for the exchange both ways.",
+      "The product must be in perfect condition with original tags."
+    ],
+    "formBoxTitle": "Forms and contact",
+    "formBoxAddress": "Return shipping address: ul. Polna 22, 57-120 Wiązów, Poland.",
+    "formBoxEmailNote": "For returns and complaints, contact is available only by email at info@syrenahthelabel.com.",
+    "formBoxDownloadReturn": "Download return form",
+    "formBoxDownloadComplaint": "Download complaint form",
+    "formBoxContactForm": "Contact form"
+  },
+  "common": {
+    "loading": "Loading...",
+    "loadingConfirm": "Loading confirmation\u2026",
+    "or": "or",
+    "processing": "Processing..."
+  },
+  "alerts": {
+    "checkoutNoPaymentUrl": "No payment URL returned — please try again.",
+    "checkoutGenericError": "Something went wrong — please try again.",
+    "checkoutMissingBackendUrl": "No URL from the server — check the browser console."
+  },
+  "search": {
+    "preparing": "This page is coming soon",
+    "searching": "Searching…",
+    "noResults": "No products match this search",
+    "viewAll": "View all results",
+    "close": "Close search"
+  },
+  "orderSuccess": {
+    "title": "Thank you for your order \u2661",
+    "body": "Your payment was successful. You will receive an order confirmation shortly.",
+    "backToShop": "Back to shop"
+  },
+  "checkoutFlow": {
+    "emptyCartTitle": "Your cart is empty",
+    "emptyCartHint": "Add products to continue to checkout.",
+    "backToShop": "Back to shop",
+    "backToCart": "\u2190 Back to cart",
+    "gateTitle": "How would you like to continue?",
+    "gateSubtitle": "Sign in to access your order history, or continue as a guest.",
+    "gateLoginTitle": "Sign in",
+    "gateLoginDesc": "Have an account? Sign in or register.",
+    "gateGuestTitle": "Continue as guest",
+    "gateGuestDesc": "Place an order without creating an account.",
+    "gateNoAccount": "Don\u2019t have an account?",
+    "shippingTitle": "Shipping details",
+    "shippingSubtitle": "Enter the address where we should send your order.",
+    "reviewTitle": "Order summary",
+    "reviewSubtitle": "Review your details and proceed to payment.",
+    "orderSidebarTitle": "Your order",
+    "reviewPayTitle": "To pay",
+    "change": "Change",
+    "shippingDataTitle": "Shipping details",
+    "altShippingTitle": "Shipping address (different)",
+    "invoiceTitle": "VAT invoice details",
+    "vatIdLabel": "VAT ID:",
+    "productsTitle": "Products",
+    "productsCount": "Products ({count})",
+    "shippingMethodTitle": "Shipping method",
+    "parcelLockerPrefix": "Parcel locker:",
+    "payButton": "Pay now",
+    "secureStripe": "Secure payment with Stripe",
+    "backToShipping": "\u2190 Back to shipping details",
+    "continueToReview": "Continue to summary",
+    "termsAcceptBefore": "I accept the",
+    "termsStore": "store terms",
+    "termsAnd": "and the",
+    "termsPrivacy": "privacy policy",
+    "termsError": "Please accept the terms to continue.",
+    "lockerSelectedTitle": "Selected parcel locker",
+    "lockerPickTitle": "Choose parcel locker",
+    "lockerMapHint": "Click to open the locker map",
+    "lockerModalTitle": "Choose parcel locker",
+    "lockerModalSubtitle": "Find your nearest InPost locker",
+    "wantInvoice": "I need a VAT invoice",
+    "differentShipping": "Ship to a different address",
+    "receiverName": "Recipient full name",
+    "receiverPhone": "Recipient phone",
+    "companyName": "Company name",
+    "companyAddress": "Company address",
+    "fullName": "Full name",
+    "email": "Email address",
+    "phone": "Phone number",
+    "street": "Street and number",
+    "postalCode": "Postal code",
+    "city": "City",
+    "country": "Country",
+    "addressHeading": "Delivery address",
+    "shippingMethodHeading": "Shipping method",
+    "courierLabel": "Courier",
+    "courierDesc": "Door delivery in 1\u20132 business days",
+    "lockerLabel": "Parcel locker",
+    "lockerDesc": "Pick up at your chosen 24/7 locker",
+    "summaryProducts": "Products",
+    "summaryShipping": "Shipping",
+    "summaryDiscount": "Discount",
+    "summaryTotal": "Total",
+    "summaryShippingWithMethod": "Shipping ({method})",
+    "sizeLabel": "Size:",
+    "colorLabel": "Colour:",
+    "qty": "Qty:",
+    "vatNumberField": "VAT number",
+    "phFullName": "Jane Doe",
+    "phEmail": "jane@example.com",
+    "phPhone": "+48 600 123 456",
+    "phStreet": "10 Example Street",
+    "phPostalCode": "00-001",
+    "phCity": "Warsaw",
+    "phCompanyName": "Acme Ltd.",
+    "phVatNumber": "1234567890",
+    "phCompanyStreet": "10 Business Road",
+    "phReceiverName": "John Smith",
+    "phAltStreet": "5 Flower Street, apt. 3",
+    "phAltCity": "Poznań",
+    "phAltPhone": "+48 600 987 654",
+    "pickLockerFirst": "Please select a parcel locker before continuing",
+    "legacyPageTitle": "Checkout",
+    "legacyEmail": "Email",
+    "legacyFullName": "Full name",
+    "legacyAddress": "Address",
+    "legacyOrderSummary": "Order summary",
+    "legacySum": "Total",
+    "legacyPay": "Proceed to payment",
+    "legacyEmailPh": "you@example.com",
+    "legacyNamePh": "Jane Doe",
+    "legacyAddressPh": "Street, number, city"
+  },
+  "checkoutValidation": {
+    "fullNameRequired": "Full name is required",
+    "fullNameMin": "At least 3 characters",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email address",
+    "phoneRequired": "Phone number is required",
+    "phoneInvalid": "Invalid phone number",
+    "streetRequired": "Street is required",
+    "streetMin": "At least 3 characters",
+    "postalRequired": "Postal code is required",
+    "postalFormat": "Format: 00-000",
+    "cityRequired": "City is required",
+    "cityMin": "At least 2 characters",
+    "countryRequired": "Country is required",
+    "postalMin": "At least 2 characters",
+    "companyNameRequired": "Company name is required",
+    "vatRequired": "VAT ID is required",
+    "vatInvalid": "Invalid VAT ID",
+    "companyStreetRequired": "Company address is required",
+    "companyPostalRequired": "Postal code is required",
+    "companyCityRequired": "City is required",
+    "altNameRequired": "Recipient name is required",
+    "altStreetRequired": "Street is required",
+    "altPostalRequired": "Postal code is required",
+    "altCityRequired": "City is required",
+    "altPhoneInvalid": "Invalid phone number"
+  },
+  "account": {
+    "greeting": "Hello, {name}!",
+    "guestName": "there",
+    "tabAccount": "Account details",
+    "tabOrders": "Orders",
+    "tabLogout": "Sign out",
+    "editTitle": "Edit details",
+    "cancel": "Cancel",
+    "saveChanges": "Save changes",
+    "editData": "Edit details",
+    "lastName": "Last name",
+    "phone": "Phone number",
+    "address": "Address",
+    "noAddress": "No address on file",
+    "ordersEmpty": "You don\u2019t have any orders yet.",
+    "goToShop": "Go to shop",
+    "orderPrefix": "Order",
+    "status": {
+      "PENDING": "Pending",
+      "PAID": "Paid",
+      "PROCESSING": "Processing",
+      "SHIPPED": "Shipped",
+      "DELIVERED": "Delivered",
+      "CANCELLED": "Cancelled",
+      "FAILED": "Failed",
+      "REFUNDED": "Refunded"
+    }
+  },
+  "orderDetail": {
+    "notFoundTitle": "Order not found",
+    "notFoundBody": "No order exists with this identifier.",
+    "orderLabel": "Order",
+    "placedOn": "Placed on",
+    "productsHeading": "Products",
+    "quantity": "Quantity:",
+    "grandTotal": "Total",
+    "backToShop": "Back to shop",
+    "timeline": {
+      "placed": "Placed",
+      "paid": "Paid",
+      "shipped": "Shipped",
+      "delivered": "Delivered"
+    },
+    "status": {
+      "PENDING": "PAYMENT PENDING",
+      "PAID": "PAYMENT RECEIVED",
+      "PROCESSING": "BEING PREPARED",
+      "SHIPPED": "SHIPPED",
+      "DELIVERED": "DELIVERED",
+      "CANCELLED": "CANCELLED",
+      "FAILED": "PAYMENT FAILED",
+      "REFUNDED": "REFUND COMPLETED"
+    }
+  },
+  "checkoutCancel": {
+    "title": "Payment cancelled",
+    "body": "You can try again anytime."
+  }
+}

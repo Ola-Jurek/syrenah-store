@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { assertAdmin } from "@/lib/adminAuth";
 import { Prisma } from "@prisma/client";
+import { parseSizeChart } from "@/lib/size-chart";
 
 /**
  * GET /api/admin/products/[id]
@@ -69,6 +70,7 @@ export async function GET(
       category: product.category,
       sizes: product.sizes,
       colors: product.colors,
+      sizeChart: product.sizeChart,
       images: product.images.map((img) => ({
         id: img.id,
         url: img.url,
@@ -129,6 +131,7 @@ export async function PATCH(
       categoryId,
       sizes,
       colors,
+      sizeChart,
       images,
       discountId,
     } = body;
@@ -178,6 +181,10 @@ export async function PATCH(
     }
     if (sizes !== undefined) productData.sizes = sizes && Array.isArray(sizes) && sizes.length > 0 ? sizes : null;
     if (colors !== undefined) productData.colors = colors && Array.isArray(colors) && colors.length > 0 ? colors : null;
+    if (sizeChart !== undefined) {
+      const chart = parseSizeChart(sizeChart);
+      productData.sizeChart = chart ?? Prisma.DbNull;
+    }
 
     // Obsługa przypisania rabatu
     if (discountId !== undefined) {
@@ -238,11 +245,13 @@ export async function PATCH(
         }
 
         // Znajdź obrazy do utworzenia
-        const toCreate = images.filter((img: any) => !img.id && !img._delete);
+        const toCreate = images.filter(
+          (img: any) => !img.id && !img._delete && typeof img.url === "string" && img.url.trim() !== ""
+        );
         if (toCreate.length > 0) {
           await tx.image.createMany({
             data: toCreate.map((img: any) => ({
-              url: img.url,
+              url: img.url.trim(),
               altPl: img.altPl || null,
               altEn: img.altEn || null,
               isPrimary: img.isPrimary === true,

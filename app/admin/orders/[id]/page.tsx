@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { countryLabel } from "@/lib/shipping-countries";
 
 /* ───────── Typy ───────── */
 
@@ -28,6 +29,7 @@ type ShippingAddress = {
   street?: string;
   city?: string;
   postalCode?: string;
+  country?: string;
   parcelLockerCode?: string;
 };
 
@@ -42,6 +44,7 @@ type AlternateShippingAddress = {
   street?: string;
   city?: string;
   postalCode?: string;
+  country?: string;
   phone?: string;
 };
 
@@ -389,7 +392,7 @@ export default function AdminOrderDetailPage() {
             {!isParcelLocker && addr && (
               <InfoRow
                 label="Adres"
-                value={[addr.street, [addr.postalCode, addr.city].filter(Boolean).join(" ")].filter(Boolean).join(", ")}
+                value={[addr.street, [addr.postalCode, addr.city].filter(Boolean).join(" "), countryLabel(addr.country, "pl")].filter(Boolean).join(", ")}
               />
             )}
 
@@ -404,7 +407,7 @@ export default function AdminOrderDetailPage() {
                 )}
                 <InfoRow
                   label="Adres"
-                  value={[altShip.street, [altShip.postalCode, altShip.city].filter(Boolean).join(" ")].filter(Boolean).join(", ")}
+                  value={[altShip.street, [altShip.postalCode, altShip.city].filter(Boolean).join(" "), countryLabel(altShip.country, "pl")].filter(Boolean).join(", ")}
                 />
                 {altShip.phone && (
                   <InfoRow label="Telefon" value={altShip.phone} />

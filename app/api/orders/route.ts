@@ -5,7 +5,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma, OrderStatus } from "@prisma/client";
 import { resend } from "@/lib/email";
-import { orderConfirmationEmail } from "@/lib/emails/orderConfirmation";
+import {
+  orderConfirmationEmail,
+  orderConfirmationSubject,
+} from "@/lib/emails/orderConfirmation";
 
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -34,8 +37,12 @@ export async function POST(req: Request) {
     }
 
     const total = session.amount_total! / 100;
+    const checkoutLocale =
+      session.metadata?.checkoutLocale === "en" ? "en" : "pl";
+    const totalEurFromMeta = session.metadata?.totalEur
+      ? parseFloat(session.metadata.totalEur)
+      : total;
 
-    
     const existingOrder = await prisma.order.findUnique({
       where: { stripeSessionId: sessionId },
     });
@@ -75,7 +82,8 @@ export async function POST(req: Request) {
         stripeSessionId: sessionId,
         status: OrderStatus.PROCESSING,
         totalPln: new Prisma.Decimal(total),
-        totalEur: new Prisma.Decimal(total),
+        totalEur: new Prisma.Decimal(totalEurFromMeta),
+        language: checkoutLocale,
         ...(userId ? { userId } : {}),
         ...(discountId ? { discountId } : {}),
 
@@ -113,6 +121,7 @@ export async function POST(req: Request) {
       productId: string;
       quantity: number;
       price: number;
+      priceEur?: number;
       name: string;
     }>;
 
@@ -123,20 +132,24 @@ export async function POST(req: Request) {
           productId: item.productId,
           quantity: item.quantity,
           pricePln: new Prisma.Decimal(item.price),
-          priceEur: new Prisma.Decimal(item.price),
+          priceEur: new Prisma.Decimal(
+            item.priceEur != null ? item.priceEur : item.price
+          ),
         },
       });
-    };
+    }
 
     const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL}/orders/${order.id}`;
     await resend.emails.send({
       from: "Syrenah Store <onboarding@resend.dev>",
       to: session.customer_details?.email ?? "test@example.com",
-      subject: `Potwierdzenie zamówienia #${order.id}`,
+      subject: orderConfirmationSubject(order.id, checkoutLocale),
       html: orderConfirmationEmail({
         orderId: order.id,
-        total,
+        totalPln: total,
+        totalEur: totalEurFromMeta,
         trackingUrl,
+        locale: checkoutLocale,
       }),
     });
         

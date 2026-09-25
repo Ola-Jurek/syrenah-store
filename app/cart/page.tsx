@@ -1,11 +1,12 @@
 "use client";
 
-import { useCart } from "@/components/CartContext";
+import { useCart, getCartItemName } from "@/components/CartContext";
 import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Tag, X, Check } from "lucide-react";
+import { useLanguage } from "@/components/LanguageContext";
+import { formatMoney } from "@/lib/format-price";
 
 type ProductImage = {
   productId: string;
@@ -23,6 +24,8 @@ type AppliedDiscount = {
 };
 
 export default function CartPage() {
+  const { locale, messages } = useLanguage();
+  const ct = messages.cart;
   const { items, removeFromCart } = useCart();
   const [productImages, setProductImages] = useState<Record<string, string | null>>({});
 
@@ -165,19 +168,35 @@ export default function CartPage() {
     localStorage.removeItem("syrenah_discount_code");
   }
 
-  const subtotal = items.reduce(
+  const subtotalPln = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
+  const subtotalEur = items.reduce(
+    (sum, item) =>
+      sum +
+      (item.priceEur != null ? item.priceEur : 0) * item.quantity,
+    0
+  );
+  const canUseEur =
+    locale === "en" &&
+    items.length > 0 &&
+    items.every((i) => i.priceEur != null);
 
-  // Kwota do zapłaty: jeśli kod rabatowy jest zastosowany i daje lepszą cenę
+  const subtotal = canUseEur ? subtotalEur : subtotalPln;
+
   const hasCartDiscount = appliedDiscount && appliedDiscount.discountAmount > 0;
-  const cartDiscountAmount = hasCartDiscount ? appliedDiscount.discountAmount : 0;
-  // Porównaj: suma z cenami produktowymi vs suma po kodzie rabatowym (od ceny regularnej)
-  const totalAfterCartDiscount = hasCartDiscount ? appliedDiscount.totalAfterDiscount : subtotal;
-  // Klient dostaje lepszą cenę
-  const total = Math.min(subtotal, totalAfterCartDiscount);
-  const effectiveDiscount = subtotal - total;
+  const totalAfterCartDiscountPln = hasCartDiscount
+    ? appliedDiscount!.totalAfterDiscount
+    : subtotalPln;
+  const totalPln = Math.min(subtotalPln, totalAfterCartDiscountPln);
+  const effectiveDiscountPln = subtotalPln - totalPln;
+
+  const eurScale =
+    canUseEur && subtotalPln > 0 ? subtotalEur / subtotalPln : 1;
+  const total = canUseEur ? totalPln * eurScale : totalPln;
+  const effectiveDiscount = canUseEur    ? effectiveDiscountPln * eurScale
+    : effectiveDiscountPln;
 
   const getProductLink = (item: typeof items[0]) => {
     if (item.slug && item.categorySlug) {
@@ -189,18 +208,26 @@ export default function CartPage() {
   return (
     <div className="px-6 pt-24 pb-16 max-w-4xl mx-auto bg-white">
       <h1 className="text-xs uppercase tracking-widest mb-12 text-black font-medium">
-        KOSZYK
+        {ct.title.toUpperCase()}
       </h1>
 
       {items.length === 0 ? (
-        <p className="text-black/60 text-center py-12">Twój koszyk jest pusty.</p>
+        <p className="text-black/60 text-center py-12">{ct.empty}</p>
       ) : (
         <>
           <ul className="space-y-6 mb-12">
             {items.map((item) => {
               const productLink = getProductLink(item);
               const imageUrl = productImages[item.productId];
-              const hasDiscount = item.originalPrice != null && item.originalPrice > item.price;
+              const displayName = getCartItemName(item, locale);
+              const unit =
+                canUseEur && item.priceEur != null ? item.priceEur : item.price;
+              const orig =
+                canUseEur && item.originalPriceEur != null
+                  ? item.originalPriceEur
+                  : item.originalPrice;
+              const hasDiscount =
+                orig != null && orig > unit;
 
               return (
                 <li
@@ -214,7 +241,7 @@ export default function CartPage() {
                         {imageUrl ? (
                           <Image
                             src={imageUrl}
-                            alt={item.name}
+                            alt={displayName}
                             fill
                             className="object-cover"
                             sizes="96px"
@@ -235,32 +262,32 @@ export default function CartPage() {
                     {productLink !== "#" ? (
                       <Link href={productLink}>
                         <p className="font-serif text-sm mb-1 hover:text-[#C1A88C] transition-colors">
-                          {item.name}
+                          {displayName}
                         </p>
                       </Link>
                     ) : (
-                      <p className="font-serif text-sm mb-1">{item.name}</p>
+                      <p className="font-serif text-sm mb-1">{displayName}</p>
                     )}
                     
                     {item.size && (
                       <p className="text-xs text-black/60 mb-1">
-                        Rozmiar: {item.size}
+                        {ct.size}: {item.size}
                       </p>
                     )}
                     {item.color && (
                       <p className="text-xs text-black/60 mb-1">
-                        Kolor: {item.color}
+                        {ct.color}: {item.color}
                       </p>
                     )}
                     
                     <div className="text-xs text-black/60 mb-3 flex items-center gap-2">
-                      {hasDiscount && (
+                      {hasDiscount && orig != null && (
                         <span className="line-through text-black/30">
-                          {item.originalPrice!.toFixed(2)} PLN
+                          {formatMoney(orig, canUseEur ? "en" : "pl")}
                         </span>
                       )}
                       <span className={hasDiscount ? "text-[#C1A88C] font-semibold" : ""}>
-                        {item.price.toFixed(2)} PLN
+                        {formatMoney(unit, canUseEur ? "en" : "pl")}
                       </span>
                       <span>× {item.quantity}</span>
                     </div>
@@ -269,14 +296,14 @@ export default function CartPage() {
                       onClick={() => removeFromCart(item.productId, item.size, item.color)}
                       className="text-xs uppercase tracking-widest text-black/40 hover:text-black transition-colors"
                     >
-                      Usuń
+                      {ct.remove}
                     </button>
                   </div>
 
                   {/* Cena */}
                   <div className="text-right">
                     <p className="font-serif text-sm">
-                      {(item.price * item.quantity).toFixed(2)} PLN
+                      {formatMoney(unit * item.quantity, canUseEur ? "en" : "pl")}
                     </p>
                   </div>
                 </li>
@@ -309,14 +336,17 @@ export default function CartPage() {
                         ? `-${appliedDiscount.value}%`
                         : `-${appliedDiscount.value.toFixed(2)} PLN`}
                       {effectiveDiscount > 0 &&
-                        ` (oszczędzasz ${effectiveDiscount.toFixed(2)} PLN)`}
+                        ` (${ct.youSave} ${formatMoney(
+                          effectiveDiscount,
+                          canUseEur ? "en" : "pl"
+                        )})`}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={removeDiscount}
                   className="p-1.5 text-black/40 hover:text-black transition-colors"
-                  title="Usuń kod rabatowy"
+                  title={ct.removeDiscountTitle}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -327,7 +357,7 @@ export default function CartPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <Tag className="h-3.5 w-3.5 text-[#C1A88C]" />
                   <span className="text-xs uppercase tracking-widest text-black/50">
-                    Kod rabatowy
+                    {ct.discountCode}
                   </span>
                 </div>
                 <div className="flex gap-2">
@@ -344,7 +374,7 @@ export default function CartPage() {
                         handleApplyDiscount();
                       }
                     }}
-                    placeholder="Wpisz kod..."
+                    placeholder={ct.placeholderCode}
                     className="flex-1 px-4 py-2.5 border border-[#E8E3D8] text-sm font-mono tracking-wider bg-white placeholder:text-black/25 focus:outline-none focus:border-[#C1A88C] transition-colors"
                   />
                   <button
@@ -352,7 +382,7 @@ export default function CartPage() {
                     disabled={applyingDiscount || !discountCode.trim()}
                     className="px-6 py-2.5 bg-black text-white text-xs uppercase tracking-widest hover:bg-black/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    {applyingDiscount ? "..." : "Zastosuj"}
+                    {applyingDiscount ? ct.applying : ct.apply}
                   </button>
                 </div>
                 {discountError && (
@@ -366,25 +396,25 @@ export default function CartPage() {
           <div className="bg-[#C1A88C]/10 p-6 mb-8">
             <div className="space-y-2">
               <div className="flex justify-between items-center text-xs text-black/50">
-                <span className="uppercase tracking-widest">Produkty</span>
-                <span>{subtotal.toFixed(2)} PLN</span>
+                <span className="uppercase tracking-widest">{ct.productsLine}</span>
+                <span>{formatMoney(subtotal, canUseEur ? "en" : "pl")}</span>
               </div>
 
               {effectiveDiscount > 0 && (
                 <div className="flex justify-between items-center text-xs">
                   <span className="uppercase tracking-widest text-[#C1A88C]">
-                    Rabat ({appliedDiscount?.code})
+                    {ct.discountLine} ({appliedDiscount?.code})
                   </span>
                   <span className="text-[#C1A88C] font-medium">
-                    -{effectiveDiscount.toFixed(2)} PLN
+                    -{formatMoney(effectiveDiscount, canUseEur ? "en" : "pl")}
                   </span>
                 </div>
               )}
 
               <div className="border-t border-black/10 pt-2 mt-2 flex justify-between items-center text-sm">
-                <span className="uppercase tracking-widest text-black/60">Suma</span>
+                <span className="uppercase tracking-widest text-black/60">{ct.total}</span>
                 <span className="font-serif text-lg text-black">
-                  {total.toFixed(2)} PLN
+                  {formatMoney(total, canUseEur ? "en" : "pl")}
                 </span>
               </div>
             </div>
@@ -402,7 +432,7 @@ export default function CartPage() {
                     transition-colors
                   "
                 >
-                  Przejdź do podsumowania
+                  {ct.checkoutButton}
                 </button>
               </Link>
             </div>

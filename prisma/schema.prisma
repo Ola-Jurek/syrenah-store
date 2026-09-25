@@ -74,8 +74,9 @@ model Product {
   sku           String?   @unique
   slug          String    @unique
   categoryId    String    @map("category_id")
-  sizes  Json?  @default("[]")
-  colors Json?  @default("[]")
+  sizes     Json? @default("[]")
+  colors    Json? @default("[]")
+  sizeChart Json? @map("size_chart")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -261,12 +262,14 @@ model HeroSettings {
 }
 
 model HeroImage {
-  id        String       @id @default(cuid())
-  imageUrl String       @map("image_url")
-  order     Int          @default(0)
-  heroSettingsId String  @map("hero_settings_id")
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id             String   @id @default(cuid())
+  imageUrl       String   @map("image_url")
+  mediaType      String   @default("image") @map("media_type")
+  viewport       String   @default("mobile")
+  order          Int      @default(0)
+  heroSettingsId String   @map("hero_settings_id")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   heroSettings HeroSettings @relation(fields: [heroSettingsId], references: [id], onDelete: Cascade)
 
@@ -281,4 +284,14 @@ model Newsletter {
   updatedAt DateTime @updatedAt
 
   @@map("newsletter")
+}
+
+model InstagramPhoto {
+  id        String   @id @default(cuid())
+  imageUrl  String   @map("image_url")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("instagram_photos")
 }
