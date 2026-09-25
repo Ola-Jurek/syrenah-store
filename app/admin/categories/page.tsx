@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  clearAdminToken,
+  getAdminToken,
+  promptAdminToken,
+} from "@/lib/adminToken";
 
 type Category = {
   id: string;
@@ -15,21 +20,6 @@ type Category = {
 type CategoriesResponse = {
   categories: Category[];
 };
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
-function promptAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  const token = window.prompt("Wprowadź token admina:");
-  if (token) {
-    localStorage.setItem("adminToken", token);
-    return token;
-  }
-  return null;
-}
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -69,7 +59,7 @@ export default function AdminCategoriesPage() {
         });
 
         if (res.status === 401) {
-          localStorage.removeItem("adminToken");
+          clearAdminToken();
           setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
           const newToken = promptAdminToken();
           if (newToken) {

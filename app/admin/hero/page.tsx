@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
+import {
+  ensureAdminToken,
+  recoverAdminToken,
+} from "@/lib/adminToken";
 
 type HeroImage = {
   id: string;
@@ -47,11 +46,25 @@ export default function AdminHeroPage() {
   }, []);
 
   const fetchHeroSettings = async () => {
+    const token = ensureAdminToken();
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
     try {
-      const token = getAdminToken();
       const res = await fetch("/api/admin/hero", {
-        headers: token ? { "x-admin-token": token } : {},
+        headers: { "x-admin-token": token },
       });
+      if (res.status === 401) {
+        const newToken = recoverAdminToken();
+        if (newToken) {
+          await fetchHeroSettings();
+          return;
+        }
+        alert("Nieautoryzowany dostęp. Wprowadź token ponownie.");
+        return;
+      }
       if (res.ok) {
         const data = await res.json();
         setHeroSettings(data);
@@ -63,8 +76,6 @@ export default function AdminHeroPage() {
             link: data.link || "/shop",
           });
         }
-      } else if (res.status === 401) {
-        alert("Brak autoryzacji. Zaloguj się ponownie.");
       }
     } catch (error) {
       console.error("Error fetching hero settings:", error);
@@ -95,16 +106,37 @@ export default function AdminHeroPage() {
 
     setUploading(true);
     try {
-      const uploadData = new FormData();
-      uploadData.append("file", file);
-      uploadData.append("purpose", "hero");
+      const buildUploadData = () => {
+        const data = new FormData();
+        data.append("file", file);
+        data.append("purpose", "hero");
+        return data;
+      };
 
-      const token = getAdminToken();
-      const uploadRes = await fetch("/api/admin/upload", {
+      let token = ensureAdminToken();
+      if (!token) {
+        alert("Brak tokena admina");
+        return;
+      }
+
+      let uploadRes = await fetch("/api/admin/upload", {
         method: "POST",
-        headers: token ? { "x-admin-token": token } : {},
-        body: uploadData,
+        headers: { "x-admin-token": token },
+        body: buildUploadData(),
       });
+
+      if (uploadRes.status === 401) {
+        token = recoverAdminToken();
+        if (!token) {
+          alert("Nieautoryzowany dostęp. Wprowadź token ponownie.");
+          return;
+        }
+        uploadRes = await fetch("/api/admin/upload", {
+          method: "POST",
+          headers: { "x-admin-token": token },
+          body: buildUploadData(),
+        });
+      }
 
       if (!uploadRes.ok) {
         const error = await uploadRes.json().catch(() => null);
@@ -118,20 +150,23 @@ export default function AdminHeroPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { "x-admin-token": token } : {}),
+          "x-admin-token": token,
         },
         body: JSON.stringify({ imageUrl: url, mediaType, viewport }),
       });
 
       if (addRes.ok) {
         await fetchHeroSettings();
-      } else {
-        if (addRes.status === 401) {
-          alert("Brak autoryzacji. Zaloguj się ponownie.");
+      } else if (addRes.status === 401) {
+        const newToken = recoverAdminToken();
+        if (newToken) {
+          alert("Token zapisany. Spróbuj dodać plik ponownie.");
         } else {
-          const error = await addRes.json();
-          alert(error.error || "Błąd podczas dodawania zdjęcia");
+          alert("Nieautoryzowany dostęp. Wprowadź token ponownie.");
         }
+      } else {
+        const error = await addRes.json();
+        alert(error.error || "Błąd podczas dodawania zdjęcia");
       }
     } catch (error) {
       console.error("Error uploading image:", error);
@@ -143,22 +178,37 @@ export default function AdminHeroPage() {
   };
 
   const handleDeleteImage = async (imageId: string) => {
+    let token = ensureAdminToken();
+    if (!token) {
+      alert("Brak tokena admina");
+      return;
+    }
+
     try {
-      const token = getAdminToken();
-      const res = await fetch(`/api/admin/hero/images/${imageId}`, {
+      let res = await fetch(`/api/admin/hero/images/${imageId}`, {
         method: "DELETE",
-        headers: token ? { "x-admin-token": token } : {},
+        headers: { "x-admin-token": token },
       });
+
+      if (res.status === 401) {
+        token = recoverAdminToken();
+        if (!token) {
+          alert("Nieautoryzowany dostęp. Wprowadź token ponownie.");
+          return;
+        }
+        res = await fetch(`/api/admin/hero/images/${imageId}`, {
+          method: "DELETE",
+          headers: { "x-admin-token": token },
+        });
+      }
 
       if (res.ok) {
         await fetchHeroSettings();
+      } else if (res.status === 401) {
+        alert("Nieautoryzowany dostęp. Sprawdź token admina.");
       } else {
-        if (res.status === 401) {
-          alert("Brak autoryzacji. Zaloguj się ponownie.");
-        } else {
-          const error = await res.json();
-          alert(error.error || "Błąd podczas usuwania zdjęcia");
-        }
+        const error = await res.json();
+        alert(error.error || "Błąd podczas usuwania zdjęcia");
       }
     } catch (error) {
       console.error("Error deleting image:", error);
@@ -168,30 +218,49 @@ export default function AdminHeroPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    let token = ensureAdminToken();
+    if (!token) {
+      alert("Brak tokena admina");
+      return;
+    }
+
     try {
-      const token = getAdminToken();
       const method = heroSettings ? "PATCH" : "POST";
       const url = heroSettings ? `/api/admin/hero/${heroSettings.id}` : "/api/admin/hero";
-      
-      const res = await fetch(url, {
+
+      let res = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { "x-admin-token": token } : {}),
+          "x-admin-token": token,
         },
         body: JSON.stringify(formData),
       });
 
+      if (res.status === 401) {
+        token = recoverAdminToken();
+        if (!token) {
+          alert("Nieautoryzowany dostęp. Wprowadź token ponownie.");
+          return;
+        }
+        res = await fetch(url, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-token": token,
+          },
+          body: JSON.stringify(formData),
+        });
+      }
+
       if (res.ok) {
         await fetchHeroSettings();
         setEditing(false);
+      } else if (res.status === 401) {
+        alert("Nieautoryzowany dostęp. Sprawdź token admina.");
       } else {
-        if (res.status === 401) {
-          alert("Brak autoryzacji. Zaloguj się ponownie.");
-        } else {
-          const error = await res.json();
-          alert(error.error || "Błąd podczas zapisywania");
-        }
+        const error = await res.json();
+        alert(error.error || "Błąd podczas zapisywania");
       }
     } catch (error) {
       console.error("Error saving hero settings:", error);

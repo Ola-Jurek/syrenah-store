@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
+import {
+  clearAdminToken,
+  ensureAdminToken,
+  recoverAdminToken,
+} from "@/lib/adminToken";
 
 type InstagramPhoto = {
   id: string;
@@ -18,21 +18,42 @@ export default function AdminInstagramPage() {
   const [photos, setPhotos] = useState<InstagramPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPhotos = async () => {
+    const token = ensureAdminToken();
+    if (!token) {
+      setError("Brak tokena admina");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const token = getAdminToken();
       const res = await fetch("/api/admin/instagram", {
-        headers: token ? { "x-admin-token": token } : {},
+        headers: { "x-admin-token": token },
       });
+
+      if (res.status === 401) {
+        clearAdminToken();
+        const newToken = recoverAdminToken();
+        if (newToken) {
+          await fetchPhotos();
+          return;
+        }
+        setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
+        return;
+      }
+
       if (res.ok) {
         const data = await res.json();
         setPhotos(data.photos ?? []);
-      } else if (res.status === 401) {
-        alert("Brak autoryzacji. Zaloguj się ponownie.");
+        setError(null);
+      } else {
+        setError("Błąd pobierania zdjęć");
       }
-    } catch (error) {
-      console.error("Error fetching instagram photos:", error);
+    } catch (err) {
+      console.error("Error fetching instagram photos:", err);
+      setError("Błąd pobierania zdjęć");
     } finally {
       setLoading(false);
     }
@@ -40,56 +61,74 @@ export default function AdminInstagramPage() {
 
   useEffect(() => {
     fetchPhotos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const uploadFiles = async (files: File[], token: string) => {
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadRes = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: { "x-admin-token": token },
+        body: formData,
+      });
+
+      if (uploadRes.status === 401) return "unauthorized" as const;
+      if (!uploadRes.ok) throw new Error("Upload failed");
+
+      const { url } = await uploadRes.json();
+
+      const addRes = await fetch("/api/admin/instagram", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-token": token,
+        },
+        body: JSON.stringify({ imageUrl: url }),
+      });
+
+      if (addRes.status === 401) return "unauthorized" as const;
+      if (!addRes.ok) {
+        const errBody = await addRes.json();
+        throw new Error(errBody.error || "Błąd podczas dodawania zdjęcia");
+      }
+    }
+    return "ok" as const;
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
 
+    let token = ensureAdminToken();
+    if (!token) {
+      alert("Brak tokena admina");
+      e.target.value = "";
+      return;
+    }
+
     setUploading(true);
     try {
-      const token = getAdminToken();
-
-      for (const file of files) {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const uploadRes = await fetch("/api/admin/upload", {
-          method: "POST",
-          headers: token ? { "x-admin-token": token } : {},
-          body: formData,
-        });
-
-        if (!uploadRes.ok) {
-          throw new Error("Upload failed");
+      let result = await uploadFiles(files, token);
+      if (result === "unauthorized") {
+        token = recoverAdminToken();
+        if (!token) {
+          alert("Nieautoryzowany dostęp. Wprowadź token ponownie.");
+          return;
         }
-
-        const { url } = await uploadRes.json();
-
-        const addRes = await fetch("/api/admin/instagram", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { "x-admin-token": token } : {}),
-          },
-          body: JSON.stringify({ imageUrl: url }),
-        });
-
-        if (!addRes.ok) {
-          if (addRes.status === 401) {
-            alert("Brak autoryzacji. Zaloguj się ponownie.");
-            return;
-          }
-          const error = await addRes.json();
-          throw new Error(error.error || "Błąd podczas dodawania zdjęcia");
+        result = await uploadFiles(files, token);
+        if (result === "unauthorized") {
+          alert("Nieautoryzowany dostęp. Sprawdź token admina.");
+          return;
         }
       }
-
       await fetchPhotos();
-    } catch (error) {
-      console.error("Error uploading image:", error);
+    } catch (err) {
+      console.error("Error uploading image:", err);
       alert(
-        error instanceof Error ? error.message : "Błąd podczas przesyłania zdjęcia"
+        err instanceof Error ? err.message : "Błąd podczas przesyłania zdjęcia"
       );
     } finally {
       setUploading(false);
@@ -97,32 +136,69 @@ export default function AdminInstagramPage() {
     }
   };
 
+  const deletePhoto = async (id: string, token: string) => {
+    const res = await fetch(`/api/admin/instagram/${id}`, {
+      method: "DELETE",
+      headers: { "x-admin-token": token },
+    });
+    return res;
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm("Czy na pewno chcesz usunąć to zdjęcie?")) return;
 
+    let token = ensureAdminToken();
+    if (!token) {
+      alert("Brak tokena admina");
+      return;
+    }
+
     try {
-      const token = getAdminToken();
-      const res = await fetch(`/api/admin/instagram/${id}`, {
-        method: "DELETE",
-        headers: token ? { "x-admin-token": token } : {},
-      });
+      let res = await deletePhoto(id, token);
+      if (res.status === 401) {
+        token = recoverAdminToken();
+        if (!token) {
+          alert("Nieautoryzowany dostęp. Wprowadź token ponownie.");
+          return;
+        }
+        res = await deletePhoto(id, token);
+      }
 
       if (res.ok) {
         setPhotos((current) => current.filter((photo) => photo.id !== id));
       } else if (res.status === 401) {
-        alert("Brak autoryzacji. Zaloguj się ponownie.");
+        alert("Nieautoryzowany dostęp. Sprawdź token admina.");
       } else {
-        const error = await res.json();
-        alert(error.error || "Błąd podczas usuwania zdjęcia");
+        const errBody = await res.json();
+        alert(errBody.error || "Błąd podczas usuwania zdjęcia");
       }
-    } catch (error) {
-      console.error("Error deleting image:", error);
+    } catch (err) {
+      console.error("Error deleting image:", err);
       alert("Błąd podczas usuwania zdjęcia");
     }
   };
 
   if (loading) {
     return <div className="py-12 text-center text-black/40">Ładowanie...</div>;
+  }
+
+  if (error && photos.length === 0) {
+    return (
+      <div className="py-12 text-center">
+        <p className="mb-4 text-sm text-red-600">{error}</p>
+        <Button
+          type="button"
+          onClick={() => {
+            setLoading(true);
+            setError(null);
+            fetchPhotos();
+          }}
+          className="rounded-none bg-[#C1A88C] text-xs uppercase tracking-widest text-white hover:bg-[#B09A7C]"
+        >
+          Spróbuj ponownie
+        </Button>
+      </div>
+    );
   }
 
   return (

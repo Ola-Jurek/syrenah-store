@@ -8,6 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { countryLabel } from "@/lib/shipping-countries";
+import {
+  ensureAdminToken,
+  recoverAdminToken,
+} from "@/lib/adminToken";
 
 /* ───────── Typy ───────── */
 
@@ -79,11 +83,6 @@ type OrderResponse = {
 };
 
 /* ───────── Helpers ───────── */
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -180,7 +179,7 @@ export default function AdminOrderDetailPage() {
 
   useEffect(() => {
     async function fetchOrder() {
-      const token = getAdminToken();
+      let token = ensureAdminToken();
       if (!token) {
         setError("Brak tokena admina");
         setLoading(false);
@@ -188,11 +187,25 @@ export default function AdminOrderDetailPage() {
       }
 
       try {
-        const res = await fetch(`/api/admin/orders/${id}`, {
+        let res = await fetch(`/api/admin/orders/${id}`, {
           headers: {
             "x-admin-token": token,
           },
         });
+
+        if (res.status === 401) {
+          token = recoverAdminToken();
+          if (!token) {
+            setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
+            setLoading(false);
+            return;
+          }
+          res = await fetch(`/api/admin/orders/${id}`, {
+            headers: {
+              "x-admin-token": token,
+            },
+          });
+        }
 
         if (res.status === 401) {
           setError("Nieautoryzowany dostęp");
@@ -226,14 +239,14 @@ export default function AdminOrderDetailPage() {
   }, [id]);
 
   async function handleSaveStatus() {
-    const token = getAdminToken();
+    let token = ensureAdminToken();
     if (!token || !order) return;
 
     setSaving(true);
     setSaveMessage(null);
 
     try {
-      const res = await fetch(`/api/admin/orders/${id}`, {
+      let res = await fetch(`/api/admin/orders/${id}`, {
         method: "PATCH",
         headers: {
           "x-admin-token": token,
@@ -241,6 +254,23 @@ export default function AdminOrderDetailPage() {
         },
         body: JSON.stringify({ status: selectedStatus }),
       });
+
+      if (res.status === 401) {
+        token = recoverAdminToken();
+        if (!token) {
+          setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
+          setSaving(false);
+          return;
+        }
+        res = await fetch(`/api/admin/orders/${id}`, {
+          method: "PATCH",
+          headers: {
+            "x-admin-token": token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: selectedStatus }),
+        });
+      }
 
       if (res.status === 401) {
         setError("Nieautoryzowany dostęp");

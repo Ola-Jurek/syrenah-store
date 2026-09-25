@@ -8,6 +8,10 @@ import { LogOut, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/components/CartContext";
 import {
+  ensureAdminToken,
+  getAdminToken,
+} from "@/lib/adminToken";
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -25,15 +29,40 @@ export default function AdminLayout({
   const { clearCart } = useCart();
   const [isMounted, setIsMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [tokenGate, setTokenGate] = useState<"checking" | "ready" | "missing">(
+    "checking"
+  );
 
   const handleSignOut = async () => {
     clearCart();
     await signOut({ callbackUrl: "/" });
   };
 
+  const requestAdminToken = () => {
+    const token = ensureAdminToken();
+    setTokenGate(token ? "ready" : "missing");
+  };
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Po zalogowaniu jako ADMIN — od razu upewnij się, że jest token API
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (status !== "authenticated" || session?.user?.role !== "ADMIN") {
+      setTokenGate("checking");
+      return;
+    }
+
+    if (getAdminToken()) {
+      setTokenGate("ready");
+      return;
+    }
+
+    requestAdminToken();
+  }, [status, session?.user?.role]);
 
   // Pokaż ładowanie dopóki sprawdzamy sesję
   if (status === "loading") {
@@ -103,6 +132,37 @@ export default function AdminLayout({
               </Link>
             )}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (tokenGate !== "ready") {
+    if (tokenGate === "checking") {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="w-5 h-5 border-2 border-black/20 border-t-black/60 rounded-full animate-spin" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] px-4">
+        <div className="w-full max-w-xs text-center">
+          <h1 className="mb-2 text-sm font-serif tracking-wider text-neutral-700">
+            Token administratora
+          </h1>
+          <p className="mb-8 text-xs leading-relaxed text-neutral-400">
+            Aby korzystać z panelu, wprowadź token admina (ten sam co{" "}
+            <span className="text-neutral-500">ADMIN_TOKEN</span> na Netlify).
+          </p>
+          <button
+            type="button"
+            onClick={requestAdminToken}
+            className="inline-flex w-full items-center justify-center bg-[#E8E3D8] px-8 py-2.5 text-xs uppercase tracking-widest text-neutral-700 transition-colors hover:bg-[#DDD7C8]"
+          >
+            Wprowadź token
+          </button>
         </div>
       </div>
     );

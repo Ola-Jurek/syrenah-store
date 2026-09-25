@@ -15,6 +15,10 @@ import {
   type SizeChartColumnDraft,
   type SizeChartRowDraft,
 } from "@/lib/size-chart";
+import {
+  getAdminToken,
+  promptAdminToken,
+} from "@/lib/adminToken";
 
 type Category = {
   id: string;
@@ -39,21 +43,6 @@ type CategoriesResponse = {
 type DiscountsResponse = {
   discounts: Discount[];
 };
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
-function promptAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  const token = window.prompt("Wprowadź token admina:");
-  if (token) {
-    localStorage.setItem("adminToken", token);
-    return token;
-  }
-  return null;
-}
 
 function generateSlug(text: string): string {
   return text

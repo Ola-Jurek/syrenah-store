@@ -7,21 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
-function promptAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  const token = window.prompt("Wprowadź token admina:");
-  if (token) {
-    localStorage.setItem("adminToken", token);
-    return token;
-  }
-  return null;
-}
+import {
+  clearAdminToken,
+  ensureAdminToken,
+} from "@/lib/adminToken";
 
 function generateSlug(text: string): string {
   return text
@@ -60,10 +49,7 @@ export default function NewCategoryPage() {
     setSaving(true);
     setError(null);
 
-    let token = getAdminToken();
-    if (!token) {
-      token = promptAdminToken();
-    }
+    let token = ensureAdminToken();
     if (!token) {
       setError("Brak tokena admina");
       setSaving(false);
@@ -87,7 +73,7 @@ export default function NewCategoryPage() {
       });
 
       if (res.status === 401) {
-        localStorage.removeItem("adminToken");
+        clearAdminToken();
         setError("Nieautoryzowany dostęp");
         setSaving(false);
         return;

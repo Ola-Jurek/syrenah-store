@@ -5,6 +5,11 @@ import Link from "next/link";
 import { Percent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  clearAdminToken,
+  getAdminToken,
+  promptAdminToken,
+} from "@/lib/adminToken";
 
 type Category = {
   id: string;
@@ -45,21 +50,6 @@ type StockFilter = "all" | "out" | "low" | "in";
 type SortOption = "newest" | "stock-asc" | "stock-desc" | "name";
 
 const LOW_STOCK_THRESHOLD = 5;
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
-function promptAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  const token = window.prompt("Wprowadź token admina:");
-  if (token) {
-    localStorage.setItem("adminToken", token);
-    return token;
-  }
-  return null;
-}
 
 function stockClass(stock: number): string {
   if (stock <= 0) return "text-red-600 font-medium";
@@ -130,7 +120,7 @@ export default function AdminProductsPage() {
         ]);
 
         if (productsRes.status === 401 || categoriesRes.status === 401) {
-          localStorage.removeItem("adminToken");
+          clearAdminToken();
           setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
           const newToken = promptAdminToken();
           if (newToken) {

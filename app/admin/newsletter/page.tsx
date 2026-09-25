@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Mail, Download, Users } from "lucide-react";
+import {
+  clearAdminToken,
+  getAdminToken,
+  promptAdminToken,
+} from "@/lib/adminToken";
 
 type Subscriber = {
   id: string;
@@ -11,26 +16,6 @@ type Subscriber = {
   consent: boolean;
   createdAt: string;
 };
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
-function setAdminToken(token: string): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("adminToken", token);
-}
-
-function promptAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  const token = window.prompt("Wprowadź token admina:");
-  if (token) {
-    setAdminToken(token);
-    return token;
-  }
-  return null;
-}
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -81,7 +66,7 @@ export default function AdminNewsletterPage() {
         });
 
         if (res.status === 401) {
-          localStorage.removeItem("adminToken");
+          clearAdminToken();
           setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
           const newToken = promptAdminToken();
           if (newToken) {

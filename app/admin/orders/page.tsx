@@ -5,6 +5,11 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  clearAdminToken,
+  getAdminToken,
+  promptAdminToken,
+} from "@/lib/adminToken";
 
 type Order = {
   id: string;
@@ -18,26 +23,6 @@ type Order = {
 type OrdersResponse = {
   orders: Order[];
 };
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
-function setAdminToken(token: string): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("adminToken", token);
-}
-
-function promptAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  const token = window.prompt("Wprowadź token admina:");
-  if (token) {
-    setAdminToken(token);
-    return token;
-  }
-  return null;
-}
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -127,7 +112,7 @@ export default function AdminOrdersPage() {
         });
 
         if (res.status === 401) {
-          localStorage.removeItem("adminToken");
+          clearAdminToken();
           setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
           const newToken = promptAdminToken();
           if (newToken) {

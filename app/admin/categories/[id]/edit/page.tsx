@@ -7,21 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
-function promptAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  const token = window.prompt("Wprowadź token admina:");
-  if (token) {
-    localStorage.setItem("adminToken", token);
-    return token;
-  }
-  return null;
-}
+import {
+  clearAdminToken,
+  ensureAdminToken,
+  recoverAdminToken,
+} from "@/lib/adminToken";
 
 export default function EditCategoryPage() {
   const router = useRouter();
@@ -44,10 +34,7 @@ export default function EditCategoryPage() {
 
   useEffect(() => {
     async function fetchCategory() {
-      let token = getAdminToken();
-      if (!token) {
-        token = promptAdminToken();
-      }
+      let token = ensureAdminToken();
       if (!token) {
         setError("Brak tokena admina");
         setLoading(false);
@@ -55,12 +42,24 @@ export default function EditCategoryPage() {
       }
 
       try {
-        const res = await fetch(`/api/admin/categories/${id}`, {
+        let res = await fetch(`/api/admin/categories/${id}`, {
           headers: { "x-admin-token": token },
         });
 
         if (res.status === 401) {
-          localStorage.removeItem("adminToken");
+          token = recoverAdminToken();
+          if (!token) {
+            setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
+            setLoading(false);
+            return;
+          }
+          res = await fetch(`/api/admin/categories/${id}`, {
+            headers: { "x-admin-token": token },
+          });
+        }
+
+        if (res.status === 401) {
+          clearAdminToken();
           setError("Nieautoryzowany dostęp");
           setLoading(false);
           return;
@@ -95,10 +94,7 @@ export default function EditCategoryPage() {
     setSaving(true);
     setError(null);
 
-    let token = getAdminToken();
-    if (!token) {
-      token = promptAdminToken();
-    }
+    let token = ensureAdminToken();
     if (!token) {
       setError("Brak tokena admina");
       setSaving(false);
@@ -106,7 +102,7 @@ export default function EditCategoryPage() {
     }
 
     try {
-      const res = await fetch(`/api/admin/categories/${id}`, {
+      let res = await fetch(`/api/admin/categories/${id}`, {
         method: "PATCH",
         headers: {
           "x-admin-token": token,
@@ -122,7 +118,30 @@ export default function EditCategoryPage() {
       });
 
       if (res.status === 401) {
-        localStorage.removeItem("adminToken");
+        token = recoverAdminToken();
+        if (!token) {
+          setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
+          setSaving(false);
+          return;
+        }
+        res = await fetch(`/api/admin/categories/${id}`, {
+          method: "PATCH",
+          headers: {
+            "x-admin-token": token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            namePl: formData.namePl.trim(),
+            nameEn: formData.nameEn.trim() || formData.namePl.trim(),
+            descriptionPl: formData.descriptionPl.trim() || null,
+            descriptionEn: formData.descriptionEn.trim() || null,
+            slug: formData.slug.trim(),
+          }),
+        });
+      }
+
+      if (res.status === 401) {
+        clearAdminToken();
         setError("Nieautoryzowany dostęp");
         setSaving(false);
         return;
@@ -156,10 +175,7 @@ export default function EditCategoryPage() {
     setDeleting(true);
     setError(null);
 
-    let token = getAdminToken();
-    if (!token) {
-      token = promptAdminToken();
-    }
+    const token = ensureAdminToken();
     if (!token) {
       setError("Brak tokena admina");
       setDeleting(false);
