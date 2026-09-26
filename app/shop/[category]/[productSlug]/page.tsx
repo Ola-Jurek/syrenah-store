@@ -6,6 +6,8 @@ import { parseSizeChart } from "@/lib/size-chart";
 import { alignSizeStocks, parseSizeLabels, sellableStock } from "@/lib/size-stock";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 type Props = {
   params: Promise<{
     category: string;

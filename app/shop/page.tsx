@@ -13,6 +13,8 @@ import { ShopEmpty } from "@/components/ShopEmpty";
 import { ShopNoSearchResults } from "@/components/ShopNoSearchResults";
 import { sellableStock } from "@/lib/size-stock";
 
+export const dynamic = "force-dynamic";
+
 type Props = {
   searchParams: Promise<{ search?: string; sort?: string; filter?: string }>;
 };

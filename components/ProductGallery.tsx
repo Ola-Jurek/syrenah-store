@@ -41,45 +41,71 @@ export function ProductGallery({ images, productName, locale = "pl" }: Props) {
     );
   }
 
-  const primaryImage = validImages.find((img) => img.isPrimary) || validImages[0];
-  const displayImage = validImages[selectedIndex] || primaryImage;
+  const safeIndex = selectedIndex >= 0 && selectedIndex < validImages.length ? selectedIndex : 0;
+  const displayImage = validImages[safeIndex];
+  const hasMany = validImages.length > 1;
+
+  const goTo = (index: number) => {
+    const count = validImages.length;
+    setSelectedIndex(((index % count) + count) % count);
+  };
 
   return (
-    <div className="w-full">
-      {/* Main image */}
-      <div className="aspect-[3/4] bg-[#EDE3DF] rounded-xl overflow-hidden mb-4 relative max-h-[80vh]">
+    <div className="w-full min-w-0">
+      <div className="relative mb-4 aspect-[3/4] w-full overflow-hidden rounded-xl bg-[#EDE3DF] md:max-h-[calc(100svh-11rem)]">
         <Image
+          key={displayImage.url}
           src={displayImage.url}
           alt={pickAlt(displayImage, productName, locale)}
           fill
-          className="object-cover"
+          className="object-cover pointer-events-none"
           sizes="(max-width: 768px) 100vw, 50vw"
           priority
         />
+        {hasMany && (
+          <>
+            <button
+              type="button"
+              aria-label={locale === "en" ? "Previous image" : "Poprzednie zdjęcie"}
+              className="absolute inset-y-0 left-0 z-10 w-1/2 cursor-pointer"
+              onClick={() => goTo(safeIndex - 1)}
+            />
+            <button
+              type="button"
+              aria-label={locale === "en" ? "Next image" : "Następne zdjęcie"}
+              className="absolute inset-y-0 right-0 z-10 w-1/2 cursor-pointer"
+              onClick={() => goTo(safeIndex + 1)}
+            />
+          </>
+        )}
       </div>
 
-      {/* Thumbnails */}
-      {validImages.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto">
+      {hasMany && (
+        <div className="relative z-20 flex w-full min-w-0 gap-2 overflow-x-auto">
           {validImages.map((img, index) => (
             <button
-              key={img.id}
-              onClick={() => setSelectedIndex(index)}
-              className={`flex-shrink-0 w-20 h-20 rounded border-2 overflow-hidden transition-opacity ${
-                selectedIndex === index
+              key={img.id || img.url}
+              type="button"
+              aria-label={
+                locale === "en"
+                  ? `Show image ${index + 1}`
+                  : `Pokaż zdjęcie ${index + 1}`
+              }
+              aria-current={safeIndex === index ? "true" : undefined}
+              onClick={() => goTo(index)}
+              className={`relative flex-shrink-0 w-20 h-20 rounded border-2 overflow-hidden transition-opacity ${
+                safeIndex === index
                   ? "border-black opacity-100"
                   : "border-black/20 opacity-70 hover:opacity-100"
               }`}
             >
-              <div className="relative w-full h-full bg-[#EDE3DF]">
-                <Image
-                  src={img.url}
-                  alt={pickAlt(img, productName, locale)}
-                  fill
-                  className="object-cover"
-                  sizes="80px"
-                />
-              </div>
+              <Image
+                src={img.url}
+                alt={pickAlt(img, productName, locale)}
+                fill
+                className="object-cover pointer-events-none"
+                sizes="80px"
+              />
             </button>
           ))}
         </div>

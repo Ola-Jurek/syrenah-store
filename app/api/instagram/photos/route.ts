@@ -3,6 +3,8 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { listInstagramPhotos } from "@/lib/instagramPhotos";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const photos = await listInstagramPhotos();

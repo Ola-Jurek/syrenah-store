@@ -8,6 +8,8 @@ import {
 } from "@/lib/pricing";
 import { sellableStock } from "@/lib/size-stock";
 
+export const dynamic = "force-dynamic";
+
 type Props = {
   params: Promise<{
     category: string;

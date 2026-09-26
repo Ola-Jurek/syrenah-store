@@ -9,6 +9,9 @@ import {
 } from "@/lib/pricing";
 import { sellableStock } from "@/lib/size-stock";
 
+// Hero i „najnowsze” mają być widoczne od razu po zapisie w adminie.
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const heroSettings = await prisma.heroSettings.findFirst({
     include: {

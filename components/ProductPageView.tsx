@@ -73,7 +73,7 @@ export function ProductPageView({ product, pricing }: ProductPageViewProps) {
   return (
     <div className="px-6 pt-24 pb-16 max-w-6xl mx-auto bg-white">
       <nav className="mb-16">
-        <div className="flex items-center gap-2 text-xs text-[#C1A88C]/60">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-[#C1A88C]/60">
           <Link href="/shop" className="hover:text-[#C1A88C] transition-colors">
             {t("product.shopCrumb")}
           </Link>
@@ -89,8 +89,8 @@ export function ProductPageView({ product, pricing }: ProductPageViewProps) {
         </div>
       </nav>
 
-      <div className="grid gap-12 md:grid-cols-2">
-        <div className="w-full relative">
+      <div className="grid min-w-0 grid-cols-1 gap-12 md:grid-cols-2">
+        <div className="relative w-full min-w-0">
           <ProductBadge
             createdAt={product.createdAt}
             stock={product.stock}
@@ -104,13 +104,11 @@ export function ProductPageView({ product, pricing }: ProductPageViewProps) {
               className="bg-white/60 backdrop-blur-sm shadow-sm"
             />
           </div>
-          <div className="max-h-[80vh] overflow-hidden">
-            <ProductGallery
-              images={product.images}
-              productName={name}
-              locale={locale}
-            />
-          </div>
+          <ProductGallery
+            images={product.images}
+            productName={name}
+            locale={locale}
+          />
         </div>
 
         <div className="flex flex-col">
