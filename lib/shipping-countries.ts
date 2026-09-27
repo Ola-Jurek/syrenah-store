@@ -23,8 +23,34 @@ export const SHIPPING_COUNTRIES = [
 
 export type ShippingCountryCode = (typeof SHIPPING_COUNTRIES)[number]["code"];
 
+export const DOMESTIC_SHIPPING_PLN = 19;
+export const INTERNATIONAL_COURIER_PLN = 69;
+
 export function isPolandCountry(code: string | undefined | null) {
   return !code || code === "PL";
+}
+
+export function destinationCountry(input: {
+  country?: string | null;
+  differentShipping?: boolean;
+  altCountry?: string | null;
+}) {
+  if (input.differentShipping) {
+    return input.altCountry || input.country || "PL";
+  }
+  return input.country || "PL";
+}
+
+export function shippingPricePln(
+  method: string | undefined | null,
+  destination: string | undefined | null
+) {
+  if (method === "parcel_locker" && isPolandCountry(destination)) {
+    return DOMESTIC_SHIPPING_PLN;
+  }
+  return isPolandCountry(destination)
+    ? DOMESTIC_SHIPPING_PLN
+    : INTERNATIONAL_COURIER_PLN;
 }
 
 export function countryLabel(code: string | undefined | null, locale: string) {

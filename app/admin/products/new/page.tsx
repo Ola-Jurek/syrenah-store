@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { slugify } from "@/lib/slug";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -49,17 +50,9 @@ type DiscountsResponse = {
   discounts: Discount[];
 };
 
-function generateSlug(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 export default function NewProductPage() {
   const router = useRouter();
+  const [slugTouched, setSlugTouched] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,7 +144,7 @@ export default function NewProductPage() {
     setFormData((prev) => ({
       ...prev,
       namePl: value,
-      slug: prev.slug || generateSlug(value),
+      slug: slugTouched ? prev.slug : slugify(value),
     }));
   };
 
@@ -420,9 +413,10 @@ export default function NewProductPage() {
               <Input
                 id="slug"
                 value={formData.slug}
-                onChange={(e) =>
-                  setFormData({ ...formData, slug: e.target.value })
-                }
+                onChange={(e) => {
+                  setSlugTouched(true);
+                  setFormData({ ...formData, slug: e.target.value });
+                }}
                 required
                 className="mt-1 border-black/20 font-mono text-sm"
               />

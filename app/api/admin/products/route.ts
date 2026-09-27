@@ -10,6 +10,7 @@ import {
   sellableStock,
   syncProductSizeStocks,
 } from "@/lib/size-stock";
+import { slugify } from "@/lib/slug";
 
 /**
  * GET /api/admin/products
@@ -132,8 +133,10 @@ export async function POST(req: Request) {
       discountId,
     } = body;
 
+    const normalizedSlug = slugify(String(slug ?? ""));
+
     // Walidacja wymaganych pól
-    if (!namePl || !pricePln || stock === undefined || !slug || !categoryId) {
+    if (!namePl || !pricePln || stock === undefined || !normalizedSlug || !categoryId) {
       return NextResponse.json(
         { error: "Missing required fields: namePl, pricePln, stock, slug, categoryId" },
         { status: 400 }
@@ -169,7 +172,7 @@ export async function POST(req: Request) {
           salePriceEur: salePriceEur ? new Prisma.Decimal(salePriceEur) : null,
           stock: sizeLabels.length > 0 ? 0 : parseInt(stock),
           sku: sku || null,
-          slug,
+          slug: normalizedSlug,
           categoryId,
           sizes: sizeLabels.length > 0 ? sizeLabels : Prisma.DbNull,
           colors: colors && Array.isArray(colors) && colors.length > 0 ? colors : Prisma.DbNull,

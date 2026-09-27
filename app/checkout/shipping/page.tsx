@@ -16,7 +16,9 @@ import {
 } from "@/lib/checkout-currency";
 import {
   SHIPPING_COUNTRIES,
+  destinationCountry,
   isPolandCountry,
+  shippingPricePln,
 } from "@/lib/shipping-countries";
 
 type ShippingFormData = {
@@ -122,13 +124,11 @@ export default function ShippingPage() {
         id: "courier" as const,
         label: t("checkoutFlow.courierLabel"),
         description: t("checkoutFlow.courierDesc"),
-        price: 19,
       },
       {
         id: "parcel_locker" as const,
         label: t("checkoutFlow.lockerLabel"),
         description: t("checkoutFlow.lockerDesc"),
-        price: 19,
       },
     ],
     [t]
@@ -296,18 +296,26 @@ export default function ShippingPage() {
   const altCountry = watch("altCountry");
   const shipsToPoland = isPolandCountry(country);
   const altShipsToPoland = isPolandCountry(altCountry);
+  const deliveryCountry = destinationCountry({
+    country,
+    differentShipping,
+    altCountry,
+  });
+  const destinationIsPoland = isPolandCountry(deliveryCountry);
 
   useEffect(() => {
-    if (!shipsToPoland && selectedMethod === "parcel_locker") {
+    if (!destinationIsPoland && selectedMethod === "parcel_locker") {
       setValue("shippingMethod", "courier");
     }
-  }, [shipsToPoland, selectedMethod, setValue]);
+  }, [destinationIsPoland, selectedMethod, setValue]);
 
   const { subPln: subtotal, subEur: subtotalEur, canUseEur } =
     cartSubtotals(items);
 
-  const shippingCost =
-    SHIPPING_METHODS.find((m) => m.id === selectedMethod)?.price ?? 19;
+  const methodPrice = (methodId: string) =>
+    shippingPricePln(methodId, deliveryCountry);
+
+  const shippingCost = methodPrice(selectedMethod);
 
   const shippingEur =
     canUseEur && subtotal > 0
@@ -681,7 +689,8 @@ export default function ShippingPage() {
                 </p>
                 <div className="space-y-3">
                   {SHIPPING_METHODS.filter(
-                    (method) => method.id !== "parcel_locker" || shipsToPoland
+                    (method) =>
+                      method.id !== "parcel_locker" || destinationIsPoland
                   ).map((method) => (
                     <label
                       key={method.id}
@@ -719,10 +728,10 @@ export default function ShippingPage() {
                       </div>
                       <span className="text-sm font-serif text-neutral-700">
                         {formatCheckoutMoney(
-                          method.price,
+                          methodPrice(method.id),
                           canUseEur && subtotal > 0
                             ? plnToEurUsingRatio(
-                                method.price,
+                                methodPrice(method.id),
                                 subtotal,
                                 subtotalEur
                               )

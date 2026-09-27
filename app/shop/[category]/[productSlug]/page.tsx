@@ -4,7 +4,32 @@ import { getEffectivePrice, extractDiscountInfo } from "@/lib/pricing";
 import { ProductPageView } from "@/components/ProductPageView";
 import { parseSizeChart } from "@/lib/size-chart";
 import { alignSizeStocks, parseSizeLabels, sellableStock } from "@/lib/size-stock";
+import { slugify } from "@/lib/slug";
 import type { Metadata } from "next";
+
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+async function resolveProductSlug(productSlug: string): Promise<string | null> {
+  const decoded = safeDecode(productSlug).trim();
+  const normalized = slugify(decoded);
+  const candidates = [...new Set([decoded, normalized].filter(Boolean))];
+
+  for (const slug of candidates) {
+    const found = await prisma.product.findFirst({
+      where: { slug: { equals: slug, mode: "insensitive" } },
+      select: { slug: true },
+    });
+    if (found) return found.slug;
+  }
+
+  return null;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -17,16 +42,19 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { productSlug } = await params;
+  const slug = await resolveProductSlug(productSlug);
 
-  const product = await prisma.product.findUnique({
-    where: { slug: productSlug },
-    include: {
-      images: {
-        where: { isPrimary: true },
-        take: 1,
-      },
-    },
-  });
+  const product = slug
+    ? await prisma.product.findUnique({
+        where: { slug },
+        include: {
+          images: {
+            where: { isPrimary: true },
+            take: 1,
+          },
+        },
+      })
+    : null;
 
   if (!product) {
     return {
@@ -69,27 +97,30 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { productSlug } = await params;
+  const slug = await resolveProductSlug(productSlug);
 
-  const product = await prisma.product.findUnique({
-    where: { slug: productSlug },
-    include: {
-      category: true,
-      images: {
-        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-      },
-      discounts: {
-        where: {
-          isActive: true,
-          validFrom: { lte: new Date() },
-          OR: [{ validUntil: null }, { validUntil: { gte: new Date() } }],
+  const product = slug
+    ? await prisma.product.findUnique({
+        where: { slug },
+        include: {
+          category: true,
+          images: {
+            orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+          },
+          discounts: {
+            where: {
+              isActive: true,
+              validFrom: { lte: new Date() },
+              OR: [{ validUntil: null }, { validUntil: { gte: new Date() } }],
+            },
+            take: 1,
+          },
+          sizeStocks: {
+            select: { size: true, stock: true },
+          },
         },
-        take: 1,
-      },
-      sizeStocks: {
-        select: { size: true, stock: true },
-      },
-    },
-  });
+      })
+    : null;
 
   if (!product) {
     notFound();

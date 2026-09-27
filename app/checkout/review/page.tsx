@@ -12,7 +12,11 @@ import {
   formatCheckoutMoney,
   plnToEurUsingRatio,
 } from "@/lib/checkout-currency";
-import { countryLabel } from "@/lib/shipping-countries";
+import {
+  countryLabel,
+  destinationCountry,
+  shippingPricePln,
+} from "@/lib/shipping-countries";
 
 type ShippingData = {
   fullName: string;
@@ -56,14 +60,13 @@ export default function CheckoutReviewPage() {
   const { items, clearCart } = useCart();
   const { locale, t } = useLanguage();
 
-  const SHIPPING_LABELS: Record<string, { label: string; price: number }> =
-    useMemo(
-      () => ({
-        courier: { label: t("checkoutFlow.courierLabel"), price: 19 },
-        parcel_locker: { label: t("checkoutFlow.lockerLabel"), price: 19 },
-      }),
-      [t]
-    );
+  const SHIPPING_LABELS: Record<string, string> = useMemo(
+    () => ({
+      courier: t("checkoutFlow.courierLabel"),
+      parcel_locker: t("checkoutFlow.lockerLabel"),
+    }),
+    [t]
+  );
   const [shipping, setShipping] = useState<ShippingData | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -144,8 +147,15 @@ export default function CheckoutReviewPage() {
     cartSubtotals(items);
 
   const shippingCost = shipping
-    ? SHIPPING_LABELS[shipping.shippingMethod]?.price ?? 19
-    : 15;
+    ? shippingPricePln(
+        shipping.shippingMethod,
+        destinationCountry({
+          country: shipping.country,
+          differentShipping: shipping.differentShipping,
+          altCountry: shipping.altCountry,
+        })
+      )
+    : shippingPricePln("courier", "PL");
 
   const shippingEur =
     canUseEur && subtotal > 0
@@ -296,7 +306,7 @@ export default function CheckoutReviewPage() {
   }
 
   const shippingLabel =
-    SHIPPING_LABELS[shipping.shippingMethod]?.label ??
+    SHIPPING_LABELS[shipping.shippingMethod] ??
     shipping.shippingMethod;
 
   return (

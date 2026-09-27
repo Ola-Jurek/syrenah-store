@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEffectivePrice, extractDiscountInfo } from "@/lib/pricing";
 import { stockForSize } from "@/lib/size-stock";
+import { shippingPricePln } from "@/lib/shipping-countries";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -231,6 +232,17 @@ export async function POST(req: Request) {
           });
         }
       }
+    }
+
+    if (shipping) {
+      const destination =
+        shipping.alternateShipping?.country ||
+        shipping.shippingAddress?.country ||
+        "PL";
+      shipping.shippingCost = shippingPricePln(
+        shipping.shippingMethod,
+        destination
+      );
     }
 
     const subtotalPlnVerified = verifiedItems.reduce(

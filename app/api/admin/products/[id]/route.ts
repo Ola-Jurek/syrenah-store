@@ -10,6 +10,7 @@ import {
   parseSizeLabels,
   syncProductSizeStocks,
 } from "@/lib/size-stock";
+import { slugify } from "@/lib/slug";
 
 /**
  * GET /api/admin/products/[id]
@@ -184,7 +185,16 @@ export async function PATCH(
       productData.stock = parseInt(stock);
     }
     if (sku !== undefined) productData.sku = sku || null;
-    if (slug !== undefined) productData.slug = slug;
+    if (slug !== undefined) {
+      const normalizedSlug = slugify(String(slug));
+      if (!normalizedSlug) {
+        return NextResponse.json(
+          { error: "Nieprawidłowy slug" },
+          { status: 400 }
+        );
+      }
+      productData.slug = normalizedSlug;
+    }
     if (categoryId !== undefined) {
       // Sprawdź czy kategoria istnieje
       const category = await prisma.category.findUnique({
