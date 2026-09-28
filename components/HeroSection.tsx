@@ -121,7 +121,7 @@ export function HeroSection({ heroSettings }: Props) {
 
   if (!heroSettings || heroSettings.images.length === 0) {
     return (
-      <section className="relative w-full h-[calc(100svh-64px)] md:h-[calc(100vh-64px)] bg-[#EDE3DF] overflow-hidden">
+      <section className="relative mt-16 h-[calc(100svh-64px)] w-full overflow-hidden bg-[#EDE3DF] md:mt-0 md:h-[calc(100vh-64px)]">
         {/* Background Logo - fills entire div */}
         <div className="absolute inset-0 w-full h-full">
           <Image
@@ -168,7 +168,7 @@ export function HeroSection({ heroSettings }: Props) {
   const desktopMedia = pickMedia(heroSettings.images, "desktop");
 
   return (
-    <section className="relative w-full h-[calc(100svh-64px)] md:h-[calc(100vh-64px)] overflow-hidden">
+    <section className="relative mt-16 h-[calc(100svh-64px)] w-full overflow-hidden md:mt-0 md:h-[calc(100vh-64px)]">
       <div className="absolute inset-0 md:hidden">
         <HeroMedia items={mobileMedia} />
       </div>

@@ -111,7 +111,7 @@ export function AboutPageContent() {
       </section>
 
       <section className="md:px-10 md:py-16 lg:px-16">
-        <div className="relative mx-auto w-full h-[50vh] overflow-hidden md:h-auto md:aspect-[3/2] md:max-w-[1100px]">
+        <div className="relative mx-auto aspect-[2/3] w-full overflow-hidden md:aspect-[3/2] md:h-auto md:max-w-[1100px]">
           <Image
             src="/about/cta-mobile.jpg"
             alt=""
