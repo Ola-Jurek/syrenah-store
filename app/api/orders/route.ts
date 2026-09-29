@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma, OrderStatus } from "@prisma/client";
-import { resend } from "@/lib/email";
+import { resend, storeFromEmail } from "@/lib/email";
 import {
   orderConfirmationEmail,
   orderConfirmationSubject,
@@ -143,7 +143,7 @@ export async function POST(req: Request) {
 
     const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL}/orders/${order.id}`;
     await resend.emails.send({
-      from: "Syrenah Store <onboarding@resend.dev>",
+      from: storeFromEmail,
       to: session.customer_details?.email ?? "test@example.com",
       subject: orderConfirmationSubject(order.id, checkoutLocale),
       html: orderConfirmationEmail({

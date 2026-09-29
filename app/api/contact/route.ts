@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { resend } from "@/lib/email";
+import { resend, storeFromEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     const storeEmail = process.env.STORE_CONTACT_EMAIL || "info@syrenahthelabel.com";
 
     await resend.emails.send({
-      from: "Syrenah Store <onboarding@resend.dev>",
+      from: storeFromEmail,
       to: storeEmail,
       subject: `Formularz kontaktowy: ${subject || "Bez tematu"} — od ${name}`,
       replyTo: email,
