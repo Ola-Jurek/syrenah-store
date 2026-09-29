@@ -74,19 +74,35 @@ model Product {
   sku           String?   @unique
   slug          String    @unique
   categoryId    String    @map("category_id")
-  sizes  Json?  @default("[]")
-  colors Json?  @default("[]")
+  sizes     Json? @default("[]")
+  colors    Json? @default("[]")
+  sizeChart Json? @map("size_chart")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   category      Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   images        Image[]
+  sizeStocks    ProductSizeStock[]
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
   orderItems    OrderItem[]
   discounts     Discount[]
 
   @@map("products")
+}
+
+model ProductSizeStock {
+  id        String   @id @default(cuid())
+  productId String   @map("product_id")
+  size      String
+  stock     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, size])
+  @@map("product_size_stocks")
 }
 
 model Image {
@@ -192,6 +208,7 @@ model OrderItem {
   orderId   String   @map("order_id")
   productId String   @map("product_id")
   quantity  Int
+  size      String?
   pricePln  Decimal  @map("price_pln") @db.Decimal(10, 2)
   priceEur  Decimal  @map("price_eur") @db.Decimal(10, 2)
   createdAt DateTime @default(now())
@@ -261,12 +278,14 @@ model HeroSettings {
 }
 
 model HeroImage {
-  id        String       @id @default(cuid())
-  imageUrl String       @map("image_url")
-  order     Int          @default(0)
-  heroSettingsId String  @map("hero_settings_id")
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id             String   @id @default(cuid())
+  imageUrl       String   @map("image_url")
+  mediaType      String   @default("image") @map("media_type")
+  viewport       String   @default("mobile")
+  order          Int      @default(0)
+  heroSettingsId String   @map("hero_settings_id")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   heroSettings HeroSettings @relation(fields: [heroSettingsId], references: [id], onDelete: Cascade)
 
@@ -281,4 +300,14 @@ model Newsletter {
   updatedAt DateTime @updatedAt
 
   @@map("newsletter")
+}
+
+model InstagramPhoto {
+  id        String   @id @default(cuid())
+  imageUrl  String   @map("image_url")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("instagram_photos")
 }

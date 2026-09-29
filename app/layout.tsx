@@ -10,6 +10,7 @@ import { SessionProvider } from "@/components/SessionProvider";
 import { WishlistProvider } from "@/components/WishlistContext";
 import { NewsletterPopup } from "@/components/NewsletterPopup";
 import { CookieBanner } from "@/components/CookieBanner";
+import { LanguageProvider } from "@/components/LanguageContext";
 
 
 
@@ -40,17 +41,19 @@ export default function RootLayout({
     <html lang="pl">
       <body>
         <SessionProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <Header />
-              <main className="min-h-screen">
-                {children}
-              </main>
-              <Footer />
-              <CookieBanner />
-              <NewsletterPopup />
-            </WishlistProvider>
-          </CartProvider>
+          <LanguageProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <Header />
+                <main className="min-h-screen">
+                  {children}
+                </main>
+                <Footer />
+                <CookieBanner />
+                <NewsletterPopup />
+              </WishlistProvider>
+            </CartProvider>
+          </LanguageProvider>
         </SessionProvider>
       </body>
     </html>

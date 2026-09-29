@@ -1,12 +1,30 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { slugify } from "@/lib/slug";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SizeChartEditor } from "@/components/admin/SizeChartEditor";
+import {
+  SizeStockFields,
+  sizeStocksPayload,
+  splitSizeLabels,
+} from "@/components/admin/SizeStockFields";
+import {
+  draftsToSizeChart,
+  sizeChartDraftError,
+  sizeChartToDrafts,
+  type SizeChartColumnDraft,
+  type SizeChartRowDraft,
+} from "@/lib/size-chart";
+import {
+  getAdminToken,
+  promptAdminToken,
+} from "@/lib/adminToken";
 
 type Category = {
   id: string;
@@ -32,32 +50,9 @@ type DiscountsResponse = {
   discounts: Discount[];
 };
 
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
-function promptAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  const token = window.prompt("Wprowadź token admina:");
-  if (token) {
-    localStorage.setItem("adminToken", token);
-    return token;
-  }
-  return null;
-}
-
-function generateSlug(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 export default function NewProductPage() {
   const router = useRouter();
+  const [slugTouched, setSlugTouched] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,6 +77,11 @@ export default function NewProductPage() {
     discountId: "",
   });
 
+  const initialChart = sizeChartToDrafts(null);
+  const [sizeChartColumns, setSizeChartColumns] = useState<SizeChartColumnDraft[]>(initialChart.columns);
+  const [sizeChartRows, setSizeChartRows] = useState<SizeChartRowDraft[]>(initialChart.rows);
+  const [sizeChartInvalid, setSizeChartInvalid] = useState(false);
+  const [sizeStocks, setSizeStocks] = useState<Record<string, string>>({});
   const [images, setImages] = useState<
     Array<{ url: string; altPl: string; altEn: string; isPrimary: boolean }>
   >([]);
@@ -144,12 +144,20 @@ export default function NewProductPage() {
     setFormData((prev) => ({
       ...prev,
       namePl: value,
-      slug: prev.slug || generateSlug(value),
+      slug: slugTouched ? prev.slug : slugify(value),
     }));
   };
 
   const handleAddImage = () => {
-    setImages([...images, { url: "", altPl: "", altEn: "", isPrimary: false }]);
+    setImages((prev) => [
+      ...prev,
+      {
+        url: "",
+        altPl: "",
+        altEn: "",
+        isPrimary: prev.length === 0,
+      },
+    ]);
   };
 
   const handleFileUpload = async (file: File, index: number) => {
@@ -159,7 +167,7 @@ export default function NewProductPage() {
       return;
     }
 
-    setUploading({ ...uploading, [index]: true });
+    setUploading((prev) => ({ ...prev, [index]: true }));
     setUploadError(null);
 
     try {
@@ -176,7 +184,6 @@ export default function NewProductPage() {
 
       if (res.status === 401) {
         setUploadError("Nieautoryzowany dostęp");
-        setUploading({ ...uploading, [index]: false });
         return;
       }
 
@@ -186,13 +193,57 @@ export default function NewProductPage() {
       }
 
       const data = await res.json();
-      const newImages = [...images];
-      newImages[index] = { ...newImages[index], url: data.url };
-      setImages(newImages);
+      setImages((prev) =>
+        prev.map((img, i) => (i === index ? { ...img, url: data.url } : img))
+      );
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Błąd przesyłania pliku");
     } finally {
-      setUploading({ ...uploading, [index]: false });
+      setUploading((prev) => ({ ...prev, [index]: false }));
+    }
+  };
+
+  const handleFirstFileUpload = async (file: File) => {
+    const token = getAdminToken();
+    if (!token) {
+      setUploadError("Brak tokena admina");
+      return;
+    }
+
+    setImages([{ url: "", altPl: "", altEn: "", isPrimary: true }]);
+    setUploading({ 0: true });
+    setUploadError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: {
+          "x-admin-token": token,
+        },
+        body: formData,
+      });
+
+      if (res.status === 401) {
+        setUploadError("Nieautoryzowany dostęp");
+        setImages([]);
+        return;
+      }
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Błąd przesyłania pliku");
+      }
+
+      const data = await res.json();
+      setImages([{ url: data.url, altPl: "", altEn: "", isPrimary: true }]);
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Błąd przesyłania pliku");
+      setImages([]);
+    } finally {
+      setUploading({ 0: false });
     }
   };
 
@@ -231,14 +282,30 @@ export default function NewProductPage() {
       return;
     }
 
+    if (Object.values(uploading).some(Boolean)) {
+      setError("Poczekaj na zakończenie przesyłania zdjęcia");
+      setSaving(false);
+      return;
+    }
+
+    const chartError = sizeChartDraftError(sizeChartColumns, sizeChartRows);
+    if (chartError) {
+      setSizeChartInvalid(true);
+      setError(chartError);
+      setSaving(false);
+      document.getElementById("size-chart-editor")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    setSizeChartInvalid(false);
+
     try {
       // Parsuj sizes i colors z tekstu oddzielonego przecinkami na tablice
-      const sizesArray = formData.sizes
-        ? formData.sizes.split(",").map(s => s.trim()).filter(s => s.length > 0)
-        : [];
+      const sizesArray = splitSizeLabels(formData.sizes);
       const colorsArray = formData.colors
         ? formData.colors.split(",").map(c => c.trim()).filter(c => c.length > 0)
         : [];
+      const sizeStockRows = sizeStocksPayload(formData.sizes, sizeStocks);
+      const stockTotal = sizeStockRows.reduce((sum, row) => sum + row.stock, 0);
 
       const body = {
         ...formData,
@@ -246,12 +313,14 @@ export default function NewProductPage() {
         priceEur: parseFloat(formData.priceEur || formData.pricePln),
         salePricePln: formData.salePricePln ? parseFloat(formData.salePricePln) : null,
         salePriceEur: formData.salePriceEur ? parseFloat(formData.salePriceEur) : null,
-        stock: parseInt(formData.stock),
+        stock: sizesArray.length > 0 ? stockTotal : parseInt(formData.stock),
         sku: formData.sku || null,
         descriptionPl: formData.descriptionPl || null,
         descriptionEn: formData.descriptionEn || null,
         sizes: sizesArray.length > 0 ? sizesArray : null,
+        sizeStocks: sizeStockRows,
         colors: colorsArray.length > 0 ? colorsArray : null,
+        sizeChart: draftsToSizeChart(sizeChartColumns, sizeChartRows),
         images: images.filter((img) => img.url.trim() !== ""),
         discountId: formData.discountId || null,
       };
@@ -344,9 +413,10 @@ export default function NewProductPage() {
               <Input
                 id="slug"
                 value={formData.slug}
-                onChange={(e) =>
-                  setFormData({ ...formData, slug: e.target.value })
-                }
+                onChange={(e) => {
+                  setSlugTouched(true);
+                  setFormData({ ...formData, slug: e.target.value });
+                }}
                 required
                 className="mt-1 border-black/20 font-mono text-sm"
               />
@@ -497,6 +567,7 @@ export default function NewProductPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {splitSizeLabels(formData.sizes).length === 0 && (
               <div>
                 <Label htmlFor="stock" className="text-black/70">
                   Stan magazynowy *
@@ -504,6 +575,7 @@ export default function NewProductPage() {
                 <Input
                   id="stock"
                   type="number"
+                  min={0}
                   value={formData.stock}
                   onChange={(e) =>
                     setFormData({ ...formData, stock: e.target.value })
@@ -512,6 +584,7 @@ export default function NewProductPage() {
                   className="mt-1 border-black/20"
                 />
               </div>
+              )}
 
               <div>
                 <Label htmlFor="sku" className="text-black/70">
@@ -559,8 +632,27 @@ export default function NewProductPage() {
                 />
               </div>
             </div>
+
+            {splitSizeLabels(formData.sizes).length > 0 && (
+              <div className="mt-4 border-t border-black/10 pt-4">
+                <SizeStockFields
+                  sizesText={formData.sizes}
+                  values={sizeStocks}
+                  onChange={setSizeStocks}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
+
+        <SizeChartEditor
+          columns={sizeChartColumns}
+          rows={sizeChartRows}
+          sizesText={formData.sizes}
+          showSizeError={sizeChartInvalid}
+          onColumnsChange={setSizeChartColumns}
+          onRowsChange={setSizeChartRows}
+        />
 
         {/* Rabat */}
         <Card className="mb-6 border-black/10 bg-white">
@@ -629,9 +721,7 @@ export default function NewProductPage() {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const newIndex = images.length;
-                        handleAddImage();
-                        setTimeout(() => handleFileUpload(file, newIndex), 0);
+                        handleFirstFileUpload(file);
                       }
                       e.target.value = "";
                     }}

@@ -1,12 +1,37 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { AddToCartButton } from "@/components/AddToCartButton";
-import { ProductGallery } from "@/components/ProductGallery";
-import { WishlistButton } from "@/components/WishlistButton";
-import { getEffectivePrice, extractDiscountInfo, extractDiscountLabel } from "@/lib/pricing";
-import { ProductBadge } from "@/components/ProductBadge";
+import { getEffectivePrice, extractDiscountInfo } from "@/lib/pricing";
+import { ProductPageView } from "@/components/ProductPageView";
+import { parseSizeChart } from "@/lib/size-chart";
+import { alignSizeStocks, parseSizeLabels, sellableStock } from "@/lib/size-stock";
+import { slugify } from "@/lib/slug";
 import type { Metadata } from "next";
+
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+async function resolveProductSlug(productSlug: string): Promise<string | null> {
+  const decoded = safeDecode(productSlug).trim();
+  const normalized = slugify(decoded);
+  const candidates = [...new Set([decoded, normalized].filter(Boolean))];
+
+  for (const slug of candidates) {
+    const found = await prisma.product.findFirst({
+      where: { slug: { equals: slug, mode: "insensitive" } },
+      select: { slug: true },
+    });
+    if (found) return found.slug;
+  }
+
+  return null;
+}
+
+export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{
@@ -17,16 +42,19 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { productSlug } = await params;
+  const slug = await resolveProductSlug(productSlug);
 
-  const product = await prisma.product.findUnique({
-    where: { slug: productSlug },
-    include: {
-      images: {
-        where: { isPrimary: true },
-        take: 1,
-      },
-    },
-  });
+  const product = slug
+    ? await prisma.product.findUnique({
+        where: { slug },
+        include: {
+          images: {
+            where: { isPrimary: true },
+            take: 1,
+          },
+        },
+      })
+    : null;
 
   if (!product) {
     return {
@@ -68,40 +96,45 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ProductPage({ params }: Props) {
-  const { productSlug, category } = await params;
+  const { productSlug } = await params;
+  const slug = await resolveProductSlug(productSlug);
 
-  const product = await prisma.product.findUnique({
-    where: { slug: productSlug },
-    include: {
-      category: true,
-      images: {
-        orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
-      },
-      discounts: {
-        where: {
-          isActive: true,
-          validFrom: { lte: new Date() },
-          OR: [
-            { validUntil: null },
-            { validUntil: { gte: new Date() } },
-          ],
+  const product = slug
+    ? await prisma.product.findUnique({
+        where: { slug },
+        include: {
+          category: true,
+          images: {
+            orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+          },
+          discounts: {
+            where: {
+              isActive: true,
+              validFrom: { lte: new Date() },
+              OR: [{ validUntil: null }, { validUntil: { gte: new Date() } }],
+            },
+            take: 1,
+          },
+          sizeStocks: {
+            select: { size: true, stock: true },
+          },
         },
-        take: 1,
-      },
-    },
-  });
+      })
+    : null;
 
   if (!product) {
     notFound();
   }
 
-  // Parsuj sizes i colors z JSON
-  const sizes = product.sizes ? (typeof product.sizes === 'string' ? JSON.parse(product.sizes) : product.sizes) as string[] : [];
-  const colors = product.colors ? (typeof product.colors === 'string' ? JSON.parse(product.colors) : product.colors) as string[] : [];
+  const sizes = parseSizeLabels(product.sizes);
+  const colors = product.colors
+    ? ((typeof product.colors === "string"
+        ? JSON.parse(product.colors)
+        : product.colors) as string[])
+    : [];
+  const sizeStocks = alignSizeStocks(sizes, product.sizeStocks);
 
-  // Oblicz efektywną cenę
   const discountInfo = extractDiscountInfo(product.discounts);
-  const discountLabel = extractDiscountLabel(product.discounts);
   const pricing = getEffectivePrice({
     pricePln: Number(product.pricePln),
     priceEur: Number(product.priceEur),
@@ -111,95 +144,45 @@ export default async function ProductPage({ params }: Props) {
   });
 
   return (
-    <div className="px-6 pt-24 pb-16 max-w-6xl mx-auto bg-white">
-      {/* Breadcrumbs */}
-      <nav className="mb-16">
-        <div className="flex items-center gap-2 text-xs text-[#C1A88C]/60">
-          <Link href="/shop" className="hover:text-[#C1A88C] transition-colors">
-            SKLEP
-          </Link>
-          <span className="text-[#C1A88C]/40">|</span>
-          <Link 
-            href={`/shop/${product.category.slug}`} 
-            className="hover:text-[#C1A88C] transition-colors"
-          >
-            {product.category.namePl.toUpperCase()}
-          </Link>
-          <span className="text-[#C1A88C]/40">|</span>
-          <span className="text-[#C1A88C]/60">
-            {product.namePl.toUpperCase()}
-          </span>
-        </div>
-      </nav>
-
-      <div className="grid gap-12 md:grid-cols-2">
-        {/* LEFT: Images */}
-        <div className="w-full relative">
-          {/* Product Badge (SALE / NEW / SOLD OUT) */}
-          <ProductBadge
-            createdAt={product.createdAt.toISOString()}
-            stock={product.stock}
-            hasPriceReduction={pricing.hasDiscount}
-            discountLabel={discountLabel}
-          />
-          {/* Wishlist Heart – prawy górny róg zdjęcia */}
-          <div className="absolute top-3 right-3 z-10">
-            <WishlistButton
-              productId={product.id}
-              size="md"
-              className="bg-white/60 backdrop-blur-sm shadow-sm"
-            />
-          </div>
-          <div className="max-h-[80vh] overflow-hidden">
-            <ProductGallery images={product.images} productName={product.namePl} />
-          </div>
-        </div>
-
-        {/* RIGHT: Product info */}
-        <div className="flex flex-col">
-          <h1 className="text-sm uppercase tracking-widest font-serif mb-3 text-center md:text-left text-black">
-            {product.namePl.toUpperCase()}
-          </h1>
-
-          {/* Cena */}
-          <div className="mb-8 text-center md:text-left">
-            {pricing.hasDiscount ? (
-              <div className="flex items-center gap-3 justify-center md:justify-start">
-                <span className="text-xs text-black/40 line-through uppercase tracking-widest">
-                  {pricing.originalPricePln.toFixed(2)} PLN
-                </span>
-                <span className="text-xs text-[#C1A88C] font-semibold uppercase tracking-widest">
-                  {pricing.finalPricePln.toFixed(2)} PLN
-                </span>
-              </div>
-            ) : (
-              <p className="text-xs text-black/60 uppercase tracking-widest">
-                {pricing.finalPricePln.toFixed(2)} PLN
-              </p>
-            )}
-          </div>
-
-          {product.descriptionPl && (
-            <p className="text-sm text-black/60 mb-8 leading-relaxed whitespace-pre-wrap text-center md:text-left">
-              {product.descriptionPl}
-            </p>
-          )}
-
-          {/* CTA */}
-          <div className="mt-auto">
-            <AddToCartButton
-              productId={product.id}
-              name={product.namePl}
-              price={pricing.finalPricePln}
-              stock={product.stock}
-              sizes={sizes}
-              colors={colors}
-              slug={product.slug}
-              categorySlug={product.category.slug}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+    <ProductPageView
+      product={{
+        id: product.id,
+        namePl: product.namePl,
+        nameEn: product.nameEn,
+        slug: product.slug,
+        descriptionPl: product.descriptionPl,
+        descriptionEn: product.descriptionEn,
+        stock: sellableStock(product.stock, product.sizes, product.sizeStocks),
+        sizes,
+        sizeStocks,
+        colors,
+        sizeChart: parseSizeChart(product.sizeChart),
+        createdAt: product.createdAt.toISOString(),
+        category: {
+          slug: product.category.slug,
+          namePl: product.category.namePl,
+          nameEn: product.category.nameEn,
+        },
+        images: product.images.map((img) => ({
+          id: img.id,
+          url: img.url,
+          altPl: img.altPl,
+          altEn: img.altEn,
+          isPrimary: img.isPrimary,
+        })),
+        discounts: product.discounts.map((d) => ({
+          type: d.type,
+          value: d.value,
+          namePl: d.namePl,
+        })),
+      }}
+      pricing={{
+        originalPricePln: pricing.originalPricePln,
+        finalPricePln: pricing.finalPricePln,
+        originalPriceEur: pricing.originalPriceEur,
+        finalPriceEur: pricing.finalPriceEur,
+        hasDiscount: pricing.hasDiscount,
+      }}
+    />
   );
 }

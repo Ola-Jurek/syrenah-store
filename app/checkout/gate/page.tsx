@@ -5,20 +5,20 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
 import { useCart } from "@/components/CartContext";
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function CheckoutGatePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { items } = useCart();
+  const { t } = useLanguage();
 
-  // Jeśli zalogowany — od razu dalej
   useEffect(() => {
     if (status === "authenticated") {
       router.replace("/checkout/shipping");
     }
   }, [status, router]);
 
-  // Spinner: sesja się ładuje LUB użytkownik zalogowany (zaraz nastąpi redirect)
   if (status === "loading" || status === "authenticated") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]">
@@ -27,21 +27,20 @@ export default function CheckoutGatePage() {
     );
   }
 
-  // Pusty koszyk — wróć do sklepu
   if (items.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-[#FDFBF7]">
         <h1 className="font-serif text-xl text-neutral-800 mb-3">
-          Twój koszyk jest pusty
+          {t("checkoutFlow.emptyCartTitle")}
         </h1>
         <p className="text-xs text-neutral-400 mb-8">
-          Dodaj produkty, aby przejść do zamówienia.
+          {t("checkoutFlow.emptyCartHint")}
         </p>
         <Link
           href="/shop"
           className="border border-neutral-900 px-8 py-3 text-xs uppercase tracking-widest text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors"
         >
-          Wróć do sklepu
+          {t("checkoutFlow.backToShop")}
         </Link>
       </div>
     );
@@ -50,7 +49,6 @@ export default function CheckoutGatePage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 pt-24 pb-16 bg-[#FDFBF7]">
       <div className="w-full max-w-md">
-        {/* Stepper */}
         <div className="flex items-center justify-center gap-3 mb-12">
           <span className="w-8 h-8 rounded-full bg-[#C1A88C] text-white flex items-center justify-center text-xs font-medium">
             1
@@ -65,21 +63,16 @@ export default function CheckoutGatePage() {
           </span>
         </div>
 
-        {/* Nagłówek */}
         <div className="text-center mb-10">
           <h1 className="font-serif text-2xl text-neutral-800 mb-3">
-            Jak chcesz kontynuować?
+            {t("checkoutFlow.gateTitle")}
           </h1>
           <p className="text-xs text-neutral-400 leading-relaxed">
-            Zaloguj się, aby mieć dostęp do historii zamówień,
-            <br />
-            lub kontynuuj jako gość.
+            {t("checkoutFlow.gateSubtitle")}
           </p>
         </div>
 
-        {/* Opcje */}
         <div className="space-y-4">
-          {/* Zaloguj się */}
           <Link
             href="/login?callbackUrl=/checkout/shipping"
             className="group block w-full border border-[#C1A88C] bg-white p-5 transition-all hover:bg-[#C1A88C]/5"
@@ -87,10 +80,10 @@ export default function CheckoutGatePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-neutral-800 mb-1">
-                  Zaloguj się
+                  {t("checkoutFlow.gateLoginTitle")}
                 </p>
                 <p className="text-xs text-neutral-400">
-                  Masz konto? Zaloguj się lub zarejestruj.
+                  {t("checkoutFlow.gateLoginDesc")}
                 </p>
               </div>
               <svg
@@ -109,7 +102,6 @@ export default function CheckoutGatePage() {
             </div>
           </Link>
 
-          {/* Kontynuuj jako gość */}
           <Link
             href="/checkout/shipping"
             className="group block w-full border border-neutral-200 bg-white p-5 transition-all hover:border-neutral-300 hover:bg-neutral-50/50"
@@ -117,10 +109,10 @@ export default function CheckoutGatePage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-neutral-800 mb-1">
-                  Kontynuuj jako gość
+                  {t("checkoutFlow.gateGuestTitle")}
                 </p>
                 <p className="text-xs text-neutral-400">
-                  Złóż zamówienie bez zakładania konta.
+                  {t("checkoutFlow.gateGuestDesc")}
                 </p>
               </div>
               <svg
@@ -140,24 +132,22 @@ export default function CheckoutGatePage() {
           </Link>
         </div>
 
-        {/* Divider */}
         <div className="flex items-center gap-4 my-8">
           <div className="flex-1 h-px bg-neutral-200" />
           <span className="text-[10px] uppercase tracking-widest text-neutral-300">
-            lub
+            {t("common.or")}
           </span>
           <div className="flex-1 h-px bg-neutral-200" />
         </div>
 
-        {/* Link do rejestracji */}
         <div className="text-center">
           <p className="text-xs text-neutral-400">
-            Nie masz konta?{" "}
+            {t("checkoutFlow.gateNoAccount")}{" "}
             <Link
               href="/register?callbackUrl=/checkout/shipping"
               className="text-neutral-600 hover:text-neutral-800 underline underline-offset-2 transition-colors"
             >
-              Zarejestruj się
+              {t("auth.registerLink")}
             </Link>
           </p>
         </div>

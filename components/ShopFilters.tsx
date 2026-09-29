@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/components/LanguageContext";
 
 type Props = {
   currentFilter: string;
@@ -11,28 +12,43 @@ type Props = {
   hasSaleProducts: boolean;
 };
 
-const filterOptions = [
-  { value: "all", label: "WSZYSTKIE" },
-  { value: "new", label: "NOWOŚCI" },
-  { value: "sale", label: "WYPRZEDAŻ" },
-] as const;
-
-const sortOptions = [
-  { value: "newest", label: "Najnowsze" },
-  { value: "price_asc", label: "Od najniższej" },
-  { value: "price_desc", label: "Od najwyższej" },
-] as const;
-
-export function ShopFilters({ currentFilter, currentSort, hasSaleProducts }: Props) {
+export function ShopFilters({
+  currentFilter,
+  currentSort,
+  hasSaleProducts,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [priceOpen, setPriceOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { t, messages } = useLanguage();
 
-  // Zamknij dropdown po kliknięciu poza nim
+  const filterOptions = useMemo(
+    () =>
+      [
+        { value: "all", label: messages.shop.filterAll },
+        { value: "new", label: messages.shop.filterNew },
+        { value: "sale", label: messages.shop.filterSale },
+      ] as const,
+    [messages.shop]
+  );
+
+  const sortOptions = useMemo(
+    () =>
+      [
+        { value: "newest", label: messages.shop.sortNewest },
+        { value: "price_asc", label: messages.shop.sortPriceAsc },
+        { value: "price_desc", label: messages.shop.sortPriceDesc },
+      ] as const,
+    [messages.shop]
+  );
+
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setPriceOpen(false);
       }
     }
@@ -43,7 +59,6 @@ export function ShopFilters({ currentFilter, currentSort, hasSaleProducts }: Pro
   const buildUrl = (overrides: { filter?: string; sort?: string }) => {
     const params = new URLSearchParams(searchParams.toString());
 
-    // filter
     const filter = overrides.filter ?? currentFilter;
     if (filter && filter !== "all") {
       params.set("filter", filter);
@@ -51,7 +66,6 @@ export function ShopFilters({ currentFilter, currentSort, hasSaleProducts }: Pro
       params.delete("filter");
     }
 
-    // sort
     const sort = overrides.sort ?? currentSort;
     if (sort && sort !== "newest") {
       params.set("sort", sort);
@@ -72,17 +86,14 @@ export function ShopFilters({ currentFilter, currentSort, hasSaleProducts }: Pro
     router.push(buildUrl({ sort: value }));
   };
 
-  const activeSortLabel =
-    sortOptions.find((o) => o.value === currentSort)?.label ?? "Cena";
-
   return (
     <div className="flex flex-wrap items-center gap-4 sm:gap-6 mb-8 pb-4 border-b border-[#C1A88C]/10">
-      {/* Filter tabs */}
       {filterOptions
         .filter((opt) => opt.value !== "sale" || hasSaleProducts)
         .map((opt) => (
           <button
             key={opt.value}
+            type="button"
             onClick={() => handleFilter(opt.value)}
             className={cn(
               "text-xs uppercase tracking-widest transition-colors",
@@ -95,9 +106,9 @@ export function ShopFilters({ currentFilter, currentSort, hasSaleProducts }: Pro
           </button>
         ))}
 
-      {/* Price dropdown */}
       <div className="relative ml-auto" ref={dropdownRef}>
         <button
+          type="button"
           onClick={() => setPriceOpen((v) => !v)}
           className={cn(
             "flex items-center gap-1 text-xs uppercase tracking-widest transition-colors",
@@ -106,7 +117,7 @@ export function ShopFilters({ currentFilter, currentSort, hasSaleProducts }: Pro
               : "text-black/40 hover:text-black/70"
           )}
         >
-          CENA
+          {messages.shop.sortPriceLabel}
           <ChevronDown
             className={cn(
               "h-3 w-3 transition-transform",
@@ -122,6 +133,7 @@ export function ShopFilters({ currentFilter, currentSort, hasSaleProducts }: Pro
               .map((opt) => (
                 <button
                   key={opt.value}
+                  type="button"
                   onClick={() => handleSort(opt.value)}
                   className={cn(
                     "block w-full text-left px-4 py-2.5 text-xs uppercase tracking-widest transition-colors",
@@ -135,10 +147,11 @@ export function ShopFilters({ currentFilter, currentSort, hasSaleProducts }: Pro
               ))}
             {currentSort !== "newest" && (
               <button
+                type="button"
                 onClick={() => handleSort("newest")}
                 className="block w-full text-left px-4 py-2.5 text-xs uppercase tracking-widest text-black/30 hover:text-black/60 hover:bg-[#C1A88C]/5 border-t border-[#C1A88C]/10"
               >
-                Resetuj
+                {t("shop.sortReset")}
               </button>
             )}
           </div>

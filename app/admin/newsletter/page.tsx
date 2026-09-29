@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Mail, Download, Users } from "lucide-react";
+import {
+  clearAdminToken,
+  getAdminToken,
+  promptAdminToken,
+} from "@/lib/adminToken";
 
 type Subscriber = {
   id: string;
@@ -11,26 +16,6 @@ type Subscriber = {
   consent: boolean;
   createdAt: string;
 };
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
-function setAdminToken(token: string): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem("adminToken", token);
-}
-
-function promptAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  const token = window.prompt("Wprowadź token admina:");
-  if (token) {
-    setAdminToken(token);
-    return token;
-  }
-  return null;
-}
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -81,7 +66,7 @@ export default function AdminNewsletterPage() {
         });
 
         if (res.status === 401) {
-          localStorage.removeItem("adminToken");
+          clearAdminToken();
           setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
           const newToken = promptAdminToken();
           if (newToken) {
@@ -113,7 +98,7 @@ export default function AdminNewsletterPage() {
     if (!token) return;
 
     try {
-      const res = await fetch("/api/admin/newsletter?format=csv", {
+      const res = await fetch("/api/admin/newsletter?format=xls", {
         headers: {
           "x-admin-token": token,
         },
@@ -127,7 +112,7 @@ export default function AdminNewsletterPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `newsletter_${new Date().toISOString().split("T")[0]}.csv`;
+      a.download = `newsletter_${new Date().toISOString().split("T")[0]}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -152,9 +137,9 @@ export default function AdminNewsletterPage() {
   return (
     <>
       {/* Nagłówek */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-xs uppercase tracking-widest text-black font-medium mb-1">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="mb-1 text-xs font-medium uppercase tracking-widest text-black">
             Newsletter
           </h1>
           <p className="text-xs text-black/40">
@@ -164,10 +149,10 @@ export default function AdminNewsletterPage() {
         <Button
           onClick={handleExportCSV}
           disabled={subscribers.length === 0}
-          className="bg-[#C1A88C] hover:bg-[#B09A7C] text-white text-xs uppercase tracking-widest px-6 py-2.5 rounded-none"
+          className="w-full rounded-none bg-[#C1A88C] px-6 py-2.5 text-xs uppercase tracking-widest text-white hover:bg-[#B09A7C] sm:w-auto"
         >
-          <Download className="h-3.5 w-3.5 mr-2" />
-          Eksportuj do CSV
+          <Download className="mr-2 h-3.5 w-3.5" />
+          Eksportuj do Excela
         </Button>
       </div>
 
@@ -223,14 +208,33 @@ export default function AdminNewsletterPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-[#E8E3D8] rounded-none shadow-none overflow-hidden">
-          <CardHeader className="border-b border-[#E8E3D8] bg-[#FDFBF7]/50 px-6 py-4">
-            <CardTitle className="text-xs uppercase tracking-widest text-black/60 font-medium">
+        <Card className="min-w-0 overflow-hidden rounded-none border-[#E8E3D8] shadow-none">
+          <CardHeader className="border-b border-[#E8E3D8] bg-[#FDFBF7]/50 px-4 py-4 sm:px-6">
+            <CardTitle className="text-xs font-medium uppercase tracking-widest text-black/60">
               Lista subskrybentów ({subscribers.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            <div className="divide-y divide-[#E8E3D8]/60 md:hidden">
+              {subscribers.map((subscriber, index) => (
+                <div key={subscriber.id} className="space-y-1 px-4 py-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="min-w-0 break-all text-sm font-medium text-neutral-700">
+                      {subscriber.email}
+                    </p>
+                    {subscriber.consent ? (
+                      <span className="shrink-0 text-xs text-green-600">Tak</span>
+                    ) : (
+                      <span className="shrink-0 text-xs text-red-400">Nie</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-black/40">
+                    {index + 1}. {formatDate(subscriber.createdAt)}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-[#E8E3D8]">

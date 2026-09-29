@@ -6,6 +6,8 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { User, Package, LogOut, Pencil, X, Check, ChevronRight } from "lucide-react";
 import { useCart } from "@/components/CartContext";
+import { useLanguage } from "@/components/LanguageContext";
+import { formatCheckoutMoney } from "@/lib/checkout-currency";
 
 // ── Types ──────────────────────────────────────────────
 
@@ -15,6 +17,7 @@ interface OrderItem {
   pricePln: string;
   product: {
     namePl: string;
+    nameEn: string;
     slug: string;
   };
 }
@@ -23,6 +26,7 @@ interface Order {
   id: string;
   status: string;
   totalPln: string;
+  totalEur?: string;
   createdAt: string;
   items: OrderItem[];
 }
@@ -46,17 +50,6 @@ type Tab = "account" | "orders" | "logout";
 
 // ── Status Maps ────────────────────────────────────────
 
-const statusLabels: Record<string, string> = {
-  PENDING: "Oczekujące",
-  PAID: "Opłacone",
-  PROCESSING: "W realizacji",
-  SHIPPED: "Wysłane",
-  DELIVERED: "Dostarczone",
-  CANCELLED: "Anulowane",
-  FAILED: "Nieudane",
-  REFUNDED: "Zwrócone",
-};
-
 const statusColors: Record<string, string> = {
   PENDING: "bg-amber-50 text-amber-700 border-amber-200",
   PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -74,6 +67,7 @@ export default function AccountPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { clearCart } = useCart();
+  const { locale, t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<Tab>("account");
   const [orders, setOrders] = useState<Order[]>([]);
@@ -219,9 +213,9 @@ export default function AccountPage() {
 
   // ── Tabs config ──
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: "account", label: "Dane konta", icon: <User className="h-4 w-4" /> },
-    { key: "orders", label: "Zamówienia", icon: <Package className="h-4 w-4" /> },
-    { key: "logout", label: "Wyloguj", icon: <LogOut className="h-4 w-4" /> },
+    { key: "account", label: t("account.tabAccount"), icon: <User className="h-4 w-4" /> },
+    { key: "orders", label: t("account.tabOrders"), icon: <Package className="h-4 w-4" /> },
+    { key: "logout", label: t("account.tabLogout"), icon: <LogOut className="h-4 w-4" /> },
   ];
 
   return (
@@ -231,7 +225,10 @@ export default function AccountPage() {
         {/* ── Nagłówek z imieniem ── */}
         <div className="mb-12">
           <h1 className="font-serif text-3xl md:text-4xl text-neutral-800 tracking-wide">
-            Cześć, {firstName || "Klientko"}!
+            {t("account.greeting").replace(
+              "{name}",
+              firstName || t("account.guestName")
+            )}
           </h1>
           <div className="mt-3 w-12 h-px bg-[#C1A88C]" />
         </div>
@@ -271,14 +268,14 @@ export default function AccountPage() {
               <div className="space-y-8">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-xs uppercase tracking-widest text-neutral-500 font-medium">
-                    Edytuj dane
+                    {t("account.editTitle")}
                   </h2>
                   <button
                     onClick={cancelEditing}
                     className="flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
                   >
                     <X className="h-3.5 w-3.5" />
-                    Anuluj
+                    {t("account.cancel")}
                   </button>
                 </div>
 
@@ -287,26 +284,26 @@ export default function AccountPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-[11px] uppercase tracking-widest text-neutral-400 mb-2">
-                        Imię
+                        {t("auth.name")}
                       </label>
                       <input
                         type="text"
                         value={editForm.name}
                         onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
                         className="w-full border border-[#E8E3D8] bg-[#FDFBF7] px-4 py-3 text-sm text-neutral-700 focus:outline-none focus:border-[#C1A88C] transition-colors"
-                        placeholder="Imię"
+                        placeholder={t("auth.placeholderName")}
                       />
                     </div>
                     <div>
                       <label className="block text-[11px] uppercase tracking-widest text-neutral-400 mb-2">
-                        Nazwisko
+                        {t("account.lastName")}
                       </label>
                       <input
                         type="text"
                         value={editForm.lastName}
                         onChange={(e) => setEditForm({ ...editForm, lastName: e.target.value })}
                         className="w-full border border-[#E8E3D8] bg-[#FDFBF7] px-4 py-3 text-sm text-neutral-700 focus:outline-none focus:border-[#C1A88C] transition-colors"
-                        placeholder="Nazwisko"
+                        placeholder={t("account.lastName")}
                       />
                     </div>
                   </div>
@@ -314,7 +311,7 @@ export default function AccountPage() {
                   {/* Email (read only) */}
                   <div>
                     <label className="block text-[11px] uppercase tracking-widest text-neutral-400 mb-2">
-                      Email
+                      {t("auth.email")}
                     </label>
                     <input
                       type="email"
@@ -327,7 +324,7 @@ export default function AccountPage() {
                   {/* Telefon */}
                   <div>
                     <label className="block text-[11px] uppercase tracking-widest text-neutral-400 mb-2">
-                      Numer telefonu
+                      {t("account.phone")}
                     </label>
                     <input
                       type="tel"
@@ -344,7 +341,7 @@ export default function AccountPage() {
                   {/* Adres */}
                   <div>
                     <label className="block text-[11px] uppercase tracking-widest text-neutral-400 mb-2">
-                      Ulica i numer
+                      {t("checkoutFlow.street")}
                     </label>
                     <input
                       type="text"
@@ -358,7 +355,7 @@ export default function AccountPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-[11px] uppercase tracking-widest text-neutral-400 mb-2">
-                        Kod pocztowy
+                        {t("checkoutFlow.postalCode")}
                       </label>
                       <input
                         type="text"
@@ -370,7 +367,7 @@ export default function AccountPage() {
                     </div>
                     <div>
                       <label className="block text-[11px] uppercase tracking-widest text-neutral-400 mb-2">
-                        Miasto
+                        {t("checkoutFlow.city")}
                       </label>
                       <input
                         type="text"
@@ -394,7 +391,7 @@ export default function AccountPage() {
                   ) : (
                     <>
                       <Check className="h-3.5 w-3.5" />
-                      Zapisz zmiany
+                      {t("account.saveChanges")}
                     </>
                   )}
                 </button>
@@ -407,7 +404,7 @@ export default function AccountPage() {
                     {/* Imię */}
                     <div>
                       <span className="block text-[11px] uppercase tracking-widest text-neutral-400 mb-1.5">
-                        Imię
+                        {t("auth.name")}
                       </span>
                       <p className="text-sm text-neutral-700">
                         {profile?.name || <span className="text-neutral-300 italic">—</span>}
@@ -417,7 +414,7 @@ export default function AccountPage() {
                     {/* Nazwisko */}
                     <div>
                       <span className="block text-[11px] uppercase tracking-widest text-neutral-400 mb-1.5">
-                        Nazwisko
+                        {t("account.lastName")}
                       </span>
                       <p className="text-sm text-neutral-700">
                         {profile?.lastName || <span className="text-neutral-300 italic">—</span>}
@@ -427,7 +424,7 @@ export default function AccountPage() {
                     {/* Email */}
                     <div>
                       <span className="block text-[11px] uppercase tracking-widest text-neutral-400 mb-1.5">
-                        Email
+                        {t("auth.email")}
                       </span>
                       <p className="text-sm text-neutral-700">
                         {profile?.email}
@@ -437,7 +434,7 @@ export default function AccountPage() {
                     {/* Telefon */}
                     <div>
                       <span className="block text-[11px] uppercase tracking-widest text-neutral-400 mb-1.5">
-                        Numer telefonu
+                        {t("account.phone")}
                       </span>
                       <p className="text-sm text-neutral-700">
                         {profile?.phone || <span className="text-neutral-300 italic">—</span>}
@@ -451,7 +448,7 @@ export default function AccountPage() {
                   {/* Adres */}
                   <div>
                     <span className="block text-[11px] uppercase tracking-widest text-neutral-400 mb-1.5">
-                      Adres
+                      {t("account.address")}
                     </span>
                     {profile?.address ? (
                       <div className="text-sm text-neutral-700 space-y-0.5">
@@ -459,7 +456,7 @@ export default function AccountPage() {
                         <p>{profile.address.postalCode} {profile.address.city}</p>
                       </div>
                     ) : (
-                      <p className="text-sm text-neutral-300 italic">Brak adresu</p>
+                      <p className="text-sm text-neutral-300 italic">{t("account.noAddress")}</p>
                     )}
                   </div>
                 </div>
@@ -470,7 +467,7 @@ export default function AccountPage() {
                   className="flex items-center gap-2 px-6 py-3 border border-[#C1A88C] text-[#C1A88C] text-xs uppercase tracking-widest font-medium hover:bg-[#C1A88C] hover:text-white transition-all duration-200 cursor-pointer"
                 >
                   <Pencil className="h-3.5 w-3.5" />
-                  Edytuj dane
+                  {t("account.editData")}
                 </button>
               </div>
             )}
@@ -488,13 +485,13 @@ export default function AccountPage() {
               <div className="border border-[#E8E3D8] bg-white p-12 text-center">
                 <Package className="h-10 w-10 text-neutral-200 mx-auto mb-4" />
                 <p className="text-sm text-neutral-400 mb-6">
-                  Nie masz jeszcze żadnych zamówień.
+                  {t("account.ordersEmpty")}
                 </p>
                 <Link
                   href="/shop"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-[#C1A88C] text-white text-xs uppercase tracking-widest font-medium hover:bg-[#B09878] transition-colors"
                 >
-                  Przejdź do sklepu
+                  {t("account.goToShop")}
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
@@ -509,14 +506,17 @@ export default function AccountPage() {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div className="space-y-1.5">
                         <p className="text-xs font-medium text-neutral-700 tracking-wide">
-                          Zamówienie #{order.id.slice(-8).toUpperCase()}
+                          {t("account.orderPrefix")} #{order.id.slice(-8).toUpperCase()}
                         </p>
                         <p className="text-xs text-neutral-400">
-                          {new Date(order.createdAt).toLocaleDateString("pl-PL", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          })}
+                          {new Date(order.createdAt).toLocaleDateString(
+                            locale === "en" ? "en-GB" : "pl-PL",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            }
+                          )}
                         </p>
                       </div>
 
@@ -527,10 +527,16 @@ export default function AccountPage() {
                             "bg-neutral-50 text-neutral-500 border-neutral-200"
                           }`}
                         >
-                          {statusLabels[order.status] || order.status}
+                          {t(`account.status.${order.status}`) || order.status}
                         </span>
                         <span className="text-sm font-medium text-neutral-700 whitespace-nowrap tabular-nums">
-                          {Number(order.totalPln).toFixed(2)} zł
+                          {formatCheckoutMoney(
+                            Number(order.totalPln),
+                            locale === "en" && order.totalEur != null
+                              ? Number(order.totalEur)
+                              : null,
+                            locale
+                          )}
                         </span>
                         <ChevronRight className="h-4 w-4 text-neutral-300 group-hover:text-[#C1A88C] transition-colors hidden sm:block" />
                       </div>
@@ -542,7 +548,7 @@ export default function AccountPage() {
                           {order.items
                             .map(
                               (item) =>
-                                `${item.product.namePl} × ${item.quantity}`
+                                `${locale === "en" ? item.product.nameEn : item.product.namePl} × ${item.quantity}`
                             )
                             .join("  ·  ")}
                         </p>

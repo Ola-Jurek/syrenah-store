@@ -7,12 +7,18 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { countryLabel } from "@/lib/shipping-countries";
+import {
+  ensureAdminToken,
+  recoverAdminToken,
+} from "@/lib/adminToken";
 
 /* ───────── Typy ───────── */
 
 type OrderItem = {
   id: string;
   quantity: number;
+  size: string | null;
   pricePln: number;
   product: {
     id: string;
@@ -28,6 +34,7 @@ type ShippingAddress = {
   street?: string;
   city?: string;
   postalCode?: string;
+  country?: string;
   parcelLockerCode?: string;
 };
 
@@ -42,6 +49,7 @@ type AlternateShippingAddress = {
   street?: string;
   city?: string;
   postalCode?: string;
+  country?: string;
   phone?: string;
 };
 
@@ -76,11 +84,6 @@ type OrderResponse = {
 };
 
 /* ───────── Helpers ───────── */
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -177,7 +180,7 @@ export default function AdminOrderDetailPage() {
 
   useEffect(() => {
     async function fetchOrder() {
-      const token = getAdminToken();
+      let token = ensureAdminToken();
       if (!token) {
         setError("Brak tokena admina");
         setLoading(false);
@@ -185,11 +188,25 @@ export default function AdminOrderDetailPage() {
       }
 
       try {
-        const res = await fetch(`/api/admin/orders/${id}`, {
+        let res = await fetch(`/api/admin/orders/${id}`, {
           headers: {
             "x-admin-token": token,
           },
         });
+
+        if (res.status === 401) {
+          token = recoverAdminToken();
+          if (!token) {
+            setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
+            setLoading(false);
+            return;
+          }
+          res = await fetch(`/api/admin/orders/${id}`, {
+            headers: {
+              "x-admin-token": token,
+            },
+          });
+        }
 
         if (res.status === 401) {
           setError("Nieautoryzowany dostęp");
@@ -223,14 +240,14 @@ export default function AdminOrderDetailPage() {
   }, [id]);
 
   async function handleSaveStatus() {
-    const token = getAdminToken();
+    let token = ensureAdminToken();
     if (!token || !order) return;
 
     setSaving(true);
     setSaveMessage(null);
 
     try {
-      const res = await fetch(`/api/admin/orders/${id}`, {
+      let res = await fetch(`/api/admin/orders/${id}`, {
         method: "PATCH",
         headers: {
           "x-admin-token": token,
@@ -238,6 +255,23 @@ export default function AdminOrderDetailPage() {
         },
         body: JSON.stringify({ status: selectedStatus }),
       });
+
+      if (res.status === 401) {
+        token = recoverAdminToken();
+        if (!token) {
+          setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
+          setSaving(false);
+          return;
+        }
+        res = await fetch(`/api/admin/orders/${id}`, {
+          method: "PATCH",
+          headers: {
+            "x-admin-token": token,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: selectedStatus }),
+        });
+      }
 
       if (res.status === 401) {
         setError("Nieautoryzowany dostęp");
@@ -389,7 +423,7 @@ export default function AdminOrderDetailPage() {
             {!isParcelLocker && addr && (
               <InfoRow
                 label="Adres"
-                value={[addr.street, [addr.postalCode, addr.city].filter(Boolean).join(" ")].filter(Boolean).join(", ")}
+                value={[addr.street, [addr.postalCode, addr.city].filter(Boolean).join(" "), countryLabel(addr.country, "pl")].filter(Boolean).join(", ")}
               />
             )}
 
@@ -404,7 +438,7 @@ export default function AdminOrderDetailPage() {
                 )}
                 <InfoRow
                   label="Adres"
-                  value={[altShip.street, [altShip.postalCode, altShip.city].filter(Boolean).join(" ")].filter(Boolean).join(", ")}
+                  value={[altShip.street, [altShip.postalCode, altShip.city].filter(Boolean).join(" "), countryLabel(altShip.country, "pl")].filter(Boolean).join(", ")}
                 />
                 {altShip.phone && (
                   <InfoRow label="Telefon" value={altShip.phone} />
@@ -573,6 +607,7 @@ export default function AdminOrderDetailPage() {
                     <td className="py-3 px-3">
                       <p className="text-sm font-medium text-black">
                         {item.product.namePl}
+                        {item.size ? ` · ${item.size}` : ""}
                       </p>
                       {item.product.nameEn && (
                         <p className="text-[11px] text-black/40">
@@ -620,6 +655,7 @@ export default function AdminOrderDetailPage() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-black truncate">
                     {item.product.namePl}
+                    {item.size ? ` · ${item.size}` : ""}
                   </p>
                   <p className="text-xs text-black/50">
                     {item.pricePln.toFixed(2)} zł × {item.quantity}

@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -60,3 +61,5 @@ export function ShopClientWrapper({ totalProducts, currentSort }: Props) {
     </div>
   );
 }
+
+

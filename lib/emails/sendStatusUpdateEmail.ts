@@ -1,4 +1,4 @@
-import { resend } from "@/lib/email";
+import { resend, storeFromEmail } from "@/lib/email";
 import { statusUpdateEmail } from "@/lib/emails/statusUpdate";
 
 type OrderForEmail = {
@@ -63,7 +63,7 @@ export async function sendStatusUpdateEmail({
     });
 
     const result = await resend.emails.send({
-      from: "Syrenah Store <onboarding@resend.dev>",
+      from: storeFromEmail,
       to: recipientEmail,
       subject,
       html,

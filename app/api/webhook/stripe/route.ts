@@ -4,8 +4,11 @@ import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma, OrderStatus } from "@prisma/client";
-import { resend } from "@/lib/email";
-import { orderConfirmationEmail } from "@/lib/emails/orderConfirmation";
+import { resend, storeFromEmail } from "@/lib/email";
+import {
+  orderConfirmationEmail,
+  orderConfirmationSubject,
+} from "@/lib/emails/orderConfirmation";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -72,6 +75,12 @@ export async function POST(req: Request) {
       const total = (session.amount_total ?? 0) / 100;
       console.log("Total amount:", total);
 
+      const checkoutLocale =
+        session.metadata?.checkoutLocale === "en" ? "en" : "pl";
+      const totalEurFromMeta = session.metadata?.totalEur
+        ? parseFloat(session.metadata.totalEur)
+        : total;
+
       // Cart trzymamy w metadata
       const cartRaw = session.metadata?.cart;
       if (!cartRaw) {
@@ -86,7 +95,10 @@ export async function POST(req: Request) {
         productId: string;
         quantity: number;
         price: number;
+        priceEur?: number;
         name: string;
+        nameEn?: string;
+        size?: string;
       }>;
       console.log("Cart items count:", cart.length);
 
@@ -103,7 +115,8 @@ export async function POST(req: Request) {
             stripeSessionId: sessionId,
             status: OrderStatus.PAID,
             totalPln: new Prisma.Decimal(total),
-            totalEur: new Prisma.Decimal(total),
+            totalEur: new Prisma.Decimal(totalEurFromMeta),
+            language: checkoutLocale,
             ...(userId ? { userId } : {}),
           },
         });
@@ -116,20 +129,43 @@ export async function POST(req: Request) {
               orderId: newOrder.id,
               productId: item.productId,
               quantity: item.quantity ?? 1,
+              size: item.size || null,
               pricePln: new Prisma.Decimal(item.price),
-              priceEur: new Prisma.Decimal(item.price),
+              priceEur: new Prisma.Decimal(
+                item.priceEur != null ? item.priceEur : item.price
+              ),
             },
           });
 
-          // Zmniejsz stock produktu
-          await tx.product.update({
-            where: { id: item.productId },
-            data: {
-              stock: {
-                decrement: item.quantity ?? 1,
+          const qty = item.quantity ?? 1;
+          if (item.size) {
+            const sizeRow = await tx.productSizeStock.findUnique({
+              where: {
+                productId_size: {
+                  productId: item.productId,
+                  size: item.size,
+                },
               },
-            },
-          });
+            });
+            const decrement = Math.min(qty, sizeRow?.stock ?? 0);
+            if (sizeRow && decrement > 0) {
+              await tx.productSizeStock.update({
+                where: { id: sizeRow.id },
+                data: { stock: { decrement } },
+              });
+              await tx.product.update({
+                where: { id: item.productId },
+                data: { stock: { decrement } },
+              });
+            }
+          } else {
+            await tx.product.update({
+              where: { id: item.productId },
+              data: {
+                stock: { decrement: qty },
+              },
+            });
+          }
         }
 
         return newOrder;
@@ -148,13 +184,15 @@ export async function POST(req: Request) {
         try {
           const trackingUrl = `${process.env.NEXT_PUBLIC_APP_URL}/orders/${order.id}`;
           const emailResult = await resend.emails.send({
-            from: "Syrenah Store <onboarding@resend.dev>",
+            from: storeFromEmail,
             to: customerEmail,
-            subject: `Potwierdzenie zamówienia #${order.id}`,
+            subject: orderConfirmationSubject(order.id, checkoutLocale),
             html: orderConfirmationEmail({
               orderId: order.id,
-              total: Number(order.totalPln),
+              totalPln: Number(order.totalPln),
+              totalEur: Number(order.totalEur),
               trackingUrl,
+              locale: checkoutLocale,
             }),
           });
 

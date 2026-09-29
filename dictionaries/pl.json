@@ -1,0 +1,686 @@
+{
+  "nav": {
+    "home": "START",
+    "shop": "SKLEP",
+    "about": "O NAS",
+    "contact": "KONTAKT",
+    "collections": "KOLEKCJE",
+    "searchPlaceholder": "SZUKAJ...",
+    "categories": "KATEGORIE",
+    "login": "Zaloguj",
+    "myAccount": "Moje konto",
+    "mobileMenuTitle": "Menu główne",
+    "openMenu": "Otwórz menu",
+    "wishlistAria": "Ulubione",
+    "cartAria": "Koszyk",
+    "accountAria": "Konto",
+    "logoAlt": "Syrenah",
+    "searchAria": "Szukaj w sklepie"
+  },
+  "footer": {
+    "info": "Informacje",
+    "about": "O nas",
+    "contact": "Kontakt",
+    "terms": "Regulamin",
+    "privacy": "Polityka prywatności",
+    "returns": "Zwroty i reklamacje",
+    "social": "Social",
+    "shopData": "Dane sklepu",
+    "copyright": "Wszystkie prawa zastrzeżone.",
+    "instagramAria": "Instagram Syrenah",
+    "tiktokAria": "TikTok Syrenah"
+  },
+  "home": {
+    "newest": "NOWOŚCI",
+    "seeAll": "Zobacz wszystkie"
+  },
+  "instagram": {
+    "title": "INSTAGRAM",
+    "openProfile": "Otwórz Instagram Syrenah",
+    "openPost": "Zobacz post na Instagramie"
+  },
+  "shop": {
+    "codePrefix": "KOD:",
+    "preparing": "Produkty w przygotowaniu ✨",
+    "searchTitle": "WYNIKI WYSZUKIWANIA:",
+    "foundOne": "Znaleziono",
+    "product": "produkt",
+    "products": "produktów",
+    "noResults": "Nie znaleziono produktów dla frazy",
+    "filterAll": "WSZYSTKIE",
+    "filterNew": "NOWOŚCI",
+    "filterSale": "WYPRZEDAŻ",
+    "sortNewest": "Najnowsze",
+    "sortPriceAsc": "Od najniższej",
+    "sortPriceDesc": "Od najwyższej",
+    "sortPriceLabel": "Cena",
+    "sortReset": "Resetuj"
+  },
+  "product": {
+    "shopCrumb": "SKLEP",
+    "size": "Rozmiar",
+    "color": "Kolor",
+    "addToCart": "Dodaj do koszyka",
+    "outOfStock": "Niedostępny",
+    "selectSize": "Wybierz rozmiar",
+    "adding": "Dodawanie...",
+    "addedModalTitle": "Produkt dodany do koszyka",
+    "continueShopping": "Kontynuuj zakupy",
+    "goToCart": "Przejdź do koszyka"
+  },
+  "sizeChart": {
+    "trigger": "Tabela wymiarów",
+    "title": "Tabela wymiarów",
+    "subtitle": "wymiary w cm",
+    "srDescription": "Długość, biodra, klatka piersiowa i talia tego produktu w centymetrach.",
+    "colSize": "Rozmiar",
+    "colLength": "Długość",
+    "colHips": "Biodra",
+    "colChest": "Klatka",
+    "colWaist": "Talia",
+    "caption": "Tabela rozmiarów, wymiary w centymetrach",
+    "footnote": "Wymiary tego produktu w centymetrach.",
+    "unitCm": "cm",
+    "unitIn": "in",
+    "subtitleIn": "wymiary w calach",
+    "captionIn": "Tabela rozmiarów, wymiary w calach",
+    "footnoteIn": "Wymiary przeliczone z centymetrów. 1 cal = 2,54 cm.",
+    "srDescriptionIn": "Długość, biodra, klatka piersiowa i talia tego produktu w calach."
+  },
+  "about": {
+    "metaTitle": "O nas",
+    "heroKicker": "Nasza historia",
+    "heroTitle": "Syrenah",
+    "heroLead": "Elegancja zrodzona z pasji. Moda, która podkreśla Twoją wyjątkowość.",
+    "missionKicker": "Kim jesteśmy",
+    "missionBody": "Tworzymy modę dla kobiet, które wiedzą czego chcą. Jesteśmy siostrami – Marta i Claudia. Razem stworzyłyśmy Syrenah od zera. Zaczynając od samego początku, z ogromną determinacją uczymy się, projektujemy i budujemy tę markę krok po kroku. Wierzymy, że kiedy ma się odwagę próbować, nie ma rzeczy, których nie da się osiągnąć.",
+    "valuesKicker": "Nasze wartości",
+    "v1Title": "Kunszt i jakość",
+    "v1Body": "Dbamy o jakość, detale i najwyższy poziom obsługi. Syrenah to marka, która daje kobietom możliwość poczucia się wyjątkowo — bez kompromisów.",
+    "v2Title": "Pewność siebie",
+    "v2Body": "Nasza marka powstała z myślą o każdej kobiecie. Wierzymy, że styl i piękno nie mają jednego rozmiaru, koloru ani definicji. Chcemy, aby każda kobieta – niezależnie od sylwetki, koloru skóry czy wieku – mogła poczuć się w naszych projektach pewnie i wyjątkowo.",
+    "v3Title": "Symbolika syreny",
+    "v3Body": "Syrena jest symbolem kobiecej niezależności, siły i odwagi. To kobieta, która podąża własną drogą, słucha swojej intuicji i nie boi się być sobą.",
+    "manifestKicker": "Manifest",
+    "manifestQuote": "„Syrenah to manifest kobiecej siły. Wierzymy, że każda kobieta ma w sobie odwagę, by sięgać po więcej. Bo kiedy wierzysz w siebie, nie ma rzeczy niemożliwych.”",
+    "manifestSignoff": "Zespół Syrenah",
+    "ctaTitle": "Odkryj kolekcję",
+    "ctaShop": "Zobacz sklep"
+  },
+  "contact": {
+    "metaTitle": "Kontakt",
+    "kicker": "Napisz do nas",
+    "title": "Kontakt",
+    "intro": "Masz pytanie dotyczące zamówienia, produktu lub współpracy? Chętnie pomożemy — wypełnij formularz, a odezwiemy się najszybciej jak to możliwe.",
+    "infoKicker": "Informacje",
+    "emailLabel": "E-mail",
+    "addressLabel": "Adres",
+    "addressLines": "Syrenah sp. z o.o.\nUl. Słoneczna 42B/2\n55-311 Kostomłoty",
+    "responseNote": "Odpowiadamy na wiadomości e-mail w ciągu 24 godzin w dni robocze.",
+    "nameLabel": "Imię i nazwisko",
+    "emailFieldLabel": "Adres e-mail",
+    "subjectLabel": "Temat",
+    "messageLabel": "Wiadomość",
+    "subjectPlaceholder": "Wybierz temat...",
+    "subjectProduct": "Pytanie o produkt",
+    "subjectOrder": "Status zamówienia",
+    "subjectReturn": "Zwrot lub wymiana",
+    "subjectComplaint": "Reklamacja",
+    "subjectCoop": "Współpraca",
+    "subjectOther": "Inne",
+    "messagePlaceholder": "Opisz swoją sprawę...",
+    "submit": "Wyślij wiadomość",
+    "submitting": "Wysyłanie...",
+    "toastFillRequired": "Wypełnij wszystkie wymagane pola.",
+    "toastMessageShort": "Wiadomość musi zawierać co najmniej 10 znaków.",
+    "toastSuccess": "Wiadomość wysłana! Odpowiemy najszybciej jak to możliwe.",
+    "toastError": "Wystąpił błąd podczas wysyłania.",
+    "toastNetwork": "Wystąpił błąd połączenia. Spróbuj ponownie później."
+  },
+  "cookie": {
+    "textPrefix": "Nasza strona korzysta z plików cookies, aby zapewnić Ci najwyższą jakość usług. Korzystając ze sklepu, akceptujesz naszą",
+    "privacyLink": "politykę prywatności",
+    "accept": "Akceptuję"
+  },
+  "newsletter": {
+    "close": "Zamknij",
+    "title": "Newsletter",
+    "subtitle": "Zapisz się i bądź na bieżąco",
+    "emailPlaceholder": "Twój adres e-mail",
+    "consent": "Wyrażam zgodę na przetwarzanie moich danych osobowych w celu otrzymywania newslettera.",
+    "submit": "Zapisz się",
+    "consentError": "Zaznacz zgodę na przetwarzanie danych.",
+    "errorGeneric": "Wystąpił błąd. Spróbuj ponownie.",
+    "thanksTitle": "Dziękujemy!",
+    "headline": "Bądź częścią naszej historii",
+    "blurb": "Zapisz się do newslettera, by otrzymywać informacje o nowych kolekcjach i wyjątkowych ofertach.",
+    "joinTagline": "Dołącz do Syrenah Girls \u2661",
+    "saving": "Zapisywanie...",
+    "noThanks": "Nie, dziękuję"
+  },
+  "auth": {
+    "loginTitle": "Logowanie",
+    "loginSubtitle": "Zaloguj się do swojego konta",
+    "registerTitle": "Rejestracja",
+    "registerSubtitle": "Utwórz konto w Syrenah",
+    "email": "Adres email",
+    "password": "Hasło",
+    "confirmPassword": "Potwierdź hasło",
+    "submitLogin": "Zaloguj się",
+    "submitRegister": "Zarejestruj się",
+    "noAccount": "Nie masz konta?",
+    "hasAccount": "Masz już konto?",
+    "registerLink": "Zarejestruj się",
+    "loginLink": "Zaloguj się",
+    "invalidCreds": "Nieprawidłowy email lub hasło",
+    "unexpectedError": "Wystąpił nieoczekiwany błąd",
+    "passwordMismatch": "Hasła nie są identyczne",
+    "registerSuccess": "Konto utworzone. Możesz się zalogować.",
+    "registerHeroTitle": "Stwórz konto",
+    "registerHeroSubtitle": "Dołącz do Syrenah Store",
+    "name": "Imię",
+    "repeatPasswordLabel": "Powtórz hasło",
+    "passwordMin": "Hasło musi mieć co najmniej 6 znaków",
+    "registerError": "Wystąpił błąd podczas rejestracji",
+    "registerAutoLoginFail": "Konto utworzone, ale nie udało się zalogować automatycznie. Przejdź do strony logowania.",
+    "loggingIn": "Logowanie...",
+    "registering": "Rejestrowanie...",
+    "placeholderPassword": "Wpisz hasło",
+    "placeholderPasswordHint": "Min. 6 znaków",
+    "placeholderRepeatPassword": "Powtórz hasło",
+    "placeholderName": "Anna"
+  },
+  "cart": {
+    "title": "Koszyk",
+    "empty": "Twój koszyk jest pusty.",
+    "continueShopping": "Kontynuuj zakupy",
+    "subtotal": "Suma częściowa",
+    "discountCode": "Kod rabatowy",
+    "apply": "Zastosuj",
+    "removeDiscount": "Usuń kod",
+    "removeDiscountTitle": "Usuń kod rabatowy",
+    "total": "Razem",
+    "checkout": "Do kasy",
+    "remove": "Usuń",
+    "size": "Rozmiar",
+    "color": "Kolor",
+    "productsLine": "Produkty",
+    "discountLine": "Rabat",
+    "youSave": "oszczędzasz",
+    "placeholderCode": "Wpisz kod...",
+    "applying": "...",
+    "checkoutButton": "Przejdź do podsumowania"
+  },
+  "wishlist": {
+    "title": "Ulubione",
+    "empty": "Twoja lista ulubionych jest pusta",
+    "browse": "Przeglądaj sklep",
+    "loading": "\u0141adowanie...",
+    "crumbWishlist": "Ulubione",
+    "discover": "Odkryj produkty",
+    "removeAria": "Usuń z ulubionych"
+  },
+  "regulamin": {
+    "kicker": "Dokumenty prawne",
+    "title": "Regulamin Sklepu",
+    "updated": "Ostatnia aktualizacja: Kwiecień 2026",
+    "sections": [
+      {
+        "title": "§ 1. Postanowienia ogólne",
+        "ordered": true,
+        "items": [
+          "Niniejszy Regulamin określa zasady korzystania ze sklepu internetowego Syrenah, dostępnego pod adresem www.syrenahthelabel.com (dalej: „Sklep\").",
+          "Właścicielem i operatorem Sklepu jest Syrenah sp. z o.o., z siedzibą przy Ul. Słoneczna 42B/2, 55-311 Kostomłoty, wpisana do rejestru przedsiębiorców prowadzonego przez Sąd Rejonowy dla Wrocławia-Fabrycznej we Wrocławiu, pod numerem KRS: 0001160021, NIP: 9131641193, REGON: 541107549.",
+          "Kontakt ze Sklepem jest możliwy wyłącznie drogą elektroniczną, pod adresem e-mail: info@syrenahthelabel.com.",
+          "Korzystanie ze Sklepu oznacza akceptację niniejszego Regulaminu.",
+          "Regulamin jest udostępniany nieodpłatnie za pośrednictwem Sklepu w formie umożliwiającej jego pobranie, utrwalenie i wydrukowanie."
+        ]
+      },
+      {
+        "title": "§ 2. Definicje",
+        "ordered": false,
+        "items": [
+          "Klient — osoba fizyczna posiadająca pełną zdolność do czynności prawnych, osoba prawna lub jednostka organizacyjna, która dokonuje lub zamierza dokonać zakupu w Sklepie.",
+          "Konsument — Klient będący osobą fizyczną dokonującą ze Sprzedawcą czynności prawnej niezwiązanej bezpośrednio z jej działalnością gospodarczą lub zawodową.",
+          "Produkt — rzecz ruchoma dostępna w ofercie Sklepu, będąca przedmiotem umowy sprzedaży.",
+          "Zamówienie — oświadczenie woli Klienta zmierzające do zawarcia umowy sprzedaży Produktu ze Sprzedawcą.",
+          "Konto — indywidualne konto Klienta w Sklepie, umożliwiające korzystanie z dodatkowych funkcjonalności."
+        ]
+      },
+      {
+        "title": "§ 3. Zasady składania zamówień",
+        "ordered": true,
+        "items": [
+          "Zamówienia można składać 24 godziny na dobę, 7 dni w tygodniu za pośrednictwem strony internetowej Sklepu.",
+          "Złożenie zamówienia wymaga: wyboru Produktu, dodania go do koszyka, podania danych do wysyłki, wyboru metody dostawy oraz dokonania płatności.",
+          "Zamówienia mogą być składane zarówno przez Klientów posiadających Konto, jak i bez rejestracji (jako gość).",
+          "Po złożeniu zamówienia Klient otrzymuje na podany adres e-mail potwierdzenie przyjęcia zamówienia wraz z jego numerem.",
+          "Umowa sprzedaży zostaje zawarta z chwilą potwierdzenia zamówienia przez Sprzedawcę.",
+          "Sprzedawca zastrzega sobie prawo do odmowy realizacji zamówienia w przypadku podania nieprawdziwych lub niekompletnych danych przez Klienta."
+        ]
+      },
+      {
+        "title": "§ 4. Ceny i płatności",
+        "ordered": true,
+        "items": [
+          "Wszystkie ceny podane w Sklepie zawierają podatek VAT.",
+          "Dla krajów członkowskich Unii Europejskiej walutą rozliczeniową jest euro (EUR).",
+          "Cena Produktu podana w chwili składania zamówienia jest wiążąca dla obu stron.",
+          {
+            "lead": "Sklep umożliwia dokonanie płatności za pośrednictwem:",
+            "sub": [
+              "systemu płatności online Stripe (karty płatnicze, BLIK, przelewy bankowe),",
+              "innych metod płatności udostępnionych w procesie składania zamówienia."
+            ]
+          },
+          "Koszty dostawy są doliczane do ceny zamówienia i prezentowane Klientowi przed finalizacją zakupu."
+        ]
+      },
+      {
+        "title": "§ 5. Dostawa",
+        "ordered": true,
+        "items": [
+          "Dostawa Produktów odbywa się na terytorium całej Unii Europejskiej.",
+          "Realizacja dostaw następuje kurierem DHL.",
+          "Przewidywany czas dostawy wynosi od 2 do 5 dni roboczych od momentu zaksięgowania płatności.",
+          "Klient jest informowany o statusie przesyłki drogą e-mailową, w tym o nadaniu numeru przesyłki."
+        ]
+      },
+      {
+        "title": "§ 6. Prawo odstąpienia od umowy",
+        "ordered": true,
+        "items": [
+          "Konsument ma prawo odstąpić od umowy zawartej na odległość w terminie 14 dni kalendarzowych bez podawania przyczyny i bez ponoszenia kosztów, z wyjątkiem kosztów określonych w pkt. 5 poniżej.",
+          "Bieg terminu do odstąpienia od umowy rozpoczyna się od dnia, w którym Konsument objął Produkt w posiadanie lub w którym wskazana przez niego osoba trzecia inna niż przewoźnik objęła Produkt w posiadanie.",
+          "Aby skorzystać z prawa odstąpienia od umowy, Konsument powinien poinformować Sprzedawcę o swojej decyzji, przesyłając wypełniony formularz zwrotu na adres e-mail: info@syrenahthelabel.com.",
+          "Sprzedawca niezwłocznie, nie później niż w terminie 14 dni od dnia otrzymania formularza zwrotu, zwróci Konsumentowi wszystkie dokonane przez niego płatności, w tym koszty dostawy (z wyjątkiem dodatkowych kosztów wynikających z wybranego przez Konsumenta sposobu dostawy innego niż najtańszy).",
+          "Konsument ponosi bezpośrednie koszty zwrotu Produktu.",
+          "Produkt powinien zostać zwrócony w stanie niezmienionym, bez śladów użytkowania, z kompletnym opakowaniem i metkami."
+        ]
+      },
+      {
+        "title": "§ 7. Reklamacje",
+        "ordered": true,
+        "items": [
+          "Sprzedawca jest zobowiązany dostarczyć Klientowi Produkt wolny od wad.",
+          "Reklamacje można składać wyłącznie drogą elektroniczną na adres: info@syrenahthelabel.com.",
+          "Reklamacja powinna zawierać: opis wady, datę jej stwierdzenia, żądanie Klienta (naprawa, wymiana, obniżenie ceny lub odstąpienie od umowy) oraz dowód zakupu.",
+          "Sprzedawca rozpatrzy reklamację w terminie 14 dni kalendarzowych od dnia jej otrzymania i poinformuje Klienta o sposobie jej rozpatrzenia."
+        ]
+      },
+      {
+        "title": "§ 8. Ochrona danych osobowych",
+        "ordered": true,
+        "items": [
+          "Administratorem danych osobowych Klientów jest Sprzedawca.",
+          "Dane osobowe przetwarzane są zgodnie z Rozporządzeniem Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. (RODO) oraz ustawą o ochronie danych osobowych.",
+          "Szczegółowe informacje dotyczące przetwarzania danych osobowych zawarte są w Polityce Prywatności dostępnej na stronie Sklepu."
+        ]
+      },
+      {
+        "title": "§ 9. Postanowienia końcowe",
+        "ordered": true,
+        "items": [
+          "Sprzedawca zastrzega sobie prawo do zmiany niniejszego Regulaminu. O każdej zmianie Klienci zostaną poinformowani poprzez publikację nowej wersji Regulaminu na stronie Sklepu.",
+          "W sprawach nieuregulowanych niniejszym Regulaminem zastosowanie mają przepisy prawa polskiego, w szczególności Kodeksu cywilnego oraz ustawy o prawach konsumenta.",
+          "Wszelkie spory wynikłe z umów zawartych na podstawie niniejszego Regulaminu będą rozstrzygane przez sąd właściwy dla siedziby Sprzedawcy, z zastrzeżeniem, że w przypadku Konsumenta — sąd właściwy miejscowo zgodnie z przepisami Kodeksu postępowania cywilnego.",
+          "Regulamin wchodzi w życie z dniem publikacji na stronie Sklepu."
+        ]
+      }
+    ]
+  },
+  "polityka": {
+    "kicker": "Dokumenty prawne",
+    "title": "Polityka Prywatności",
+    "updated": "Ostatnia aktualizacja: Luty 2026",
+    "intro": "Niniejsza Polityka Prywatności określa zasady przetwarzania i ochrony danych osobowych Klientów sklepu internetowego Syrenah, dostępnego pod adresem www.syrenahthelabel.com. Dbamy o prywatność naszych Klientów i dokładamy wszelkich starań, aby dane osobowe były przetwarzane zgodnie z obowiązującymi przepisami prawa, w szczególności z Rozporządzeniem Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. (RODO).",
+    "sections": [
+      {
+        "title": "I. Administrator danych osobowych",
+        "ordered": true,
+        "items": [
+          "Administratorem danych osobowych jest Syrenah sp. z o.o., z siedzibą przy Ul. Słoneczna 42B/2, 55-311 Kostomłoty, NIP: 9131641193, REGON: 541107549 (dalej: „Administrator”).",
+          "Kontakt z Administratorem w sprawach dotyczących danych osobowych jest możliwy pod adresem e-mail: info@syrenahthelabel.com."
+        ]
+      },
+      {
+        "title": "II. Cele i podstawy przetwarzania danych",
+        "ordered": false,
+        "intro": "Dane osobowe Klientów przetwarzane są w następujących celach:",
+        "items": [
+          "Realizacja zamówień — przetwarzanie danych jest niezbędne do wykonania umowy sprzedaży (art. 6 ust. 1 lit. b RODO). Obejmuje to imię, nazwisko, adres dostawy, adres e-mail, numer telefonu oraz dane do faktury.",
+          "Prowadzenie Konta Klienta — na podstawie zgody Klienta (art. 6 ust. 1 lit. a RODO). Klient może w dowolnym momencie usunąć swoje konto.",
+          "Marketing bezpośredni — w zakresie newslettera, na podstawie dobrowolnej zgody Klienta (art. 6 ust. 1 lit. a RODO). Zgoda może być wycofana w dowolnym momencie.",
+          "Obsługa zapytań i reklamacji — w celu realizacji prawnie uzasadnionego interesu Administratora (art. 6 ust. 1 lit. f RODO).",
+          "Obowiązki prawne — w zakresie wymaganym przepisami prawa, w szczególności prawa podatkowego i rachunkowego (art. 6 ust. 1 lit. c RODO)."
+        ]
+      },
+      {
+        "title": "III. Okres przechowywania danych",
+        "ordered": false,
+        "items": [
+          "Dane związane z realizacją zamówień przechowywane są przez okres wymagany przepisami prawa podatkowego (5 lat od końca roku podatkowego).",
+          "Dane Konta Klienta przechowywane są do momentu usunięcia konta przez Klienta.",
+          "Dane przetwarzane na podstawie zgody — do momentu jej wycofania.",
+          "Dane dotyczące reklamacji — przez okres niezbędny do rozpatrzenia reklamacji oraz ewentualnego dochodzenia roszczeń."
+        ]
+      },
+      {
+        "title": "IV. Prawa osób, których dane dotyczą",
+        "ordered": false,
+        "intro": "Każdemu Klientowi przysługuje prawo do:",
+        "items": [
+          "dostępu do swoich danych osobowych,",
+          "sprostowania (poprawienia) danych,",
+          "usunięcia danych („prawo do bycia zapomnianym”),",
+          "ograniczenia przetwarzania danych,",
+          "przenoszenia danych do innego administratora,",
+          "wniesienia sprzeciwu wobec przetwarzania danych,",
+          "cofnięcia zgody w dowolnym momencie (bez wpływu na zgodność z prawem przetwarzania dokonanego przed cofnięciem zgody),",
+          "wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych (ul. Stawki 2, 00-193 Warszawa)."
+        ]
+      },
+      {
+        "title": "V. Odbiorcy danych",
+        "ordered": false,
+        "intro": "Dane osobowe mogą być przekazywane następującym kategoriom odbiorców:",
+        "items": [
+          "firmom kurierskim i operatorom logistycznym (DPD, InPost) — w celu dostawy zamówień,",
+          "operatorowi płatności (Stripe) — w celu obsługi transakcji płatniczych,",
+          "dostawcy usług hostingowych i infrastruktury IT,",
+          "dostawcy usług e-mail transakcyjnych (Resend),",
+          "podmiotom uprawnionym na podstawie przepisów prawa."
+        ]
+      },
+      {
+        "title": "VI. Pliki cookies",
+        "ordered": true,
+        "items": [
+          "Sklep korzysta z plików cookies (ciasteczek) w celu zapewnienia prawidłowego działania strony, analizy ruchu oraz personalizacji treści.",
+          {
+            "lead": "Rodzaje wykorzystywanych plików cookies:",
+            "sub": [
+              "Niezbędne — wymagane do prawidłowego działania Sklepu (sesja, koszyk, uwierzytelnianie).",
+              "Analityczne — pomagają zrozumieć, w jaki sposób Klienci korzystają ze Sklepu.",
+              "Marketingowe — wykorzystywane do wyświetlania spersonalizowanych treści reklamowych."
+            ]
+          },
+          "Klient może w dowolnym momencie zmienić ustawienia plików cookies w swojej przeglądarce internetowej, w tym zablokować ich zapisywanie."
+        ]
+      },
+      {
+        "title": "VII. Bezpieczeństwo danych",
+        "ordered": false,
+        "paragraphs": [
+          "Administrator stosuje odpowiednie środki techniczne i organizacyjne zapewniające ochronę przetwarzanych danych osobowych, w szczególności zabezpiecza dane przed ich udostępnieniem osobom nieupoważnionym, utratą, uszkodzeniem lub zniszczeniem. Komunikacja ze Sklepem jest szyfrowana za pomocą protokołu SSL/TLS. Dane płatnicze są przetwarzane wyłącznie przez certyfikowanego operatora płatności (Stripe) i nie są przechowywane na serwerach Sklepu."
+        ]
+      },
+      {
+        "title": "VIII. Zmiany Polityki Prywatności",
+        "ordered": false,
+        "paragraphs": [
+          "Administrator zastrzega sobie prawo do wprowadzania zmian w niniejszej Polityce Prywatności. O wszelkich zmianach Klienci zostaną poinformowani poprzez publikację zaktualizowanej wersji na stronie Sklepu. Korzystanie ze Sklepu po wprowadzeniu zmian oznacza ich akceptację."
+        ]
+      }
+    ]
+  },
+  "zwroty": {
+    "kicker": "Dokumenty prawne",
+    "title": "Zwroty i Reklamacje",
+    "updated": "Ostatnia aktualizacja: Kwiecień 2026",
+    "intro": "W Syrenah zależy nam na Twoim pełnym zadowoleniu z zakupów. Jeśli zakupiony produkt nie spełnia Twoich oczekiwań, masz prawo go zwrócić lub zareklamować. Poniżej znajdziesz szczegółowe informacje dotyczące procedury zwrotów i reklamacji.",
+    "returnsTitle": "Zwroty — prawo odstąpienia od umowy",
+    "returnsItems": [
+      "Zgodnie z ustawą z dnia 30 maja 2014 r. o prawach konsumenta, Konsument ma prawo odstąpić od umowy zawartej na odległość w terminie 14 dni kalendarzowych od dnia odebrania przesyłki, bez podawania przyczyny.",
+      {
+        "lead": "Aby dokonać zwrotu, należy:",
+        "sub": [
+          "Przesłać wypełniony formularz zwrotu na adres e-mail: info@syrenahthelabel.com, podając numer zamówienia.",
+          "Koniecznie zapakować produkt w oryginalne opakowanie (wraz z kompletem zawartości i metkami) i odesłać przesyłkę na adres magazynu: ul. Polna 22, 57-120 Wiązów."
+        ]
+      },
+      "Warunki zwrotu: Produkt musi być nieużywany, w stanie nienaruszonym, z kompletnym opakowaniem i oryginalnymi metkami. Produkty noszące ślady użytkowania, uszkodzone z winy Klienta lub bez metek nie podlegają zwrotowi.",
+      "Koszt odesłania produktu ponosi Klient, chyba że zwrot wynika z winy Sprzedawcy (np. wysłanie wadliwego lub niezgodnego z zamówieniem produktu).",
+      "Zwrot płatności nastąpi w terminie 14 dni od dnia otrzymania formularza zwrotu, tą samą metodą płatności, której użył Klient przy składaniu zamówienia. Sprzedawca może wstrzymać się ze zwrotem płatności do czasu otrzymania zwracanego produktu."
+    ],
+    "complaintsTitle": "Reklamacje",
+    "complaintsItems": [
+      "Sprzedawca ponosi odpowiedzialność za wady fizyczne i prawne sprzedanego Produktu na zasadach określonych w Kodeksie cywilnym (rękojmia za wady).",
+      {
+        "lead": "Reklamację można złożyć:",
+        "sub": [
+          "wyłącznie drogą elektroniczną na adres: info@syrenahthelabel.com."
+        ]
+      },
+      {
+        "lead": "Zgłoszenie reklamacyjne powinno zawierać:",
+        "sub": [
+          "imię i nazwisko Klienta,",
+          "numer zamówienia,",
+          "opis stwierdzonej wady,",
+          "datę wykrycia wady,",
+          "żądanie Klienta (naprawa, wymiana, obniżenie ceny lub odstąpienie od umowy),",
+          "zdjęcia dokumentujące wadę (zalecane)."
+        ]
+      },
+      "Reklamacja zostanie rozpatrzona w terminie 14 dni kalendarzowych od dnia jej otrzymania. O wyniku rozpatrzenia reklamacji Klient zostanie poinformowany drogą e-mailową.",
+      "W przypadku uznania reklamacji, Sprzedawca — w zależności od żądania Klienta — naprawi lub wymieni Produkt na wolny od wad, obniży cenę lub zwróci pełną kwotę zakupu.",
+      "Koszty przesyłki reklamowanego Produktu ponosi Sprzedawca w przypadku uznania reklamacji."
+    ],
+    "exchangeTitle": "Wymiana rozmiaru",
+    "exchangeItems": [
+      "Jeśli zamówiony produkt nie pasuje rozmiarem, oferujemy możliwość jednorazowej wymiany na inny rozmiar (o ile jest dostępny w magazynie).",
+      "Aby dokonać wymiany, skontaktuj się z nami pod adresem: info@syrenahthelabel.com, podając numer zamówienia i pożądany rozmiar.",
+      "Koszty przesyłki wymiany w obie strony ponosi Klient.",
+      "Produkt przeznaczony do wymiany musi być w stanie nienaruszonym, z oryginalnymi metkami."
+    ],
+    "formBoxTitle": "Formularz i kontakt",
+    "formBoxAddress": "Adres magazynu do przesyłek zwrotnych: ul. Polna 22, 57-120 Wiązów.",
+    "formBoxEmailNote": "W sprawach zwrotów i reklamacji kontakt jest możliwy wyłącznie drogą mailową na adres info@syrenahthelabel.com.",
+    "formBoxDownloadReturn": "Pobierz formularz zwrotu",
+    "formBoxDownloadComplaint": "Pobierz formularz reklamacji",
+    "formBoxContactForm": "Formularz kontaktowy"
+  },
+  "common": {
+    "loading": "\u0141adowanie...",
+    "loadingConfirm": "\u0141adowanie potwierdzenia\u2026",
+    "or": "lub",
+    "processing": "Przetwarzanie..."
+  },
+  "alerts": {
+    "checkoutNoPaymentUrl": "Brak adresu płatności — spróbuj ponownie.",
+    "checkoutGenericError": "Wystąpił błąd — spróbuj ponownie.",
+    "checkoutMissingBackendUrl": "Brak URL z backendu — sprawdź konsolę przeglądarki."
+  },
+  "search": {
+    "preparing": "Strona w przygotowaniu",
+    "searching": "Szukam…",
+    "noResults": "Brak produktów dla tej frazy",
+    "viewAll": "Zobacz wszystkie wyniki",
+    "close": "Zamknij wyszukiwanie"
+  },
+  "orderSuccess": {
+    "title": "Dzi\u0119kujemy za zam\u00f3wienie \u2661",
+    "body": "Twoja płatność została przyjęta. Wkrótce otrzymasz potwierdzenie zamówienia.",
+    "backToShop": "Wróć do sklepu"
+  },
+  "checkoutFlow": {
+    "emptyCartTitle": "Twój koszyk jest pusty",
+    "emptyCartHint": "Dodaj produkty, aby przejść do zamówienia.",
+    "backToShop": "Wróć do sklepu",
+    "backToCart": "← Wróć do koszyka",
+    "gateTitle": "Jak chcesz kontynuować?",
+    "gateSubtitle": "Zaloguj się, aby mieć dostęp do historii zamówień, lub kontynuuj jako gość.",
+    "gateLoginTitle": "Zaloguj się",
+    "gateLoginDesc": "Masz konto? Zaloguj się lub zarejestruj.",
+    "gateGuestTitle": "Kontynuuj jako gość",
+    "gateGuestDesc": "Złóż zamówienie bez zakładania konta.",
+    "gateNoAccount": "Nie masz konta?",
+    "shippingTitle": "Dane dostawy",
+    "shippingSubtitle": "Podaj adres, na który wyślemy Twoje zamówienie.",
+    "reviewTitle": "Podsumowanie zamówienia",
+    "reviewSubtitle": "Sprawdź dane i przejdź do płatności.",
+    "orderSidebarTitle": "Twoje zamówienie",
+    "reviewPayTitle": "Do zapłaty",
+    "change": "Zmień",
+    "shippingDataTitle": "Dane dostawy",
+    "altShippingTitle": "Adres do wysyłki (inny)",
+    "invoiceTitle": "Dane do faktury VAT",
+    "vatIdLabel": "NIP:",
+    "productsTitle": "Produkty",
+    "productsCount": "Produkty ({count})",
+    "shippingMethodTitle": "Metoda dostawy",
+    "parcelLockerPrefix": "Paczkomat:",
+    "payButton": "Zapłać",
+    "secureStripe": "Bezpieczna płatność przez Stripe",
+    "backToShipping": "← Wróć do danych dostawy",
+    "continueToReview": "Przejdź do podsumowania",
+    "termsAcceptBefore": "Akceptuję",
+    "termsStore": "regulamin sklepu",
+    "termsAnd": "oraz",
+    "termsPrivacy": "politykę prywatności",
+    "termsError": "Zaakceptuj regulamin, żeby przejść dalej.",
+    "lockerSelectedTitle": "Wybrany paczkomat",
+    "lockerPickTitle": "Wybierz Paczkomat",
+    "lockerMapHint": "Kliknij, aby otworzyć mapę paczkomatów",
+    "lockerModalTitle": "Wybierz Paczkomat",
+    "lockerModalSubtitle": "Znajdź najbliższy paczkomat InPost",
+    "wantInvoice": "Chcę otrzymać fakturę VAT",
+    "differentShipping": "Inny adres dostawy",
+    "receiverName": "Imię i nazwisko odbiorcy",
+    "receiverPhone": "Telefon odbiorcy",
+    "companyName": "Nazwa firmy",
+    "companyAddress": "Adres firmy",
+    "fullName": "Imię i nazwisko",
+    "email": "Adres email",
+    "phone": "Numer telefonu",
+    "street": "Ulica i numer",
+    "postalCode": "Kod pocztowy",
+    "city": "Miasto",
+    "country": "Kraj",
+    "addressHeading": "Adres dostawy",
+    "shippingMethodHeading": "Metoda dostawy",
+    "courierLabel": "Kurier",
+    "courierDesc": "Dostawa pod drzwi w 1–2 dni robocze",
+    "lockerLabel": "Paczkomat",
+    "lockerDesc": "Odbiór w wybranym paczkomacie 24/7",
+    "summaryProducts": "Produkty",
+    "summaryShipping": "Dostawa",
+    "summaryDiscount": "Rabat",
+    "summaryTotal": "Razem",
+    "summaryShippingWithMethod": "Dostawa ({method})",
+    "sizeLabel": "Rozmiar:",
+    "colorLabel": "Kolor:",
+    "qty": "Ilość:",
+    "vatNumberField": "NIP",
+    "phFullName": "Anna Kowalska",
+    "phEmail": "anna@example.com",
+    "phPhone": "600 123 456",
+    "phStreet": "ul. Marszałkowska 1/2",
+    "phPostalCode": "00-001",
+    "phCity": "Warszawa",
+    "phCompanyName": "Moja Firma Sp. z o.o.",
+    "phVatNumber": "1234567890",
+    "phCompanyStreet": "ul. Biznesowa 10",
+    "phReceiverName": "Jan Nowak",
+    "phAltStreet": "ul. Kwiatowa 5/3",
+    "phAltCity": "Kraków",
+    "phAltPhone": "600 987 654",
+    "pickLockerFirst": "Wybierz paczkomat przed kontynuacją",
+    "legacyPageTitle": "Kasa",
+    "legacyEmail": "Email",
+    "legacyFullName": "Imię i nazwisko",
+    "legacyAddress": "Adres",
+    "legacyOrderSummary": "Podsumowanie zamówienia",
+    "legacySum": "Suma",
+    "legacyPay": "Przejdź do płatności",
+    "legacyEmailPh": "twoj@email.pl",
+    "legacyNamePh": "Jan Kowalski",
+    "legacyAddressPh": "Ulica, numer, miasto"
+  },
+  "checkoutValidation": {
+    "fullNameRequired": "Imię i nazwisko jest wymagane",
+    "fullNameMin": "Minimum 3 znaki",
+    "emailRequired": "Email jest wymagany",
+    "emailInvalid": "Nieprawidłowy adres email",
+    "phoneRequired": "Numer telefonu jest wymagany",
+    "phoneInvalid": "Nieprawidłowy numer telefonu",
+    "streetRequired": "Ulica jest wymagana",
+    "streetMin": "Minimum 3 znaki",
+    "postalRequired": "Kod pocztowy jest wymagany",
+    "postalFormat": "Format: 00-000",
+    "cityRequired": "Miasto jest wymagane",
+    "cityMin": "Minimum 2 znaki",
+    "countryRequired": "Kraj jest wymagany",
+    "postalMin": "Minimum 2 znaki",
+    "companyNameRequired": "Nazwa firmy jest wymagana",
+    "vatRequired": "NIP jest wymagany",
+    "vatInvalid": "Nieprawidłowy NIP",
+    "companyStreetRequired": "Adres firmy jest wymagany",
+    "companyPostalRequired": "Kod pocztowy jest wymagany",
+    "companyCityRequired": "Miasto jest wymagane",
+    "altNameRequired": "Imię i nazwisko odbiorcy jest wymagane",
+    "altStreetRequired": "Ulica jest wymagana",
+    "altPostalRequired": "Kod pocztowy jest wymagany",
+    "altCityRequired": "Miasto jest wymagane",
+    "altPhoneInvalid": "Nieprawidłowy numer telefonu"
+  },
+  "account": {
+    "greeting": "Cześć, {name}!",
+    "guestName": "Klientko",
+    "tabAccount": "Dane konta",
+    "tabOrders": "Zamówienia",
+    "tabLogout": "Wyloguj",
+    "editTitle": "Edytuj dane",
+    "cancel": "Anuluj",
+    "saveChanges": "Zapisz zmiany",
+    "editData": "Edytuj dane",
+    "lastName": "Nazwisko",
+    "phone": "Numer telefonu",
+    "address": "Adres",
+    "noAddress": "Brak adresu",
+    "ordersEmpty": "Nie masz jeszcze żadnych zamówień.",
+    "goToShop": "Przejdź do sklepu",
+    "orderPrefix": "Zamówienie",
+    "status": {
+      "PENDING": "Oczekujące",
+      "PAID": "Opłacone",
+      "PROCESSING": "W realizacji",
+      "SHIPPED": "Wysłane",
+      "DELIVERED": "Dostarczone",
+      "CANCELLED": "Anulowane",
+      "FAILED": "Nieudane",
+      "REFUNDED": "Zwrócone"
+    }
+  },
+  "orderDetail": {
+    "notFoundTitle": "Nie znaleziono zamówienia",
+    "notFoundBody": "Zamówienie o podanym identyfikatorze nie istnieje.",
+    "orderLabel": "Zamówienie",
+    "placedOn": "Złożone",
+    "productsHeading": "Produkty",
+    "quantity": "Ilość:",
+    "grandTotal": "Suma",
+    "backToShop": "Wróć do sklepu",
+    "timeline": {
+      "placed": "Złożone",
+      "paid": "Opłacone",
+      "shipped": "Wysłane",
+      "delivered": "Dostarczone"
+    },
+    "status": {
+      "PENDING": "PŁATNOŚĆ OCZEKUJE",
+      "PAID": "PŁATNOŚĆ PRZYJĘTA",
+      "PROCESSING": "W PRZYGOTOWANIU",
+      "SHIPPED": "WYSŁANE",
+      "DELIVERED": "DOSTARCZONE",
+      "CANCELLED": "ANULOWANE",
+      "FAILED": "PŁATNOŚĆ NIEUDANA",
+      "REFUNDED": "ZWROT ZREALIZOWANY"
+    }
+  },
+  "checkoutCancel": {
+    "title": "Płatność anulowana",
+    "body": "Możesz spróbować ponownie."
+  }
+}

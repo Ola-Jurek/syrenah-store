@@ -21,6 +21,7 @@ export async function GET() {
           product: {
             select: {
               namePl: true,
+              nameEn: true,
               slug: true,
             },
           },

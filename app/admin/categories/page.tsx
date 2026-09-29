@@ -3,32 +3,23 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  clearAdminToken,
+  getAdminToken,
+  promptAdminToken,
+} from "@/lib/adminToken";
 
 type Category = {
   id: string;
   namePl: string;
   nameEn: string;
   slug: string;
+  productCount?: number;
 };
 
 type CategoriesResponse = {
   categories: Category[];
 };
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
-function promptAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  const token = window.prompt("Wprowadź token admina:");
-  if (token) {
-    localStorage.setItem("adminToken", token);
-    return token;
-  }
-  return null;
-}
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -68,7 +59,7 @@ export default function AdminCategoriesPage() {
         });
 
         if (res.status === 401) {
-          localStorage.removeItem("adminToken");
+          clearAdminToken();
           setError("Nieautoryzowany dostęp. Wprowadź token ponownie.");
           const newToken = promptAdminToken();
           if (newToken) {
@@ -84,7 +75,9 @@ export default function AdminCategoriesPage() {
         const data: CategoriesResponse = await res.json();
         setCategories(data.categories);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Błąd pobierania kategorii");
+        setError(
+          err instanceof Error ? err.message : "Błąd pobierania kategorii"
+        );
       } finally {
         setLoading(false);
       }
@@ -100,9 +93,7 @@ export default function AdminCategoriesPage() {
   }
 
   if (error) {
-    return (
-      <div className="text-center text-black/60 py-12">{error}</div>
-    );
+    return <div className="text-center text-black/60 py-12">{error}</div>;
   }
 
   return (
@@ -126,8 +117,13 @@ export default function AdminCategoriesPage() {
               className="border border-black/10 rounded-lg p-6 hover:border-black/20 transition-colors"
             >
               <h2 className="text-lg font-medium mb-2">{category.namePl}</h2>
-              <p className="text-sm text-black/60 mb-4">{category.nameEn}</p>
-              <p className="text-xs text-black/40 mb-4">Slug: {category.slug}</p>
+              <p className="text-sm text-black/60 mb-2">{category.nameEn}</p>
+              <p className="text-xs text-black/40 mb-1">
+                Slug: {category.slug}
+              </p>
+              <p className="text-xs text-black/40 mb-4">
+                Produktów: {category.productCount ?? 0}
+              </p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" asChild>
                   <Link href={`/admin/categories/${category.id}/edit`}>
@@ -142,4 +138,3 @@ export default function AdminCategoriesPage() {
     </>
   );
 }
-

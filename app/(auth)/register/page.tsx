@@ -1,12 +1,16 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,12 +23,12 @@ export default function RegisterPage() {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("Hasła nie są identyczne");
+      setError(t("auth.passwordMismatch"));
       return;
     }
 
     if (password.length < 6) {
-      setError("Hasło musi mieć co najmniej 6 znaków");
+      setError(t("auth.passwordMin"));
       return;
     }
 
@@ -40,12 +44,11 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || "Wystąpił błąd podczas rejestracji");
+        setError(data.error || t("auth.registerError"));
         setLoading(false);
         return;
       }
 
-      // Automatyczne logowanie po rejestracji
       const signInResult = await signIn("credentials", {
         email,
         password,
@@ -53,14 +56,14 @@ export default function RegisterPage() {
       });
 
       if (signInResult?.error) {
-        setError("Konto utworzone, ale nie udało się zalogować automatycznie. Przejdź do strony logowania.");
+        setError(t("auth.registerAutoLoginFail"));
         setLoading(false);
         return;
       }
 
       router.push("/account");
     } catch {
-      setError("Wystąpił nieoczekiwany błąd");
+      setError(t("auth.unexpectedError"));
       setLoading(false);
     }
   };
@@ -70,10 +73,10 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-playfair font-semibold tracking-wide text-foreground">
-            Stwórz konto
+            {t("auth.registerHeroTitle")}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Dołącz do Syrenah Store
+            {t("auth.registerHeroSubtitle")}
           </p>
         </div>
 
@@ -89,7 +92,7 @@ export default function RegisterPage() {
               htmlFor="name"
               className="block text-sm font-medium text-foreground mb-1.5"
             >
-              Imię
+              {t("auth.name")}
             </label>
             <input
               id="name"
@@ -97,7 +100,7 @@ export default function RegisterPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-4 py-2.5 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
-              placeholder="Anna"
+              placeholder={t("auth.placeholderName")}
             />
           </div>
 
@@ -106,7 +109,7 @@ export default function RegisterPage() {
               htmlFor="email"
               className="block text-sm font-medium text-foreground mb-1.5"
             >
-              Adres email
+              {t("auth.email")}
             </label>
             <input
               id="email"
@@ -124,7 +127,7 @@ export default function RegisterPage() {
               htmlFor="password"
               className="block text-sm font-medium text-foreground mb-1.5"
             >
-              Hasło
+              {t("auth.password")}
             </label>
             <input
               id="password"
@@ -133,7 +136,7 @@ export default function RegisterPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2.5 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
-              placeholder="Min. 6 znaków"
+              placeholder={t("auth.placeholderPasswordHint")}
             />
           </div>
 
@@ -142,7 +145,7 @@ export default function RegisterPage() {
               htmlFor="confirmPassword"
               className="block text-sm font-medium text-foreground mb-1.5"
             >
-              Powtórz hasło
+              {t("auth.repeatPasswordLabel")}
             </label>
             <input
               id="confirmPassword"
@@ -151,7 +154,7 @@ export default function RegisterPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-4 py-2.5 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
-              placeholder="Powtórz hasło"
+              placeholder={t("auth.placeholderRepeatPassword")}
             />
           </div>
 
@@ -160,17 +163,17 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full bg-primary text-primary-foreground py-2.5 rounded-md font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Rejestrowanie..." : "Zarejestruj się"}
+            {loading ? t("auth.registering") : t("auth.submitRegister")}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Masz już konto?{" "}
+          {t("auth.hasAccount")}{" "}
           <Link
             href="/login"
             className="text-foreground font-medium hover:underline"
           >
-            Zaloguj się
+            {t("auth.loginLink")}
           </Link>
         </p>
       </div>

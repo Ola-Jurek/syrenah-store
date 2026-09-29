@@ -2,9 +2,13 @@
 
 import { useState } from "react";
 import { Toaster, toast } from "sonner";
-import { Send, Mail, MapPin, Phone } from "lucide-react";
+import { Send, Mail, MapPin } from "lucide-react";
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function KontaktPage() {
+  const { messages } = useLanguage();
+  const c = messages.contact;
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -14,7 +18,9 @@ export default function KontaktPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -23,12 +29,12 @@ export default function KontaktPage() {
     e.preventDefault();
 
     if (!formData.name || !formData.email || !formData.message) {
-      toast.error("Wypełnij wszystkie wymagane pola.");
+      toast.error(c.toastFillRequired);
       return;
     }
 
     if (formData.message.length < 10) {
-      toast.error("Wiadomość musi zawierać co najmniej 10 znaków.");
+      toast.error(c.toastMessageShort);
       return;
     }
 
@@ -44,17 +50,19 @@ export default function KontaktPage() {
       const data = await res.json();
 
       if (res.ok) {
-        toast.success("Wiadomość wysłana! Odpowiemy najszybciej jak to możliwe.");
+        toast.success(c.toastSuccess);
         setFormData({ name: "", email: "", subject: "", message: "" });
       } else {
-        toast.error(data.error || "Wystąpił błąd podczas wysyłania.");
+        toast.error(data.error || c.toastError);
       }
     } catch {
-      toast.error("Wystąpił błąd połączenia. Spróbuj ponownie później.");
+      toast.error(c.toastNetwork);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const addressLines = c.addressLines.split("\n");
 
   return (
     <div className="bg-white min-h-screen">
@@ -70,33 +78,28 @@ export default function KontaktPage() {
         }}
       />
 
-      {/* Header */}
       <section className="pt-20 pb-12 px-6">
         <div className="max-w-3xl mx-auto text-center">
           <p className="text-[11px] tracking-[0.3em] text-black/40 uppercase mb-4">
-            Napisz do nas
+            {c.kicker}
           </p>
           <h1 className="font-playfair text-3xl md:text-4xl text-black tracking-wide">
-            Kontakt
+            {c.title}
           </h1>
           <div className="w-12 h-px bg-black/20 mx-auto mt-6 mb-6" />
           <p className="text-sm text-black/55 max-w-lg mx-auto leading-relaxed">
-            Masz pytanie dotyczące zamówienia, produktu lub współpracy?
-            Chętnie pomożemy — wypełnij formularz, a odezwiemy się najszybciej jak to możliwe.
+            {c.intro}
           </p>
         </div>
       </section>
 
-      {/* Content */}
       <section className="pb-24 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16">
-
-            {/* Dane kontaktowe */}
             <div className="lg:col-span-1 space-y-8">
               <div>
                 <p className="text-[11px] tracking-[0.3em] text-black/40 uppercase mb-6">
-                  Informacje
+                  {c.infoKicker}
                 </p>
 
                 <div className="space-y-6">
@@ -105,23 +108,15 @@ export default function KontaktPage() {
                       <Mail className="w-4 h-4 text-black/50" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-black mb-1">E-mail</p>
+                      <p className="text-sm font-medium text-black mb-1">
+                        {c.emailLabel}
+                      </p>
                       <a
-                        href="mailto:contact@syrenah.com"
+                        href="mailto:info@syrenahthelabel.com"
                         className="text-sm text-black/55 hover:text-black transition"
                       >
-                        contact@syrenah.com
+                        info@syrenahthelabel.com
                       </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[#FAF8F5] border border-[#E8E3D8] flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Phone className="w-4 h-4 text-black/50" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-black mb-1">Telefon</p>
-                      <p className="text-sm text-black/55">[numer telefonu]</p>
                     </div>
                   </div>
 
@@ -130,11 +125,16 @@ export default function KontaktPage() {
                       <MapPin className="w-4 h-4 text-black/50" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-black mb-1">Adres</p>
+                      <p className="text-sm font-medium text-black mb-1">
+                        {c.addressLabel}
+                      </p>
                       <p className="text-sm text-black/55 leading-relaxed">
-                        [Nazwa firmy Sp. z o.o.]<br />
-                        [ulica i numer]<br />
-                        [kod pocztowy, miasto]
+                        {addressLines.map((line, i) => (
+                          <span key={i}>
+                            {line}
+                            {i < addressLines.length - 1 ? <br /> : null}
+                          </span>
+                        ))}
                       </p>
                     </div>
                   </div>
@@ -143,24 +143,21 @@ export default function KontaktPage() {
 
               <div className="pt-6 border-t border-black/10">
                 <p className="text-xs text-black/40 leading-relaxed">
-                  Odpowiadamy na wiadomości w ciągu 24 godzin w dni robocze.
-                  W przypadku pilnych spraw prosimy o kontakt telefoniczny.
+                  {c.responseNote}
                 </p>
               </div>
             </div>
 
-            {/* Formularz */}
             <div className="lg:col-span-2">
               <form onSubmit={handleSubmit} className="space-y-6">
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {/* Imię i nazwisko */}
                   <div>
                     <label
                       htmlFor="name"
                       className="block text-[11px] tracking-[0.15em] text-black/50 uppercase mb-2"
                     >
-                      Imię i nazwisko <span className="text-red-400">*</span>
+                      {c.nameLabel}{" "}
+                      <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="text"
@@ -174,13 +171,13 @@ export default function KontaktPage() {
                     />
                   </div>
 
-                  {/* E-mail */}
                   <div>
                     <label
                       htmlFor="email"
                       className="block text-[11px] tracking-[0.15em] text-black/50 uppercase mb-2"
                     >
-                      Adres e-mail <span className="text-red-400">*</span>
+                      {c.emailFieldLabel}{" "}
+                      <span className="text-red-400">*</span>
                     </label>
                     <input
                       type="email"
@@ -195,13 +192,12 @@ export default function KontaktPage() {
                   </div>
                 </div>
 
-                {/* Temat */}
                 <div>
                   <label
                     htmlFor="subject"
                     className="block text-[11px] tracking-[0.15em] text-black/50 uppercase mb-2"
                   >
-                    Temat
+                    {c.subjectLabel}
                   </label>
                   <select
                     id="subject"
@@ -210,23 +206,23 @@ export default function KontaktPage() {
                     onChange={handleChange}
                     className="w-full px-4 py-3 bg-[#FAF8F5] border border-[#E8E3D8] text-sm text-black focus:outline-none focus:border-black/30 transition-colors appearance-none cursor-pointer"
                   >
-                    <option value="">Wybierz temat...</option>
-                    <option value="Pytanie o produkt">Pytanie o produkt</option>
-                    <option value="Status zamówienia">Status zamówienia</option>
-                    <option value="Zwrot lub wymiana">Zwrot lub wymiana</option>
-                    <option value="Reklamacja">Reklamacja</option>
-                    <option value="Współpraca">Współpraca</option>
-                    <option value="Inne">Inne</option>
+                    <option value="">{c.subjectPlaceholder}</option>
+                    <option value="Pytanie o produkt">{c.subjectProduct}</option>
+                    <option value="Status zamówienia">{c.subjectOrder}</option>
+                    <option value="Zwrot lub wymiana">{c.subjectReturn}</option>
+                    <option value="Reklamacja">{c.subjectComplaint}</option>
+                    <option value="Współpraca">{c.subjectCoop}</option>
+                    <option value="Inne">{c.subjectOther}</option>
                   </select>
                 </div>
 
-                {/* Wiadomość */}
                 <div>
                   <label
                     htmlFor="message"
                     className="block text-[11px] tracking-[0.15em] text-black/50 uppercase mb-2"
                   >
-                    Wiadomość <span className="text-red-400">*</span>
+                    {c.messageLabel}{" "}
+                    <span className="text-red-400">*</span>
                   </label>
                   <textarea
                     id="message"
@@ -236,11 +232,10 @@ export default function KontaktPage() {
                     required
                     rows={6}
                     className="w-full px-4 py-3 bg-[#FAF8F5] border border-[#E8E3D8] text-sm text-black placeholder:text-black/30 focus:outline-none focus:border-black/30 transition-colors resize-none"
-                    placeholder="Opisz swoją sprawę..."
+                    placeholder={c.messagePlaceholder}
                   />
                 </div>
 
-                {/* Przycisk */}
                 <div className="pt-2">
                   <button
                     type="submit"
@@ -250,20 +245,18 @@ export default function KontaktPage() {
                     {isSubmitting ? (
                       <>
                         <div className="w-3.5 h-3.5 border border-white/40 border-t-white rounded-full animate-spin" />
-                        Wysyłanie...
+                        {c.submitting}
                       </>
                     ) : (
                       <>
                         <Send className="w-3.5 h-3.5" />
-                        Wyślij wiadomość
+                        {c.submit}
                       </>
                     )}
                   </button>
                 </div>
-
               </form>
             </div>
-
           </div>
         </div>
       </section>

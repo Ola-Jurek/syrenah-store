@@ -6,13 +6,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEffectivePrice, extractDiscountInfo } from "@/lib/pricing";
+import { stockForSize } from "@/lib/size-stock";
+import { shippingPricePln } from "@/lib/shipping-countries";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { items, shipping, discountCode } = body;
+    const { items, shipping, discountCode, checkoutLocale } = body;
+    const resolvedLocale =
+      checkoutLocale === "en" ? "en" : "pl";
 
     if (!items || items.length === 0) {
       return NextResponse.json(
@@ -41,6 +45,7 @@ export async function POST(req: Request) {
           },
           take: 1,
         },
+        sizeStocks: { select: { size: true, stock: true } },
       },
     });
 
@@ -79,8 +84,11 @@ export async function POST(req: Request) {
     const verifiedItems: Array<{
       productId: string;
       name: string;
+      nameEn: string;
       price: number;
+      priceEur: number;
       quantity: number;
+      size?: string;
     }> = [];
 
     const lineItems: any[] = [];
@@ -91,6 +99,24 @@ export async function POST(req: Request) {
       if (!product) {
         return NextResponse.json(
           { error: `Product not found: ${item.productId}` },
+          { status: 400 }
+        );
+      }
+
+      const requestedQty = Math.max(1, Number(item.quantity) || 1);
+      const availability = stockForSize(
+        product.stock,
+        product.sizes,
+        product.sizeStocks,
+        item.size
+      );
+      if (availability.error || availability.available < requestedQty) {
+        return NextResponse.json(
+          {
+            error: availability.error
+              ? `${product.namePl}: ${availability.error}`
+              : `${product.namePl}${item.size ? ` (${item.size})` : ""}: za mało sztuk na stanie`,
+          },
           { status: 400 }
         );
       }
@@ -109,7 +135,7 @@ export async function POST(req: Request) {
 
       // Regularna cena (do obliczenia zniżki z kodu koszyka)
       const regularPrice = Number(product.pricePln);
-      totalRegularPrice += regularPrice * item.quantity;
+      totalRegularPrice += regularPrice * requestedQty;
 
       // Jeśli jest kod rabatowy z koszyka — oblicz cenę od regularnej
       let cartCodePrice = regularPrice;
@@ -132,22 +158,43 @@ export async function POST(req: Request) {
         finalPrice = productLevelPrice;
       }
 
+      const productLevelPriceEur = pricing.finalPriceEur;
+      const regularPriceEur = Number(product.priceEur);
+      let cartCodePriceEur = regularPriceEur;
+      if (cartDiscount) {
+        if (cartDiscount.type === "PERCENTAGE") {
+          cartCodePriceEur =
+            Math.round(
+              regularPriceEur * (1 - cartDiscount.value / 100) * 100
+            ) / 100;
+        }
+      }
+      let finalPriceEur: number;
+      if (cartDiscount && cartDiscount.type === "PERCENTAGE") {
+        finalPriceEur = Math.min(productLevelPriceEur, cartCodePriceEur);
+      } else {
+        finalPriceEur = productLevelPriceEur;
+      }
+
       verifiedItems.push({
         productId: product.id,
         name: product.namePl,
+        nameEn: product.nameEn,
         price: finalPrice,
-        quantity: item.quantity,
+        priceEur: finalPriceEur,
+        quantity: requestedQty,
+        ...(item.size ? { size: String(item.size) } : {}),
       });
 
       lineItems.push({
         price_data: {
           currency: "pln",
           product_data: {
-            name: product.namePl,
+            name: item.size ? `${product.namePl} (${item.size})` : product.namePl,
           },
           unit_amount: Math.round(finalPrice * 100),
         },
-        quantity: item.quantity,
+        quantity: requestedQty,
       });
     }
 
@@ -167,15 +214,17 @@ export async function POST(req: Request) {
         // Podejście: proporcjonalnie rozłóż zniżkę na produkty
         const ratio = (subtotalFromItems - fixedDiscountAmount) / subtotalFromItems;
         
-        // Wyczyść line items i przelicz
+        // Wyczyść line items i przelicz (PLN + EUR w metadanych)
         lineItems.length = 0;
         for (const vi of verifiedItems) {
           const adjustedPrice = Math.round(vi.price * ratio * 100) / 100;
+          vi.price = adjustedPrice;
+          vi.priceEur = Math.round(vi.priceEur * ratio * 100) / 100;
           lineItems.push({
             price_data: {
               currency: "pln",
               product_data: {
-                name: vi.name,
+                name: vi.size ? `${vi.name} (${vi.size})` : vi.name,
               },
               unit_amount: Math.max(1, Math.round(adjustedPrice * 100)), // min 1 grosz
             },
@@ -185,8 +234,45 @@ export async function POST(req: Request) {
       }
     }
 
+    if (shipping) {
+      const destination =
+        shipping.alternateShipping?.country ||
+        shipping.shippingAddress?.country ||
+        "PL";
+      shipping.shippingCost = shippingPricePln(
+        shipping.shippingMethod,
+        destination
+      );
+    }
+
+    const subtotalPlnVerified = verifiedItems.reduce(
+      (s, i) => s + i.price * i.quantity,
+      0
+    );
+    const subtotalEurVerified = verifiedItems.reduce(
+      (s, i) => s + i.priceEur * i.quantity,
+      0
+    );
+
+    let totalEurForMeta = subtotalEurVerified;
+    if (
+      shipping?.shippingCost &&
+      shipping.shippingCost > 0 &&
+      subtotalPlnVerified > 0
+    ) {
+      const shipEur =
+        Math.round(
+          ((shipping.shippingCost * subtotalEurVerified) /
+            subtotalPlnVerified) *
+            100
+        ) / 100;
+      totalEurForMeta = Math.round((subtotalEurVerified + shipEur) * 100) / 100;
+    }
+
     const metadata: Record<string, string> = {
       cart: JSON.stringify(verifiedItems),
+      checkoutLocale: resolvedLocale,
+      totalEur: totalEurForMeta.toFixed(2),
     };
 
     // Jeśli użytkownik jest zalogowany, przekaż jego id w metadata

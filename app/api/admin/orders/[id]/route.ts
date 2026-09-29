@@ -71,6 +71,7 @@ export async function GET(
       items: order.items.map((item) => ({
         id: item.id,
         quantity: item.quantity,
+        size: item.size,
         pricePln: Number(item.pricePln),
         product: {
           id: item.product.id,

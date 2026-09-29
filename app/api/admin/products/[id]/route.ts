@@ -4,6 +4,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { assertAdmin } from "@/lib/adminAuth";
 import { Prisma } from "@prisma/client";
+import { parseSizeChart } from "@/lib/size-chart";
+import {
+  alignSizeStocks,
+  parseSizeLabels,
+  syncProductSizeStocks,
+} from "@/lib/size-stock";
+import { slugify } from "@/lib/slug";
 
 /**
  * GET /api/admin/products/[id]
@@ -31,6 +38,9 @@ export async function GET(
         },
         images: {
           orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+        },
+        sizeStocks: {
+          select: { size: true, stock: true },
         },
         discounts: {
           select: {
@@ -68,7 +78,12 @@ export async function GET(
       categoryId: product.categoryId,
       category: product.category,
       sizes: product.sizes,
+      sizeStocks: alignSizeStocks(
+        parseSizeLabels(product.sizes),
+        product.sizeStocks
+      ),
       colors: product.colors,
+      sizeChart: product.sizeChart,
       images: product.images.map((img) => ({
         id: img.id,
         url: img.url,
@@ -128,7 +143,9 @@ export async function PATCH(
       slug,
       categoryId,
       sizes,
+      sizeStocks,
       colors,
+      sizeChart,
       images,
       discountId,
     } = body;
@@ -160,9 +177,24 @@ export async function PATCH(
     if (salePriceEur !== undefined) {
       productData.salePriceEur = salePriceEur ? new Prisma.Decimal(salePriceEur) : null;
     }
-    if (stock !== undefined) productData.stock = parseInt(stock);
+    const sizeLabels =
+      sizes !== undefined ? parseSizeLabels(sizes) : parseSizeLabels(existingProduct.sizes);
+    if (sizes !== undefined && sizeLabels.length > 0) {
+      // Suma stanów rozmiarów nadpisuje pole stock po zapisie wierszy.
+    } else if (stock !== undefined) {
+      productData.stock = parseInt(stock);
+    }
     if (sku !== undefined) productData.sku = sku || null;
-    if (slug !== undefined) productData.slug = slug;
+    if (slug !== undefined) {
+      const normalizedSlug = slugify(String(slug));
+      if (!normalizedSlug) {
+        return NextResponse.json(
+          { error: "Nieprawidłowy slug" },
+          { status: 400 }
+        );
+      }
+      productData.slug = normalizedSlug;
+    }
     if (categoryId !== undefined) {
       // Sprawdź czy kategoria istnieje
       const category = await prisma.category.findUnique({
@@ -176,8 +208,12 @@ export async function PATCH(
       }
       productData.categoryId = categoryId;
     }
-    if (sizes !== undefined) productData.sizes = sizes && Array.isArray(sizes) && sizes.length > 0 ? sizes : null;
+    if (sizes !== undefined) productData.sizes = sizeLabels.length > 0 ? sizeLabels : Prisma.DbNull;
     if (colors !== undefined) productData.colors = colors && Array.isArray(colors) && colors.length > 0 ? colors : null;
+    if (sizeChart !== undefined) {
+      const chart = parseSizeChart(sizeChart);
+      productData.sizeChart = chart ?? Prisma.DbNull;
+    }
 
     // Obsługa przypisania rabatu
     if (discountId !== undefined) {
@@ -206,6 +242,16 @@ export async function PATCH(
           where: { id },
           data: productData,
         });
+      }
+
+      if (sizes !== undefined || sizeStocks !== undefined) {
+        const total = await syncProductSizeStocks(tx, id, sizeLabels, sizeStocks);
+        if (total !== null) {
+          await tx.product.update({
+            where: { id },
+            data: { stock: total },
+          });
+        }
       }
 
       // Obsługa obrazów
@@ -238,11 +284,13 @@ export async function PATCH(
         }
 
         // Znajdź obrazy do utworzenia
-        const toCreate = images.filter((img: any) => !img.id && !img._delete);
+        const toCreate = images.filter(
+          (img: any) => !img.id && !img._delete && typeof img.url === "string" && img.url.trim() !== ""
+        );
         if (toCreate.length > 0) {
           await tx.image.createMany({
             data: toCreate.map((img: any) => ({
-              url: img.url,
+              url: img.url.trim(),
               altPl: img.altPl || null,
               altEn: img.altEn || null,
               isPrimary: img.isPrimary === true,

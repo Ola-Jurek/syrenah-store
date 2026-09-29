@@ -4,9 +4,20 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/components/CartContext";
+import {
+  ensureAdminToken,
+  getAdminToken,
+} from "@/lib/adminToken";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export default function AdminLayout({
   children,
@@ -17,15 +28,41 @@ export default function AdminLayout({
   const { data: session, status } = useSession();
   const { clearCart } = useCart();
   const [isMounted, setIsMounted] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [tokenGate, setTokenGate] = useState<"checking" | "ready" | "missing">(
+    "checking"
+  );
 
   const handleSignOut = async () => {
     clearCart();
     await signOut({ callbackUrl: "/" });
   };
 
+  const requestAdminToken = () => {
+    const token = ensureAdminToken();
+    setTokenGate(token ? "ready" : "missing");
+  };
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Po zalogowaniu jako ADMIN — od razu upewnij się, że jest token API
+  useEffect(() => {
+    if (status === "loading") return;
+
+    if (status !== "authenticated" || session?.user?.role !== "ADMIN") {
+      setTokenGate("checking");
+      return;
+    }
+
+    if (getAdminToken()) {
+      setTokenGate("ready");
+      return;
+    }
+
+    requestAdminToken();
+  }, [status, session?.user?.role]);
 
   // Pokaż ładowanie dopóki sprawdzamy sesję
   if (status === "loading") {
@@ -100,6 +137,37 @@ export default function AdminLayout({
     );
   }
 
+  if (tokenGate !== "ready") {
+    if (tokenGate === "checking") {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="w-5 h-5 border-2 border-black/20 border-t-black/60 rounded-full animate-spin" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] px-4">
+        <div className="w-full max-w-xs text-center">
+          <h1 className="mb-2 text-sm font-serif tracking-wider text-neutral-700">
+            Token administratora
+          </h1>
+          <p className="mb-8 text-xs leading-relaxed text-neutral-400">
+            Aby korzystać z panelu, wprowadź token admina (ten sam co{" "}
+            <span className="text-neutral-500">ADMIN_TOKEN</span> na Netlify).
+          </p>
+          <button
+            type="button"
+            onClick={requestAdminToken}
+            className="inline-flex w-full items-center justify-center bg-[#E8E3D8] px-8 py-2.5 text-xs uppercase tracking-widest text-neutral-700 transition-colors hover:bg-[#DDD7C8]"
+          >
+            Wprowadź token
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const navLinks = [
     { href: "/admin/orders", label: "Zamówienia" },
     { href: "/admin/products", label: "Produkty" },
@@ -107,6 +175,7 @@ export default function AdminLayout({
     { href: "/admin/discounts", label: "Rabaty" },
     { href: "/admin/hero", label: "Hero" },
     { href: "/admin/newsletter", label: "Newsletter" },
+    { href: "/admin/instagram", label: "Instagram" },
   ];
 
   // Generuj breadcrumbs na podstawie pathname
@@ -127,6 +196,7 @@ export default function AdminLayout({
       discounts: "RABATY",
       hero: "HERO",
       newsletter: "NEWSLETTER",
+      instagram: "INSTAGRAM",
       edit: "EDYCJA",
       new: "NOWY",
     };
@@ -152,40 +222,79 @@ export default function AdminLayout({
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen overflow-x-hidden bg-white">
       {/* Top Bar */}
-      <div className="border-b border-[#E8E3D8]/60 bg-[#FDFBF7]/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="sticky top-0 z-10 border-b border-[#E8E3D8]/60 bg-[#FDFBF7]/80 backdrop-blur-sm">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col py-3">
             {/* Header */}
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between gap-3 md:mb-3">
               <Link
                 href="/admin"
-                className="text-sm font-serif text-neutral-700 tracking-wide hover:text-neutral-900 transition-colors"
+                className="min-w-0 truncate text-sm font-serif tracking-wide text-neutral-700 transition-colors hover:text-neutral-900"
               >
                 SYRENAH | Admin
               </Link>
-              <div className="flex items-center gap-4">
+              <div className="flex shrink-0 items-center gap-3">
                 <Link
                   href="/"
-                  className="text-xs text-neutral-400 hover:text-neutral-600 transition-colors"
+                  className="text-xs text-neutral-400 transition-colors hover:text-neutral-600"
                 >
                   ← Sklep
                 </Link>
-                {/* Separator */}
-                <span className="w-px h-4 bg-[#E8E3D8]" />
-                {/* Przycisk Wyloguj */}
+                <span className="h-4 w-px bg-[#E8E3D8]" />
                 <button
                   onClick={handleSignOut}
-                  className="inline-flex items-center gap-1.5 text-xs text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer"
+                  className="inline-flex cursor-pointer items-center gap-1.5 text-xs text-neutral-400 transition-colors hover:text-neutral-600"
                 >
                   <LogOut size={14} strokeWidth={1.5} />
-                  Wyloguj
+                  <span className="hidden sm:inline">Wyloguj</span>
                 </button>
+                <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+                  <SheetTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex h-9 w-9 items-center justify-center text-[#3d2e24] md:hidden"
+                      aria-label="Otwórz menu"
+                    >
+                      <Menu size={20} strokeWidth={1.5} />
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent
+                    side="right"
+                    className="w-[260px] border-[#E8E3D8] bg-[#FDFBF7] p-0"
+                  >
+                    <SheetHeader className="border-b border-[#E8E3D8] px-5 py-4 text-left">
+                      <SheetTitle className="font-serif text-sm font-normal tracking-wide text-neutral-700">
+                        Menu
+                      </SheetTitle>
+                    </SheetHeader>
+                    <nav className="flex flex-col px-2 py-2">
+                      {navLinks.map((link) => {
+                        const isActive =
+                          pathname === link.href || pathname.startsWith(link.href + "/");
+                        return (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            onClick={() => setMenuOpen(false)}
+                            className={cn(
+                              "px-3 py-3 text-sm transition-colors",
+                              isActive
+                                ? "font-medium text-neutral-800"
+                                : "text-neutral-500 hover:text-neutral-800"
+                            )}
+                          >
+                            {link.label}
+                          </Link>
+                        );
+                      })}
+                    </nav>
+                  </SheetContent>
+                </Sheet>
               </div>
             </div>
-            {/* Navigation Links */}
-            <div className="flex items-center gap-6">
+            <nav className="hidden flex-wrap items-center gap-x-4 gap-y-1 md:flex">
               {navLinks.map((link) => {
                 const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
                 return (
@@ -193,28 +302,28 @@ export default function AdminLayout({
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      "text-sm transition-colors relative",
+                      "relative w-fit py-1 text-sm transition-colors",
                       isActive
-                        ? "text-neutral-800 font-medium"
-                        : "text-neutral-400 hover:text-neutral-700"
+                        ? "font-medium text-neutral-800"
+                        : "text-neutral-500 hover:text-neutral-800"
                     )}
                   >
                     {link.label}
                     {isActive && (
-                      <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#C1A88C]" />
+                      <span className="absolute bottom-0.5 left-0 right-0 h-px bg-[#C1A88C]" />
                     )}
                   </Link>
                 );
               })}
-            </div>
+            </nav>
           </div>
         </div>
       </div>
 
       {/* Breadcrumbs - ukryj na głównej stronie /admin */}
       {isMounted && pathname !== "/admin" && breadcrumbs.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 border-b border-black/5">
-          <nav className="flex items-center gap-2 text-xs uppercase tracking-widest">
+        <div className="mx-auto max-w-7xl overflow-x-auto border-b border-black/5 px-4 py-6 sm:px-6 lg:px-8">
+          <nav className="flex w-max min-w-full items-center gap-2 text-xs uppercase tracking-widest">
             {breadcrumbs.map((crumb, index) => {
               const isLast = index === breadcrumbs.length - 1;
 
@@ -252,7 +361,7 @@ export default function AdminLayout({
       )}
 
       {/* Content Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto min-w-0 max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {children}
       </div>
     </div>

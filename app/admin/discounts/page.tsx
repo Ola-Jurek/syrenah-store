@@ -7,6 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Toaster, toast } from "sonner";
 import { Tag, Plus, Pencil, Trash2, X, Check, Layers } from "lucide-react";
+import {
+  clearAdminToken,
+  getAdminToken,
+  promptAdminToken,
+} from "@/lib/adminToken";
 
 /* ───────────── Types ───────────── */
 
@@ -53,21 +58,6 @@ const emptyForm: FormData = {
 };
 
 /* ───────────── Helpers ───────────── */
-
-function getAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("adminToken");
-}
-
-function promptAdminToken(): string | null {
-  if (typeof window === "undefined") return null;
-  const token = window.prompt("Wprowadź token admina:");
-  if (token) {
-    localStorage.setItem("adminToken", token);
-    return token;
-  }
-  return null;
-}
 
 function toLocalDatetimeString(iso: string | null): string {
   if (!iso) return "";
@@ -144,7 +134,7 @@ export default function AdminDiscountsPage() {
       });
 
       if (res.status === 401) {
-        localStorage.removeItem("adminToken");
+        clearAdminToken();
         setError("Nieautoryzowany dostęp.");
         const newToken = promptAdminToken();
         if (newToken) fetchDiscounts();

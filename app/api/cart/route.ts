@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEffectivePrice, extractDiscountInfo } from "@/lib/pricing";
+import { stockForSize } from "@/lib/size-stock";
 
 // GET /api/cart — pobierz koszyk zalogowanego użytkownika
 export async function GET() {
@@ -17,7 +18,10 @@ export async function GET() {
     include: {
       product: {
         include: {
-          images: { where: { isPrimary: true }, take: 1 },
+          images: {
+            orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }],
+            take: 5,
+          },
           category: { select: { slug: true } },
           discounts: {
             where: {
@@ -30,6 +34,7 @@ export async function GET() {
             },
             take: 1,
           },
+          sizeStocks: { select: { size: true, stock: true } },
         },
       },
     },
@@ -46,17 +51,25 @@ export async function GET() {
       discount: discountInfo,
     });
 
+    const image =
+      item.product.images.find((img) => img.url?.trim()) ||
+      item.product.images[0];
+
     return {
       productId: item.productId,
       name: item.product.namePl,
+      namePl: item.product.namePl,
+      nameEn: item.product.nameEn,
       price: pricing.finalPricePln,
+      priceEur: pricing.finalPriceEur,
       originalPrice: pricing.originalPricePln,
+      originalPriceEur: pricing.originalPriceEur,
       quantity: item.quantity,
       size: item.size ?? undefined,
       color: item.color ?? undefined,
       slug: item.product.slug,
       categorySlug: item.product.category.slug,
-      imageUrl: item.product.images[0]?.url ?? null,
+      imageUrl: image?.url?.trim() || null,
     };
   });
 
@@ -81,7 +94,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Upsert — jeśli istnieje, zsumuj ilości
+  const qty = Math.max(1, Number(quantity) || 1);
+
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: { sizeStocks: { select: { size: true, stock: true } } },
+  });
+  if (!product) {
+    return NextResponse.json({ error: "Product not found" }, { status: 404 });
+  }
+
   const existing = await prisma.cartItem.findFirst({
     where: {
       userId: session.user.id,
@@ -91,10 +113,24 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  const nextQty = (existing?.quantity ?? 0) + qty;
+  const availability = stockForSize(
+    product.stock,
+    product.sizes,
+    product.sizeStocks,
+    size
+  );
+  if (availability.error || availability.available < nextQty) {
+    return NextResponse.json(
+      { error: availability.error || "Za mało sztuk na stanie" },
+      { status: 400 }
+    );
+  }
+
   if (existing) {
     const updated = await prisma.cartItem.update({
       where: { id: existing.id },
-      data: { quantity: existing.quantity + quantity },
+      data: { quantity: nextQty },
     });
     return NextResponse.json({ item: updated });
   }
@@ -103,7 +139,7 @@ export async function POST(req: NextRequest) {
     data: {
       userId: session.user.id,
       productId,
-      quantity,
+      quantity: qty,
       size: size ?? null,
       color: color ?? null,
     },

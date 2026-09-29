@@ -5,8 +5,10 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, Trash2, ShoppingBag } from "lucide-react";
+import { Heart, Trash2 } from "lucide-react";
 import { useWishlist } from "@/components/WishlistContext";
+import { useLanguage } from "@/components/LanguageContext";
+import { formatMoney } from "@/lib/format-price";
 
 type WishlistProduct = {
   id: string;
@@ -27,6 +29,8 @@ type WishlistProduct = {
 };
 
 export default function WishlistPage() {
+  const { locale, messages, t } = useLanguage();
+  const w = messages.wishlist;
   const { data: session, status } = useSession();
   const router = useRouter();
   const { toggleWishlist } = useWishlist();
@@ -69,7 +73,7 @@ export default function WishlistPage() {
       <div className="px-6 pt-24 pb-16 max-w-7xl mx-auto bg-white">
         <div className="text-center py-24">
           <p className="text-sm text-black/40 tracking-widest uppercase">
-            Ładowanie...
+            {w.loading}
           </p>
         </div>
       </div>
@@ -82,17 +86,17 @@ export default function WishlistPage() {
       <nav className="mb-16">
         <div className="flex items-center gap-2 text-xs text-[#C1A88C]/60">
           <Link href="/" className="hover:text-[#C1A88C] transition-colors">
-            START
+            {t("nav.home")}
           </Link>
           <span className="text-[#C1A88C]/40">|</span>
-          <span className="text-[#C1A88C]/60">ULUBIONE</span>
+          <span className="text-[#C1A88C]/60">{w.crumbWishlist.toUpperCase()}</span>
         </div>
       </nav>
 
       <div className="flex items-center gap-3 mb-12">
         <Heart className="h-5 w-5 text-[#C1A88C] fill-[#C1A88C]" />
         <h1 className="text-xs uppercase tracking-widest font-serif text-black font-medium">
-          ULUBIONE
+          {w.title.toUpperCase()}
         </h1>
         <span className="text-xs text-black/40">({items.length})</span>
       </div>
@@ -101,24 +105,33 @@ export default function WishlistPage() {
         <div className="text-center py-24 space-y-6">
           <Heart className="h-12 w-12 mx-auto text-[#C1A88C]/30" />
           <p className="text-sm text-black/50 tracking-wide">
-            Twoja lista ulubionych jest pusta
+            {w.empty}
           </p>
           <Link
             href="/shop"
             className="inline-block border border-[#C1A88C] text-[#C1A88C] px-8 py-3 text-xs uppercase tracking-widest hover:bg-[#C1A88C] hover:text-white transition-all"
           >
-            Odkryj produkty
+            {w.discover}
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-8">
-          {items.map((item) => (
+          {items.map((item) => {
+            const name =
+              locale === "en" && item.product.nameEn?.trim()
+                ? item.product.nameEn
+                : item.product.namePl;
+            const priceNum =
+              locale === "en"
+                ? parseFloat(item.product.priceEur)
+                : parseFloat(item.product.pricePln);
+            return (
             <div key={item.id} className="group relative">
               {/* Przycisk usuwania */}
               <button
                 onClick={() => handleRemove(item.productId)}
                 className="absolute top-2 right-2 z-10 h-8 w-8 flex items-center justify-center rounded-full bg-white/60 backdrop-blur-sm shadow-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 hover:scale-110"
-                aria-label="Usuń z ulubionych"
+                aria-label={w.removeAria}
               >
                 <Trash2 className="h-4 w-4 text-black/40 hover:text-red-500 transition-colors" />
               </button>
@@ -149,18 +162,19 @@ export default function WishlistPage() {
                 </div>
                 <div className="text-center">
                   <h2 className="text-sm uppercase tracking-widest font-serif text-black mb-1">
-                    {item.product.namePl.toUpperCase()}
+                    {name.toUpperCase()}
                   </h2>
                   <p className="text-xs text-black/40 mb-1">
                     {item.product.categoryName}
                   </p>
                   <p className="text-xs text-black/60">
-                    {item.product.pricePln} PLN
+                    {formatMoney(priceNum, locale)}
                   </p>
                 </div>
               </Link>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

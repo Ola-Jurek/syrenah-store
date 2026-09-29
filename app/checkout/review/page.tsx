@@ -1,12 +1,22 @@
 "use client";
 
-import { useCart } from "@/components/CartContext";
+import { useCart, getCartItemName } from "@/components/CartContext";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Tag, X } from "lucide-react";
+import { Tag } from "lucide-react";
+import { useLanguage } from "@/components/LanguageContext";
+import {
+  cartSubtotals,
+  formatCheckoutMoney,
+  plnToEurUsingRatio,
+} from "@/lib/checkout-currency";
+import {
+  countryLabel,
+  destinationCountry,
+  shippingPricePln,
+} from "@/lib/shipping-countries";
 
 type ShippingData = {
   fullName: string;
@@ -14,6 +24,7 @@ type ShippingData = {
   street: string;
   postalCode: string;
   city: string;
+  country?: string;
   phone: string;
   shippingMethod: "courier" | "parcel_locker";
   parcelLockerCode?: string;
@@ -35,6 +46,7 @@ type ShippingData = {
   altStreet?: string;
   altPostalCode?: string;
   altCity?: string;
+  altCountry?: string;
   altPhone?: string;
 };
 
@@ -43,15 +55,18 @@ type ProductImage = {
   imageUrl: string | null;
 };
 
-const SHIPPING_LABELS: Record<string, { label: string; price: number }> = {
-  courier: { label: "Kurier", price: 15 },
-  parcel_locker: { label: "Paczkomat", price: 10 },
-};
-
 export default function CheckoutReviewPage() {
   const router = useRouter();
   const { items, clearCart } = useCart();
-  const { data: session } = useSession();
+  const { locale, t } = useLanguage();
+
+  const SHIPPING_LABELS: Record<string, string> = useMemo(
+    () => ({
+      courier: t("checkoutFlow.courierLabel"),
+      parcel_locker: t("checkoutFlow.lockerLabel"),
+    }),
+    [t]
+  );
   const [shipping, setShipping] = useState<ShippingData | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -128,14 +143,24 @@ export default function CheckoutReviewPage() {
     fetchImages();
   }, [items]);
 
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const { subPln: subtotal, subEur: subtotalEur, canUseEur } =
+    cartSubtotals(items);
 
   const shippingCost = shipping
-    ? SHIPPING_LABELS[shipping.shippingMethod]?.price ?? 15
-    : 15;
+    ? shippingPricePln(
+        shipping.shippingMethod,
+        destinationCountry({
+          country: shipping.country,
+          differentShipping: shipping.differentShipping,
+          altCountry: shipping.altCountry,
+        })
+      )
+    : shippingPricePln("courier", "PL");
+
+  const shippingEur =
+    canUseEur && subtotal > 0
+      ? plnToEurUsingRatio(shippingCost, subtotal, subtotalEur)
+      : null;
 
   // Uwzględnij rabat z kodu koszyka
   const hasCartDiscount =
@@ -150,6 +175,21 @@ export default function CheckoutReviewPage() {
   const effectiveDiscount = subtotal - effectiveProductTotal;
 
   const total = effectiveProductTotal + shippingCost;
+  const totalEurDisplay =
+    canUseEur && subtotal > 0
+      ? Math.round(
+          (effectiveProductTotal * (subtotalEur / subtotal) +
+            (shippingEur ?? 0)) *
+            100
+        ) / 100
+      : null;
+
+  const effectiveDiscountEur =
+    canUseEur && subtotal > 0
+      ? Math.round(
+          (effectiveDiscount * (subtotalEur / subtotal)) * 100
+        ) / 100
+      : null;
 
   const handlePayment = async () => {
     if (!shipping) return;
@@ -167,12 +207,14 @@ export default function CheckoutReviewPage() {
               street: shipping.parcelLockerAddress || "",
               city: shipping.parcelLockerCity || "",
               postalCode: shipping.parcelLockerPostalCode || "",
+              country: shipping.country || "PL",
             }
           : {
               type: "courier",
               street: shipping.street,
               city: shipping.city,
               postalCode: shipping.postalCode,
+              country: shipping.country || "PL",
             };
 
       // Dane faktury
@@ -193,6 +235,7 @@ export default function CheckoutReviewPage() {
             street: shipping.altStreet || "",
             postalCode: shipping.altPostalCode || "",
             city: shipping.altCity || "",
+            country: shipping.altCountry || shipping.country || "PL",
             phone: shipping.altPhone || "",
           }
         : null;
@@ -202,6 +245,7 @@ export default function CheckoutReviewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           items,
+          checkoutLocale: locale,
           shipping: {
             fullName: shipping.fullName,
             email: shipping.email,
@@ -218,8 +262,8 @@ export default function CheckoutReviewPage() {
 
       const data = await res.json();
 
-      if (!data.url) {
-        alert("Wystąpił błąd — spróbuj ponownie.");
+      if (!res.ok || !data.url) {
+        alert(data.error || t("alerts.checkoutNoPaymentUrl"));
         setIsProcessing(false);
         return;
       }
@@ -227,7 +271,7 @@ export default function CheckoutReviewPage() {
       window.location.href = data.url;
     } catch (error) {
       console.error("Checkout error:", error);
-      alert("Wystąpił błąd — spróbuj ponownie.");
+      alert(t("alerts.checkoutGenericError"));
       setIsProcessing(false);
     }
   };
@@ -246,23 +290,23 @@ export default function CheckoutReviewPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-[#FDFBF7]">
         <h1 className="font-serif text-xl text-neutral-800 mb-3">
-          Twój koszyk jest pusty
+          {t("checkoutFlow.emptyCartTitle")}
         </h1>
         <p className="text-xs text-neutral-400 mb-8">
-          Dodaj produkty, aby przejść do zamówienia.
+          {t("checkoutFlow.emptyCartHint")}
         </p>
         <Link
           href="/shop"
           className="border border-neutral-900 px-8 py-3 text-xs uppercase tracking-widest text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors"
         >
-          Wróć do sklepu
+          {t("checkoutFlow.backToShop")}
         </Link>
       </div>
     );
   }
 
   const shippingLabel =
-    SHIPPING_LABELS[shipping.shippingMethod]?.label ??
+    SHIPPING_LABELS[shipping.shippingMethod] ??
     shipping.shippingMethod;
 
   return (
@@ -286,10 +330,10 @@ export default function CheckoutReviewPage() {
         {/* Nagłówek */}
         <div className="text-center mb-10">
           <h1 className="font-serif text-2xl text-neutral-800 mb-2">
-            Podsumowanie zamówienia
+            {t("checkoutFlow.reviewTitle")}
           </h1>
           <p className="text-xs text-neutral-400">
-            Sprawdź dane i przejdź do płatności.
+            {t("checkoutFlow.reviewSubtitle")}
           </p>
         </div>
 
@@ -300,19 +344,25 @@ export default function CheckoutReviewPage() {
             <div className="bg-white border border-[#E8E3D8] p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xs uppercase tracking-widest text-neutral-500">
-                  Dane dostawy
+                  {t("checkoutFlow.shippingDataTitle")}
                 </h2>
                 <Link
                   href="/checkout/shipping"
                   className="text-xs text-[#C1A88C] hover:text-[#B09A7C] transition-colors underline underline-offset-2"
                 >
-                  Zmień
+                  {t("checkoutFlow.change")}
                 </Link>
               </div>
 
               <div className="space-y-1.5 text-sm text-neutral-700">
                 <p className="font-medium">{shipping.fullName}</p>
                 <p>{shipping.email}</p>
+
+                <p>{shipping.street}</p>
+                <p>
+                  {shipping.postalCode} {shipping.city}
+                </p>
+                <p>{countryLabel(shipping.country, locale)}</p>
 
                 {shipping.shippingMethod === "parcel_locker" &&
                 shipping.parcelLockerCode ? (
@@ -340,7 +390,8 @@ export default function CheckoutReviewPage() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-neutral-800">
-                        Paczkomat: {shipping.parcelLockerCode}
+                        {t("checkoutFlow.parcelLockerPrefix")}{" "}
+                        {shipping.parcelLockerCode}
                       </p>
                       <p className="text-xs text-neutral-500 mt-0.5">
                         {shipping.parcelLockerAddress}
@@ -349,15 +400,7 @@ export default function CheckoutReviewPage() {
                       </p>
                     </div>
                   </div>
-                ) : (
-                  /* Adres kuriera */
-                  <>
-                    <p>{shipping.street}</p>
-                    <p>
-                      {shipping.postalCode} {shipping.city}
-                    </p>
-                  </>
-                )}
+                ) : null}
 
                 <p className="text-neutral-500">{shipping.phone}</p>
               </div>
@@ -366,14 +409,18 @@ export default function CheckoutReviewPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs uppercase tracking-widest text-neutral-500 mb-1">
-                      Metoda dostawy
+                      {t("checkoutFlow.shippingMethodTitle")}
                     </p>
                     <p className="text-sm text-neutral-700 font-medium">
                       {shippingLabel}
                     </p>
                   </div>
                   <span className="text-sm font-serif text-neutral-700">
-                    {shippingCost.toFixed(2)} zł
+                    {formatCheckoutMoney(
+                      shippingCost,
+                      shippingEur,
+                      locale
+                    )}
                   </span>
                 </div>
               </div>
@@ -383,7 +430,7 @@ export default function CheckoutReviewPage() {
             {shipping.differentShipping && shipping.altStreet && (
               <div className="bg-white border border-[#E8E3D8] p-6">
                 <h2 className="text-xs uppercase tracking-widest text-neutral-500 mb-4">
-                  Adres do wysyłki (inny)
+                  {t("checkoutFlow.altShippingTitle")}
                 </h2>
                 <div className="space-y-1.5 text-sm text-neutral-700">
                   {shipping.altFullName && (
@@ -393,6 +440,7 @@ export default function CheckoutReviewPage() {
                   <p>
                     {shipping.altPostalCode} {shipping.altCity}
                   </p>
+                  <p>{countryLabel(shipping.altCountry || shipping.country, locale)}</p>
                   {shipping.altPhone && (
                     <p className="text-neutral-500">{shipping.altPhone}</p>
                   )}
@@ -404,11 +452,13 @@ export default function CheckoutReviewPage() {
             {shipping.wantInvoice && shipping.companyName && (
               <div className="bg-white border border-[#E8E3D8] p-6">
                 <h2 className="text-xs uppercase tracking-widest text-neutral-500 mb-4">
-                  Dane do faktury VAT
+                  {t("checkoutFlow.invoiceTitle")}
                 </h2>
                 <div className="space-y-1.5 text-sm text-neutral-700">
                   <p className="font-medium">{shipping.companyName}</p>
-                  <p>NIP: {shipping.vatNumber}</p>
+                  <p>
+                    {t("checkoutFlow.vatIdLabel")} {shipping.vatNumber}
+                  </p>
                   <p>{shipping.companyStreet}</p>
                   <p>
                     {shipping.companyPostalCode} {shipping.companyCity}
@@ -420,12 +470,16 @@ export default function CheckoutReviewPage() {
             {/* Produkty */}
             <div className="bg-white border border-[#E8E3D8] p-6">
               <h2 className="text-xs uppercase tracking-widest text-neutral-500 mb-5">
-                Produkty ({items.length})
+                {t("checkoutFlow.productsCount").replace(
+                  "{count}",
+                  String(items.length)
+                )}
               </h2>
 
               <ul className="divide-y divide-[#E8E3D8]">
                 {items.map((item) => {
                   const imageUrl = productImages[item.productId];
+                  const displayName = getCartItemName(item, locale);
 
                   return (
                     <li
@@ -439,7 +493,7 @@ export default function CheckoutReviewPage() {
                         {imageUrl ? (
                           <Image
                             src={imageUrl}
-                            alt={item.name}
+                            alt={displayName}
                             fill
                             className="object-cover"
                             sizes="64px"
@@ -454,13 +508,15 @@ export default function CheckoutReviewPage() {
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-neutral-700 font-medium truncate">
-                          {item.name}
+                          {displayName}
                         </p>
                         {(item.size || item.color) && (
                           <p className="text-xs text-neutral-400 mt-0.5">
-                            {item.size && `Rozmiar: ${item.size}`}
+                            {item.size &&
+                              `${t("checkoutFlow.sizeLabel")} ${item.size}`}
                             {item.size && item.color && " · "}
-                            {item.color && `Kolor: ${item.color}`}
+                            {item.color &&
+                              `${t("checkoutFlow.colorLabel")} ${item.color}`}
                           </p>
                         )}
                         <p className="text-xs text-neutral-400 mt-0.5">
@@ -471,7 +527,13 @@ export default function CheckoutReviewPage() {
                       {/* Cena */}
                       <div className="flex-shrink-0 text-right">
                         <p className="text-sm font-serif text-neutral-700">
-                          {(item.price * item.quantity).toFixed(2)} zł
+                          {formatCheckoutMoney(
+                            item.price * item.quantity,
+                            item.priceEur != null
+                              ? item.priceEur * item.quantity
+                              : null,
+                            locale
+                          )}
                         </p>
                       </div>
                     </li>
@@ -485,37 +547,56 @@ export default function CheckoutReviewPage() {
           <div className="md:sticky md:top-28 h-fit">
             <div className="bg-white border border-[#E8E3D8] p-6">
               <h2 className="text-xs uppercase tracking-widest text-neutral-500 mb-5">
-                Do zapłaty
+                {t("checkoutFlow.reviewPayTitle")}
               </h2>
 
               <div className="space-y-2">
                 <div className="flex justify-between text-xs text-neutral-500">
-                  <span>Produkty</span>
-                  <span>{subtotal.toFixed(2)} zł</span>
+                  <span>{t("checkoutFlow.summaryProducts")}</span>
+                  <span>
+                    {formatCheckoutMoney(
+                      subtotal,
+                      canUseEur ? subtotalEur : null,
+                      locale
+                    )}
+                  </span>
                 </div>
 
                 {effectiveDiscount > 0 && appliedDiscount && (
                   <div className="flex justify-between text-xs">
                     <span className="text-[#C1A88C] flex items-center gap-1">
                       <Tag className="h-3 w-3" />
-                      Rabat ({appliedDiscount.code})
+                      {t("checkoutFlow.summaryDiscount")} (
+                      {appliedDiscount.code})
                     </span>
                     <span className="text-[#C1A88C] font-medium">
-                      -{effectiveDiscount.toFixed(2)} zł
+                      -
+                      {formatCheckoutMoney(
+                        effectiveDiscount,
+                        effectiveDiscountEur,
+                        locale
+                      )}
                     </span>
                   </div>
                 )}
 
                 <div className="flex justify-between text-xs text-neutral-500">
-                  <span>Dostawa ({shippingLabel})</span>
-                  <span>{shippingCost.toFixed(2)} zł</span>
+                  <span>
+                    {t("checkoutFlow.summaryShippingWithMethod").replace(
+                      "{method}",
+                      shippingLabel
+                    )}
+                  </span>
+                  <span>
+                    {formatCheckoutMoney(shippingCost, shippingEur, locale)}
+                  </span>
                 </div>
                 <div className="border-t border-[#E8E3D8] pt-3 mt-3 flex justify-between">
                   <span className="text-xs uppercase tracking-widest text-neutral-600">
-                    Razem
+                    {t("checkoutFlow.summaryTotal")}
                   </span>
                   <span className="font-serif text-xl text-neutral-800">
-                    {total.toFixed(2)} zł
+                    {formatCheckoutMoney(total, totalEurDisplay, locale)}
                   </span>
                 </div>
               </div>
@@ -530,10 +611,10 @@ export default function CheckoutReviewPage() {
               {isProcessing ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="w-3.5 h-3.5 border border-white/50 border-t-white rounded-full animate-spin" />
-                  Przetwarzanie...
+                  {t("common.processing")}
                 </span>
               ) : (
-                "Zapłać"
+                t("checkoutFlow.payButton")
               )}
             </button>
 
@@ -553,7 +634,7 @@ export default function CheckoutReviewPage() {
                 />
               </svg>
               <p className="text-[10px] text-neutral-400">
-                Bezpieczna płatność przez Stripe
+                {t("checkoutFlow.secureStripe")}
               </p>
             </div>
 
@@ -562,7 +643,7 @@ export default function CheckoutReviewPage() {
               href="/checkout/shipping"
               className="block text-center mt-4 text-xs text-neutral-400 hover:text-neutral-600 transition-colors underline underline-offset-2"
             >
-              ← Wróć do danych dostawy
+              {t("checkoutFlow.backToShipping")}
             </Link>
           </div>
         </div>
