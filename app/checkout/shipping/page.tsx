@@ -6,7 +6,6 @@ import { useCart, getCartItemName } from "@/components/CartContext";
 import { useSession } from "next-auth/react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
-import Script from "next/script";
 import { Tag } from "lucide-react";
 import { useLanguage } from "@/components/LanguageContext";
 import {
@@ -221,6 +220,64 @@ export default function ShippingPage() {
       delete (window as any).__inpostPointSelected;
     };
   }, []);
+
+  // Widgetu nie wolno renderować z JSX. React przy kolejnym otwarciu
+  // mapy ustawia token/language/config/onpoint jako właściwości, a w
+  // elemencie InPostu są one tylko do odczytu i rzucają wyjątek.
+  useEffect(() => {
+    if (!showGeowidget) return;
+    const parent = geowidgetRef.current;
+    if (!parent) return;
+
+    let cancelled = false;
+    const token = process.env.NEXT_PUBLIC_INPOST_GEOWIDGET_TOKEN || "";
+    const language = locale === "en" ? "en" : "pl";
+
+    const mount = () => {
+      if (cancelled || !parent.isConnected) return;
+      parent.replaceChildren();
+      const widget = document.createElement("inpost-geowidget");
+      widget.setAttribute("token", token);
+      widget.setAttribute("language", language);
+      widget.setAttribute("config", "parcelCollect");
+      widget.setAttribute("onpoint", "__inpostPointSelected");
+      widget.style.display = "block";
+      widget.style.width = "100%";
+      widget.style.height = "100%";
+      parent.appendChild(widget);
+    };
+
+    if (!document.querySelector('link[data-inpost-geowidget="css"]')) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "https://geowidget.inpost.pl/inpost-geowidget.css";
+      link.dataset.inpostGeowidget = "css";
+      document.head.appendChild(link);
+    }
+
+    let script: HTMLScriptElement | null = null;
+    if (customElements.get("inpost-geowidget")) {
+      mount();
+    } else {
+      script = document.querySelector(
+        'script[data-inpost-geowidget="js"]'
+      ) as HTMLScriptElement | null;
+      if (!script) {
+        script = document.createElement("script");
+        script.src = "https://geowidget.inpost.pl/inpost-geowidget.js";
+        script.async = true;
+        script.dataset.inpostGeowidget = "js";
+        document.body.appendChild(script);
+      }
+      script.addEventListener("load", mount);
+    }
+
+    return () => {
+      cancelled = true;
+      script?.removeEventListener("load", mount);
+      parent.replaceChildren();
+    };
+  }, [showGeowidget, locale]);
 
   // Załaduj zapisane dane z localStorage + dane sesji
   useEffect(() => {
@@ -1424,33 +1481,7 @@ export default function ShippingPage() {
             </div>
 
             {/* Geowidget container */}
-            <div className="flex-1 relative" ref={geowidgetRef}>
-              <Script
-                src="https://geowidget.inpost.pl/inpost-geowidget.js"
-                strategy="lazyOnload"
-              />
-              <link
-                rel="stylesheet"
-                href="https://geowidget.inpost.pl/inpost-geowidget.css"
-              />
-              {/* @ts-ignore — InPost Geowidget Web Component.
-                  onpoint jest w widgecie tylko getterem. React przy drugim
-                  wejściu próbuje go nadpisać i wywala całą stronę, więc
-                  atrybut ustawiamy ręcznie. */}
-              <inpost-geowidget
-                ref={(node: HTMLElement | null) => {
-                  node?.setAttribute("onpoint", "__inpostPointSelected");
-                }}
-                token={process.env.NEXT_PUBLIC_INPOST_GEOWIDGET_TOKEN || ""}
-                language={locale === "en" ? "en" : "pl"}
-                config="parcelCollect"
-                style={{
-                  display: "block",
-                  width: "100%",
-                  height: "100%",
-                }}
-              />
-            </div>
+            <div className="flex-1 relative" ref={geowidgetRef} />
           </div>
         </>
       )}
