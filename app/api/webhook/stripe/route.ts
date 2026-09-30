@@ -12,6 +12,68 @@ import {
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
+type ShippingMeta = {
+  email?: string;
+  fullName?: string;
+  phone?: string;
+  shippingMethod?: string;
+  shippingCost?: number;
+  shippingAddress?: Prisma.InputJsonValue;
+};
+
+type InvoiceMeta = {
+  companyName?: string;
+  vatNumber?: string;
+  street?: string;
+  postalCode?: string;
+  city?: string;
+};
+
+function parseMetaJson<T>(raw: string | null | undefined): T | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+function orderShippingFromSession(session: Stripe.Checkout.Session) {
+  const shippingData = parseMetaJson<ShippingMeta>(session.metadata?.shipping);
+  const invoiceData = parseMetaJson<InvoiceMeta>(session.metadata?.invoice);
+  const alternateShippingData = parseMetaJson<Prisma.InputJsonValue>(
+    session.metadata?.alternateShipping
+  );
+  const discountId = session.metadata?.discountId || null;
+
+  return {
+    shippingEmail:
+      shippingData?.email || session.customer_details?.email || null,
+    shippingName:
+      shippingData?.fullName || session.customer_details?.name || null,
+    shippingPhone: shippingData?.phone || null,
+    shippingMethod: shippingData?.shippingMethod || null,
+    shippingCost:
+      shippingData?.shippingCost != null
+        ? new Prisma.Decimal(shippingData.shippingCost)
+        : null,
+    shippingAddress: shippingData?.shippingAddress ?? Prisma.DbNull,
+    isInvoiceRequested: !!invoiceData,
+    companyName: invoiceData?.companyName || null,
+    vatNumber: invoiceData?.vatNumber || null,
+    billingAddress: invoiceData
+      ? {
+          street: invoiceData.street,
+          postalCode: invoiceData.postalCode,
+          city: invoiceData.city,
+        }
+      : Prisma.DbNull,
+    isDifferentShippingAddress: !!alternateShippingData,
+    alternateShippingAddress: alternateShippingData ?? Prisma.DbNull,
+    ...(discountId ? { discountId } : {}),
+  };
+}
+
 export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature");
   if (!sig) {
@@ -53,17 +115,30 @@ export async function POST(req: Request) {
         console.log("Existing order ID:", existing.id);
         console.log("Existing order status:", existing.status);
 
-        // Jeśli już jest PAID, zwróć early
+        const shippingFields = orderShippingFromSession(session);
+        const needsShippingBackfill = !existing.shippingName && !existing.shippingEmail;
+
+        // Jeśli już jest PAID — ewentualnie tylko uzupełnij brakujące dane dostawy
         if (existing.status === OrderStatus.PAID) {
+          if (needsShippingBackfill) {
+            await prisma.order.update({
+              where: { id: existing.id },
+              data: shippingFields,
+            });
+            console.log(`Order ${existing.id} shipping backfilled`);
+          }
           console.log(`Order ${existing.id} already has status PAID`);
           return NextResponse.json({ received: true, alreadyProcessed: true });
         }
 
-        // Jeśli istnieje z innym statusem (np. PROCESSING), zaktualizuj na PAID
+        // Jeśli istnieje z innym statusem (np. PROCESSING), zaktualizuj na PAID + uzupełnij shipping
         console.log("Trying to update status to PAID...");
         const updated = await prisma.order.update({
           where: { id: existing.id },
-          data: { status: OrderStatus.PAID },
+          data: {
+            status: OrderStatus.PAID,
+            ...(needsShippingBackfill ? shippingFields : {}),
+          },
         });
         console.log(`Order ${updated.id} status updated to PAID`);
         console.log("Updated order status:", updated.status);
@@ -106,9 +181,11 @@ export async function POST(req: Request) {
       const userId = session.metadata?.userId || null;
       console.log("User ID from metadata:", userId);
 
+      const shippingFields = orderShippingFromSession(session);
+
       // Wszystko w transakcji dla atomowości
       const order = await prisma.$transaction(async (tx) => {
-        // Utwórz zamówienie z statusem PAID
+        // Utwórz zamówienie z statusem PAID + danymi dostawy
         console.log("Creating order with status PAID");
         const newOrder = await tx.order.create({
           data: {
@@ -118,6 +195,7 @@ export async function POST(req: Request) {
             totalEur: new Prisma.Decimal(totalEurFromMeta),
             language: checkoutLocale,
             ...(userId ? { userId } : {}),
+            ...shippingFields,
           },
         });
 
