@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Package, ShoppingBag, Folder, Image, Tag, Mail, Instagram } from "lucide-react";
 
+// Liczniki muszą być zawsze aktualne po usunięciach w bazie
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboard() {
   // Pobierz statystyki
   const [productCount, orderCount, categoryCount, pendingOrders] = await Promise.all([
