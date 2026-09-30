@@ -24,12 +24,42 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = "https://syrenahthelabel.com";
+const siteDescription =
+  "Ekskluzywna moda damska - polski design i najwyższa jakość.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "Syrenah Store",
     template: "%s | Syrenah",
   },
-  description: "Ekskluzywna moda damska - polski design i najwyższa jakość.",
+  description: siteDescription,
+  alternates: {
+    canonical: "/",
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: ["/favicon.ico"],
+  },
+  openGraph: {
+    type: "website",
+    locale: "pl_PL",
+    url: siteUrl,
+    siteName: "Syrenah",
+    title: "Syrenah Store",
+    description: siteDescription,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -40,6 +70,19 @@ export default function RootLayout({
   return (
     <html lang="pl">
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ClothingStore",
+              name: "Syrenah",
+              url: siteUrl,
+              logo: `${siteUrl}/icon-192.png`,
+              description: siteDescription,
+            }),
+          }}
+        />
         <SessionProvider>
           <LanguageProvider>
             <CartProvider>
