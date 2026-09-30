@@ -608,7 +608,7 @@
     "streetRequired": "Street is required",
     "streetMin": "At least 3 characters",
     "postalRequired": "Postal code is required",
-    "postalFormat": "Format: 00-000",
+    "postalFormat": "Enter the 5 digits of the postal code",
     "cityRequired": "City is required",
     "cityMin": "At least 2 characters",
     "countryRequired": "Country is required",

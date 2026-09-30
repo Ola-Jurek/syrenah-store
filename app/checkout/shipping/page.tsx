@@ -105,10 +105,18 @@ const inputBase =
 const inputOk = "border-[#E8E3D8] focus:border-[#C1A88C]";
 const inputErr = "border-red-300 focus:border-red-400";
 
+function polishPostalDigits(value: string) {
+  return value.replace(/\D/g, "").slice(0, 5);
+}
+
 function formatPolishPostal(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 5);
+  const digits = polishPostalDigits(value);
   if (digits.length <= 2) return digits;
   return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+}
+
+function isPolishPostal(value: string) {
+  return polishPostalDigits(value).length === 5;
 }
 
 export default function ShippingPage() {
@@ -623,17 +631,14 @@ export default function ShippingPage() {
                             event.target.value
                           );
                           if (formatted !== event.target.value) {
-                            setValue("postalCode", formatted, {
-                              shouldValidate: true,
-                            });
+                            setValue("postalCode", formatted);
                           }
                         },
                         ...(shipsToPoland
                           ? {
-                              pattern: {
-                                value: /^\d{2}-\d{3}$/,
-                                message: t("checkoutValidation.postalFormat"),
-                              },
+                              validate: (value) =>
+                                isPolishPostal(value) ||
+                                t("checkoutValidation.postalFormat"),
                             }
                           : {
                               minLength: {
@@ -943,18 +948,17 @@ export default function ShippingPage() {
                             required: wantInvoice
                               ? t("checkoutValidation.companyPostalRequired")
                               : false,
-                            pattern: {
-                              value: /^\d{2}-\d{3}$/,
-                              message: t("checkoutValidation.postalFormat"),
-                            },
+                            validate: (value) =>
+                              !wantInvoice ||
+                              !value ||
+                              isPolishPostal(value) ||
+                              t("checkoutValidation.postalFormat"),
                             onChange: (event) => {
                               const formatted = formatPolishPostal(
                                 event.target.value
                               );
                               if (formatted !== event.target.value) {
-                                setValue("companyPostalCode", formatted, {
-                                  shouldValidate: true,
-                                });
+                                setValue("companyPostalCode", formatted);
                               }
                             },
                           })}
@@ -1110,17 +1114,15 @@ export default function ShippingPage() {
                                 event.target.value
                               );
                               if (formatted !== event.target.value) {
-                                setValue("altPostalCode", formatted, {
-                                  shouldValidate: true,
-                                });
+                                setValue("altPostalCode", formatted);
                               }
                             },
                             ...(altShipsToPoland
                               ? {
-                                  pattern: {
-                                    value: /^\d{2}-\d{3}$/,
-                                    message: t("checkoutValidation.postalFormat"),
-                                  },
+                                  validate: (value: string) =>
+                                    !differentShipping ||
+                                    isPolishPostal(value) ||
+                                    t("checkoutValidation.postalFormat"),
                                 }
                               : {
                                   minLength: {
@@ -1431,9 +1433,14 @@ export default function ShippingPage() {
                 rel="stylesheet"
                 href="https://geowidget.inpost.pl/inpost-geowidget.css"
               />
-              {/* @ts-ignore — InPost Geowidget Web Component */}
+              {/* @ts-ignore — InPost Geowidget Web Component.
+                  onpoint jest w widgecie tylko getterem. React przy drugim
+                  wejściu próbuje go nadpisać i wywala całą stronę, więc
+                  atrybut ustawiamy ręcznie. */}
               <inpost-geowidget
-                onpoint="__inpostPointSelected"
+                ref={(node: HTMLElement | null) => {
+                  node?.setAttribute("onpoint", "__inpostPointSelected");
+                }}
                 token={process.env.NEXT_PUBLIC_INPOST_GEOWIDGET_TOKEN || ""}
                 language={locale === "en" ? "en" : "pl"}
                 config="parcelCollect"
