@@ -47,6 +47,7 @@ export async function sendStatusUpdateEmail({
     courier: "Kurier DPD",
     parcel_locker: "Paczkomat InPost",
     inpost_courier: "Kurier InPost",
+    pickup: "Odbiór osobisty",
   };
 
   const shippingMethodLabel = order.shippingMethod

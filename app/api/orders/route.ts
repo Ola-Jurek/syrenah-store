@@ -92,7 +92,10 @@ export async function POST(req: Request) {
         shippingName: shippingData?.fullName || session.customer_details?.name || null,
         shippingPhone: shippingData?.phone || null,
         shippingMethod: shippingData?.shippingMethod || null,
-        shippingCost: shippingData?.shippingCost ? new Prisma.Decimal(shippingData.shippingCost) : null,
+        shippingCost:
+          shippingData?.shippingCost != null
+            ? new Prisma.Decimal(shippingData.shippingCost)
+            : null,
         shippingAddress: shippingData?.shippingAddress || null,
 
         // Faktura VAT

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { useCart } from "@/components/CartContext";
 import { useLanguage } from "@/components/LanguageContext";
 
@@ -10,22 +11,18 @@ export function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const hasProcessed = useRef(false);
+  const { status } = useSession();
   const { clearCart } = useCart();
   const { t } = useLanguage();
 
-  if (typeof window !== "undefined" && sessionId && !hasProcessed.current) {
-    localStorage.removeItem("cart");
-    localStorage.removeItem("syrenah_shipping");
-    localStorage.removeItem("syrenah_discount_code");
-  }
-
   useEffect(() => {
-    if (!sessionId) return;
-    if (hasProcessed.current) return;
+    if (!sessionId || status === "loading" || hasProcessed.current) return;
 
     hasProcessed.current = true;
-    clearCart();
-  }, [sessionId, clearCart]);
+    localStorage.removeItem("syrenah_shipping");
+    localStorage.removeItem("syrenah_discount_code");
+    void clearCart();
+  }, [sessionId, status, clearCart]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center text-center px-6">

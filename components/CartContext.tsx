@@ -85,6 +85,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const mergeInProgressRef = useRef(false);
   // Flaga: czy localStorage jest już załadowany (żeby persist nie nadpisał gościnnego koszyka zanim się załaduje)
   const initializedRef = useRef(false);
+  // Po clearCart nie wolno z powrotem wczytać koszyka z bazy (wyścig ze stroną sukcesu).
+  const clearedRef = useRef(false);
+  const prevUserIdRef = useRef<string | undefined>(undefined);
 
   const isAuthenticated = status === "authenticated";
   const userId = session?.user?.id;
@@ -103,7 +106,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // ======== Merge koszyka gościa z DB ========
   const mergeGuestCartToDb = useCallback(async () => {
-    if (mergeInProgressRef.current) return;
+    if (clearedRef.current || mergeInProgressRef.current) return;
     mergeInProgressRef.current = true;
 
     try {
@@ -111,7 +114,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (guestItems.length === 0) {
         // Brak elementów gościa — po prostu pobierz koszyk z DB
         const dbItems = await fetchDbCart();
-        setItems(dbItems);
+        if (!clearedRef.current) setItems(dbItems);
         return;
       }
 
@@ -131,19 +134,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
       if (res.ok) {
         const data = await res.json();
-        setItems(data.items ?? []);
+        if (!clearedRef.current) setItems(data.items ?? []);
         // Wyczyść localStorage po udanym merge
         clearGuestCart();
       } else {
         // Fallback — pobierz z DB
         const dbItems = await fetchDbCart();
-        setItems(dbItems);
+        if (!clearedRef.current) setItems(dbItems);
       }
     } catch (error) {
       console.error("Cart merge error:", error);
       // Fallback
       const dbItems = await fetchDbCart();
-      setItems(dbItems);
+      if (!clearedRef.current) setItems(dbItems);
     } finally {
       mergeInProgressRef.current = false;
     }
@@ -152,6 +155,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // ======== Inicjalizacja + reakcja na zmianę sesji ========
   useEffect(() => {
     if (status === "loading") return;
+
+    if (prevUserIdRef.current && prevUserIdRef.current !== userId) {
+      clearedRef.current = false;
+    }
+    prevUserIdRef.current = userId;
+
+    if (clearedRef.current) {
+      setItems([]);
+      clearGuestCart();
+      initializedRef.current = true;
+      setIsLoading(false);
+      return;
+    }
 
     const prevStatus = prevStatusRef.current;
     prevStatusRef.current = status;
@@ -170,7 +186,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // Już był authenticated — po prostu pobierz koszyk
         setIsLoading(true);
         fetchDbCart().then((dbItems) => {
-          setItems(dbItems);
+          if (!clearedRef.current) setItems(dbItems);
           setIsLoading(false);
         });
       }
@@ -187,7 +203,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       initializedRef.current = true;
       setIsLoading(false);
     }
-  }, [status, mergeGuestCartToDb, fetchDbCart]);
+  }, [status, userId, mergeGuestCartToDb, fetchDbCart]);
 
   // ======== Persist do localStorage (tylko dla gości) ========
   useEffect(() => {
@@ -320,32 +336,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // ======== clearCart ========
   const clearCart = useCallback(async () => {
-    if (isAuthenticated) {
-      // Usuń wszystkie elementy koszyka z DB
-      try {
-        // Usuń po jednym — ale lepiej stworzyć dedykowany endpoint lub po prostu wyczyść stan
-        // Dla prostoty czyścimy stan i localStorage
-        const currentItems = [...items];
-        for (const item of currentItems) {
-          const params = new URLSearchParams({
-            productId: item.productId,
-            removeAll: "true",
-          });
-          if (item.size) params.set("size", item.size);
-          if (item.color) params.set("color", item.color);
-
-          await fetch(`/api/cart?${params.toString()}`, {
-            method: "DELETE",
-          });
-        }
-      } catch (error) {
-        console.error("Error clearing cart:", error);
-      }
-    }
-
+    clearedRef.current = true;
     setItems([]);
     clearGuestCart();
-  }, [isAuthenticated, items]);
+
+    if (!isAuthenticated) return;
+
+    try {
+      await fetch("/api/cart?all=true", { method: "DELETE" });
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+    }
+  }, [isAuthenticated]);
 
   return (
     <CartContext.Provider

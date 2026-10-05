@@ -26,7 +26,7 @@ type ShippingData = {
   city: string;
   country?: string;
   phone: string;
-  shippingMethod: "courier" | "parcel_locker";
+  shippingMethod: "courier" | "parcel_locker" | "pickup";
   parcelLockerCode?: string;
   parcelLockerAddress?: string;
   parcelLockerCity?: string;
@@ -64,6 +64,7 @@ export default function CheckoutReviewPage() {
     () => ({
       courier: t("checkoutFlow.courierLabel"),
       parcel_locker: t("checkoutFlow.lockerLabel"),
+      pickup: t("checkoutFlow.pickupLabel"),
     }),
     [t]
   );
@@ -199,23 +200,28 @@ export default function CheckoutReviewPage() {
     try {
       // Przygotuj shippingAddress w zależności od metody dostawy
       const shippingAddress =
-        shipping.shippingMethod === "parcel_locker" &&
-        shipping.parcelLockerCode
+        shipping.shippingMethod === "pickup"
           ? {
-              type: "parcel_locker",
-              parcelLockerCode: shipping.parcelLockerCode,
-              street: shipping.parcelLockerAddress || "",
-              city: shipping.parcelLockerCity || "",
-              postalCode: shipping.parcelLockerPostalCode || "",
-              country: shipping.country || "PL",
+              type: "pickup",
+              country: "PL",
             }
-          : {
-              type: "courier",
-              street: shipping.street,
-              city: shipping.city,
-              postalCode: shipping.postalCode,
-              country: shipping.country || "PL",
-            };
+          : shipping.shippingMethod === "parcel_locker" &&
+              shipping.parcelLockerCode
+            ? {
+                type: "parcel_locker",
+                parcelLockerCode: shipping.parcelLockerCode,
+                street: shipping.parcelLockerAddress || "",
+                city: shipping.parcelLockerCity || "",
+                postalCode: shipping.parcelLockerPostalCode || "",
+                country: shipping.country || "PL",
+              }
+            : {
+                type: "courier",
+                street: shipping.street,
+                city: shipping.city,
+                postalCode: shipping.postalCode,
+                country: shipping.country || "PL",
+              };
 
       // Dane faktury
       const invoice = shipping.wantInvoice
@@ -229,7 +235,8 @@ export default function CheckoutReviewPage() {
         : null;
 
       // Inny adres dostawy
-      const alternateShipping = shipping.differentShipping
+      const alternateShipping =
+        shipping.shippingMethod !== "pickup" && shipping.differentShipping
         ? {
             fullName: shipping.altFullName || "",
             street: shipping.altStreet || "",
@@ -358,11 +365,19 @@ export default function CheckoutReviewPage() {
                 <p className="font-medium">{shipping.fullName}</p>
                 <p>{shipping.email}</p>
 
-                <p>{shipping.street}</p>
-                <p>
-                  {shipping.postalCode} {shipping.city}
-                </p>
-                <p>{countryLabel(shipping.country, locale)}</p>
+                {shipping.shippingMethod === "pickup" ? (
+                  <p className="text-neutral-500">
+                    {t("checkoutFlow.pickupNote")}
+                  </p>
+                ) : (
+                  <>
+                    <p>{shipping.street}</p>
+                    <p>
+                      {shipping.postalCode} {shipping.city}
+                    </p>
+                    <p>{countryLabel(shipping.country, locale)}</p>
+                  </>
+                )}
 
                 {shipping.shippingMethod === "parcel_locker" &&
                 shipping.parcelLockerCode ? (

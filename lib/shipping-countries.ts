@@ -45,6 +45,9 @@ export function shippingPricePln(
   method: string | undefined | null,
   destination: string | undefined | null
 ) {
+  if (method === "pickup" && isPolandCountry(destination)) {
+    return 0;
+  }
   if (method === "parcel_locker" && isPolandCountry(destination)) {
     return DOMESTIC_SHIPPING_PLN;
   }

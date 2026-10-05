@@ -304,7 +304,9 @@ export async function POST(req: Request) {
     // Dodaj koszt dostawy jako osobną pozycję
     if (shipping?.shippingCost && shipping.shippingCost > 0) {
       let shippingLabel = "Kurier";
-      if (shipping.shippingMethod === "parcel_locker") {
+      if (shipping.shippingMethod === "pickup") {
+        shippingLabel = "Odbiór osobisty";
+      } else if (shipping.shippingMethod === "parcel_locker") {
         const lockerCode = shipping.shippingAddress?.parcelLockerCode;
         shippingLabel = lockerCode
           ? `Paczkomat ${lockerCode}`

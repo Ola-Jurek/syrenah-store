@@ -157,6 +157,13 @@ export async function DELETE(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
+  if (searchParams.get("all") === "true") {
+    await prisma.cartItem.deleteMany({
+      where: { userId: session.user.id },
+    });
+    return NextResponse.json({ deleted: true });
+  }
+
   const productId = searchParams.get("productId");
   const size = searchParams.get("size") || null;
   const color = searchParams.get("color") || null;

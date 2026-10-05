@@ -42,11 +42,13 @@ function translateShippingMethod(method: string | null): string {
   if (!method) return "";
   if (method === "courier") return "Kurier";
   if (method === "parcel_locker") return "Paczkomat";
+  if (method === "pickup") return "Odbiór osobisty";
   return method;
 }
 
 function formatAddress(address: AddressJson): string {
   if (!address || typeof address !== "object") return "";
+  if (address.type === "pickup") return "Odbiór osobisty";
   const parts = [
     address.fullName,
     address.street,

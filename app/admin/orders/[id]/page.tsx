@@ -327,6 +327,8 @@ export default function AdminOrderDetailPage() {
   const isParcelLocker =
     order.shippingMethod === "parcel_locker" ||
     addr?.type === "parcel_locker";
+  const isPickup =
+    order.shippingMethod === "pickup" || addr?.type === "pickup";
   const billing = order.billingAddress as BillingAddress | null;
   const altShip =
     order.alternateShippingAddress as AlternateShippingAddress | null;
@@ -400,7 +402,11 @@ export default function AdminOrderDetailPage() {
             <InfoRow
               label="Metoda"
               value={
-                isParcelLocker ? "Paczkomat InPost" : "Kurier"
+                isParcelLocker
+                  ? "Paczkomat InPost"
+                  : isPickup
+                    ? "Odbiór osobisty"
+                    : "Kurier"
               }
             />
             {order.shippingCost !== null && (
@@ -420,7 +426,7 @@ export default function AdminOrderDetailPage() {
               </>
             )}
 
-            {!isParcelLocker && addr && (
+            {!isParcelLocker && !isPickup && addr && (
               <InfoRow
                 label="Adres"
                 value={[addr.street, [addr.postalCode, addr.city].filter(Boolean).join(" "), countryLabel(addr.country, "pl")].filter(Boolean).join(", ")}

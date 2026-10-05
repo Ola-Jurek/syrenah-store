@@ -28,7 +28,7 @@ type ShippingFormData = {
   city: string;
   country: string;
   phone: string;
-  shippingMethod: "courier" | "parcel_locker";
+  shippingMethod: "courier" | "parcel_locker" | "pickup";
 
   // Faktura VAT
   wantInvoice: boolean;
@@ -137,6 +137,11 @@ export default function ShippingPage() {
         label: t("checkoutFlow.lockerLabel"),
         description: t("checkoutFlow.lockerDesc"),
       },
+      {
+        id: "pickup" as const,
+        label: t("checkoutFlow.pickupLabel"),
+        description: t("checkoutFlow.pickupDesc"),
+      },
     ],
     [t]
   );
@@ -171,6 +176,8 @@ export default function ShippingPage() {
     handleSubmit,
     watch,
     setValue,
+    unregister,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<ShippingFormData>({
     defaultValues: {
@@ -306,7 +313,9 @@ export default function ShippingPage() {
         if (parsed.companyCity) setValue("companyCity", parsed.companyCity);
 
         // Alternate shipping
-        if (parsed.differentShipping) setValue("differentShipping", true);
+        if (parsed.differentShipping && parsed.shippingMethod !== "pickup") {
+          setValue("differentShipping", true);
+        }
         if (parsed.altFullName) setValue("altFullName", parsed.altFullName);
         if (parsed.altStreet) setValue("altStreet", parsed.altStreet);
         if (parsed.altPostalCode)
@@ -368,11 +377,30 @@ export default function ShippingPage() {
   });
   const destinationIsPoland = isPolandCountry(deliveryCountry);
 
+  const isPickup = selectedMethod === "pickup";
+
   useEffect(() => {
-    if (!destinationIsPoland && selectedMethod === "parcel_locker") {
+    if (
+      !destinationIsPoland &&
+      (selectedMethod === "parcel_locker" || selectedMethod === "pickup")
+    ) {
       setValue("shippingMethod", "courier");
     }
   }, [destinationIsPoland, selectedMethod, setValue]);
+
+  useEffect(() => {
+    if (selectedMethod !== "pickup") return;
+    setValue("differentShipping", false);
+    clearErrors(["street", "postalCode", "city"]);
+    unregister([
+      "altFullName",
+      "altStreet",
+      "altPostalCode",
+      "altCity",
+      "altCountry",
+      "altPhone",
+    ]);
+  }, [selectedMethod, setValue, clearErrors, unregister]);
 
   const { subPln: subtotal, subEur: subtotalEur, canUseEur } =
     cartSubtotals(items);
@@ -463,6 +491,10 @@ export default function ShippingPage() {
       payload.parcelLockerAddress = selectedLocker.address;
       payload.parcelLockerCity = selectedLocker.city;
       payload.parcelLockerPostalCode = selectedLocker.postalCode;
+    }
+
+    if (data.shippingMethod === "pickup") {
+      payload.differentShipping = false;
     }
 
     localStorage.setItem("syrenah_shipping", JSON.stringify(payload));
@@ -631,7 +663,13 @@ export default function ShippingPage() {
                   )}
                 </div>
 
-                <div>
+                {isPickup && (
+                  <p className="text-sm text-neutral-500">
+                    {t("checkoutFlow.pickupNote")}
+                  </p>
+                )}
+
+                <div className={isPickup ? "hidden" : undefined}>
                   <label
                     htmlFor="street"
                     className="block text-xs uppercase tracking-widest text-neutral-500 mb-2"
@@ -647,11 +685,16 @@ export default function ShippingPage() {
                       errors.street ? inputErr : inputOk
                     }`}
                     {...register("street", {
-                      required: t("checkoutValidation.streetRequired"),
-                      minLength: {
-                        value: 3,
-                        message: t("checkoutValidation.streetMin"),
-                      },
+                      required: isPickup
+                        ? false
+                        : t("checkoutValidation.streetRequired"),
+                      minLength: isPickup
+                        ? undefined
+                        : {
+                            value: 3,
+                            message: t("checkoutValidation.streetMin"),
+                          },
+                      validate: undefined,
                     })}
                   />
                   {errors.street && (
@@ -661,7 +704,13 @@ export default function ShippingPage() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-[140px_1fr] gap-4">
+                <div
+                  className={
+                    isPickup
+                      ? "hidden"
+                      : "grid grid-cols-[140px_1fr] gap-4"
+                  }
+                >
                   <div>
                     <label
                       htmlFor="postalCode"
@@ -681,9 +730,11 @@ export default function ShippingPage() {
                         errors.postalCode ? inputErr : inputOk
                       }`}
                         {...register("postalCode", {
-                        required: t("checkoutValidation.postalRequired"),
+                        required: isPickup
+                          ? false
+                          : t("checkoutValidation.postalRequired"),
                         onChange: (event) => {
-                          if (!shipsToPoland) return;
+                          if (!shipsToPoland || isPickup) return;
                           const formatted = formatPolishPostal(
                             event.target.value
                           );
@@ -691,18 +742,19 @@ export default function ShippingPage() {
                             setValue("postalCode", formatted);
                           }
                         },
-                        ...(shipsToPoland
-                          ? {
-                              validate: (value) =>
-                                isPolishPostal(value) ||
-                                t("checkoutValidation.postalFormat"),
-                            }
-                          : {
-                              minLength: {
+                        minLength:
+                          isPickup || shipsToPoland
+                            ? undefined
+                            : {
                                 value: 2,
                                 message: t("checkoutValidation.postalMin"),
                               },
-                            }),
+                        validate:
+                          !isPickup && shipsToPoland
+                            ? (value: string) =>
+                                isPolishPostal(value) ||
+                                t("checkoutValidation.postalFormat")
+                            : undefined,
                       })}
                     />
                     {errors.postalCode && (
@@ -728,11 +780,16 @@ export default function ShippingPage() {
                         errors.city ? inputErr : inputOk
                       }`}
                       {...register("city", {
-                        required: t("checkoutValidation.cityRequired"),
-                        minLength: {
-                          value: 2,
-                          message: t("checkoutValidation.cityMin"),
-                        },
+                        required: isPickup
+                          ? false
+                          : t("checkoutValidation.cityRequired"),
+                        minLength: isPickup
+                          ? undefined
+                          : {
+                              value: 2,
+                              message: t("checkoutValidation.cityMin"),
+                            },
+                        validate: undefined,
                       })}
                     />
                     {errors.city && (
@@ -752,7 +809,9 @@ export default function ShippingPage() {
                 <div className="space-y-3">
                   {SHIPPING_METHODS.filter(
                     (method) =>
-                      method.id !== "parcel_locker" || destinationIsPoland
+                      (method.id !== "parcel_locker" &&
+                        method.id !== "pickup") ||
+                      destinationIsPoland
                   ).map((method) => (
                     <label
                       key={method.id}
@@ -766,7 +825,12 @@ export default function ShippingPage() {
                         type="radio"
                         value={method.id}
                         className="sr-only"
-                        {...register("shippingMethod")}
+                        {...register("shippingMethod", {
+                          onChange: (event) => {
+                            if (event.target.value !== "pickup") return;
+                            setValue("differentShipping", false);
+                          },
+                        })}
                       />
                       {/* Custom radio */}
                       <div
@@ -1054,6 +1118,7 @@ export default function ShippingPage() {
               </div>
 
               {/* ──────────── Inny adres dostawy ──────────── */}
+              {!isPickup && (
               <div className="pt-4 border-t border-[#E8E3D8]">
                 <StyledCheckbox
                   checked={differentShipping}
@@ -1252,6 +1317,7 @@ export default function ShippingPage() {
                   </div>
                 )}
               </div>
+              )}
             </div>
 
             {/* Prawa kolumna — podsumowanie */}
