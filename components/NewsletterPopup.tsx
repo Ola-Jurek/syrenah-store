@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { areCookiesAccepted } from "@/components/CookieBanner";
+import { hasCookieChoice } from "@/components/CookieBanner";
 import { useLanguage } from "@/components/LanguageContext";
 
 export function NewsletterPopup() {
@@ -20,7 +20,7 @@ export function NewsletterPopup() {
     const wasShown = sessionStorage.getItem("syrenah_newsletter_shown");
     if (wasShown) return;
 
-    /** Pokaż popup po 5 s — ale dopiero gdy cookies są zaakceptowane */
+    /** Pokaż popup po 5 s — dopiero gdy ktoś wybierze cookies */
     const tryShow = () => {
       const timer = setTimeout(() => {
         setIsVisible(true);
@@ -29,8 +29,7 @@ export function NewsletterPopup() {
       return timer;
     };
 
-    // Jeśli cookies już zaakceptowane — odliczaj od razu
-    if (areCookiesAccepted()) {
+    if (hasCookieChoice()) {
       const timer = tryShow();
       return () => clearTimeout(timer);
     }

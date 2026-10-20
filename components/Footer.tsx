@@ -43,6 +43,13 @@ export function Footer() {
             <Link href="/polityka-prywatnosci" className="text-sm text-foreground/70 hover:text-foreground transition">
               {t("footer.privacy")}
             </Link>
+            <button
+              type="button"
+              className="text-sm text-foreground/70 hover:text-foreground transition"
+              onClick={() => window.dispatchEvent(new Event("open-cookie-settings"))}
+            >
+              {t("footer.cookieSettings")}
+            </button>
             <Link href="/zwroty-i-reklamacje" className="text-sm text-foreground/70 hover:text-foreground transition">
               {t("footer.returns")}
             </Link>

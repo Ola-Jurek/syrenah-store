@@ -2,7 +2,7 @@
 
 import { useCart, getCartItemName } from "@/components/CartContext";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Tag } from "lucide-react";
@@ -17,6 +17,7 @@ import {
   destinationCountry,
   shippingPricePln,
 } from "@/lib/shipping-countries";
+import { getMetaCheckoutContext, trackMetaEvent } from "@/lib/meta-client";
 
 type ShippingData = {
   fullName: string;
@@ -144,6 +145,65 @@ export default function CheckoutReviewPage() {
     fetchImages();
   }, [items]);
 
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (!isReady || !shipping || items.length === 0) return;
+
+    const send = () => {
+      if (checkoutTracked.current) return;
+
+      let productTotal = items.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+      try {
+        const raw = localStorage.getItem("syrenah_discount_code");
+        if (raw) {
+          const discount = JSON.parse(raw) as {
+            totalAfterDiscount?: number;
+            discountAmount?: number;
+          };
+          if (
+            discount.discountAmount &&
+            discount.discountAmount > 0 &&
+            typeof discount.totalAfterDiscount === "number"
+          ) {
+            productTotal = Math.min(productTotal, discount.totalAfterDiscount);
+          }
+        }
+      } catch {
+        /* rabat jest opcjonalny */
+      }
+
+      const ship = shippingPricePln(
+        shipping.shippingMethod,
+        destinationCountry({
+          country: shipping.country,
+          differentShipping: shipping.differentShipping,
+          altCountry: shipping.altCountry,
+        })
+      );
+
+      const sent = trackMetaEvent("InitiateCheckout", {
+        currency: "PLN",
+        value: Math.round((productTotal + ship) * 100) / 100,
+        num_items: items.reduce((sum, item) => sum + item.quantity, 0),
+        content_ids: items.map((item) => item.productId),
+        content_type: "product",
+        contents: items.map((item) => ({
+          id: item.productId,
+          quantity: item.quantity,
+          item_price: item.price,
+        })),
+      });
+      if (sent) checkoutTracked.current = true;
+    };
+
+    send();
+    window.addEventListener("cookies-accepted", send);
+    return () => window.removeEventListener("cookies-accepted", send);
+  }, [isReady, shipping, items]);
+
   const { subPln: subtotal, subEur: subtotalEur, canUseEur } =
     cartSubtotals(items);
 
@@ -264,6 +324,7 @@ export default function CheckoutReviewPage() {
             alternateShipping,
           },
           discountCode: appliedDiscount?.code || null,
+          ...getMetaCheckoutContext(),
         }),
       });
 

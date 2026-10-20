@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useCart } from "@/components/CartContext";
 import { useLanguage } from "@/components/LanguageContext";
+import { trackMetaPurchase } from "@/lib/meta-client";
 
 export function OrderSuccessContent() {
   const searchParams = useSearchParams();
@@ -23,6 +24,29 @@ export function OrderSuccessContent() {
     localStorage.removeItem("syrenah_discount_code");
     void clearCart();
   }, [sessionId, status, clearCart]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/meta/purchase?session_id=${encodeURIComponent(sessionId)}`
+        );
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (cancelled || !data?.eventId) return;
+        trackMetaPurchase(data);
+      } catch {
+        /* piksel nie może zablokować strony podziękowania */
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center text-center px-6">

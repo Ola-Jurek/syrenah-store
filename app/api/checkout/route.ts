@@ -1,5 +1,6 @@
 export const runtime = "nodejs";
 
+import { randomUUID } from "crypto";
 import Stripe from "stripe";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -299,6 +300,17 @@ export async function POST(req: Request) {
     if (cartDiscount) {
       metadata.discountId = cartDiscount.id;
       metadata.discountCode = cartDiscount.code;
+    }
+
+    metadata.metaEventId = randomUUID();
+    if (body.metaConsent === true) {
+      metadata.metaConsent = "1";
+      if (typeof body.fbp === "string" && body.fbp.trim()) {
+        metadata.metaFbp = body.fbp.trim().slice(0, 200);
+      }
+      if (typeof body.fbc === "string" && body.fbc.trim()) {
+        metadata.metaFbc = body.fbc.trim().slice(0, 480);
+      }
     }
 
     // Dodaj koszt dostawy jako osobną pozycję

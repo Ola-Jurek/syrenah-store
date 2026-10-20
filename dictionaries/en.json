@@ -23,6 +23,7 @@
     "contact": "Contact",
     "terms": "Terms & Conditions",
     "privacy": "Privacy policy",
+    "cookieSettings": "Cookie settings",
     "returns": "Returns & complaints",
     "social": "Social",
     "shopData": "Store details",
@@ -138,9 +139,19 @@
     "toastNetwork": "Connection error. Please try again later."
   },
   "cookie": {
-    "textPrefix": "We use cookies to give you the best experience. By using the store you accept our",
+    "text": "Our site uses cookies to give you the best experience.",
+    "more": "More in our",
     "privacyLink": "privacy policy",
-    "accept": "Accept"
+    "settings": "Settings",
+    "necessary": "Necessary",
+    "necessaryDesc": "cart and login",
+    "analytics": "Analytics",
+    "analyticsDesc": "visit statistics",
+    "marketing": "Marketing",
+    "marketingDesc": "ad measurement",
+    "necessaryOnly": "Necessary only",
+    "save": "Save choice",
+    "acceptAll": "Accept all"
   },
   "newsletter": {
     "close": "Close",
@@ -389,7 +400,8 @@
           "the payment operator (Stripe) — for payment processing,",
           "hosting and IT infrastructure providers,",
           "transactional email providers (Resend),",
-          "entities entitled to receive data under applicable law."
+          "entities entitled to receive data under applicable law,",
+          "Meta Platforms Ireland Ltd. — to measure advertising performance on Facebook and Instagram, only after cookie consent."
         ]
       },
       {
@@ -402,9 +414,10 @@
             "sub": [
               "Strictly necessary — required for the Store to function (session, cart, authentication).",
               "Analytics — help us understand how customers use the Store.",
-              "Marketing — used to display personalised advertising content."
+              "Marketing — the Meta pixel (Facebook and Instagram), used to measure visits, carts and purchases from ads. It loads only after you allow marketing cookies."
             ]
           },
+          "The same events (page view, product view, add to cart, checkout and purchase) are also sent to Meta from the store’s server (Conversions API), so a purchase is still counted if the browser blocks the pixel. A purchase includes a hashed email address.",
           "You can change cookie settings in your browser at any time, including blocking cookies."
         ]
       },

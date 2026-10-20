@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
@@ -8,6 +9,7 @@ import { ProductBadge } from "@/components/ProductBadge";
 import { ProductSizeChart } from "@/components/ProductSizeChart";
 import { useLanguage } from "@/components/LanguageContext";
 import { formatMoney } from "@/lib/format-price";
+import { trackMetaEvent } from "@/lib/meta-client";
 import { extractDiscountLabel } from "@/lib/pricing";
 import type { SizeChart } from "@/lib/size-chart";
 type ImageRow = {
@@ -64,6 +66,22 @@ export function ProductPageView({ product, pricing }: ProductPageViewProps) {
   const discountLabelEn = extractDiscountLabel(product.discounts, "EUR");
   const discountLabel =
     locale === "en" ? discountLabelEn ?? discountLabelPl : discountLabelPl;
+
+  useEffect(() => {
+    const send = () => {
+      trackMetaEvent("ViewContent", {
+        content_ids: [product.id],
+        content_type: "product",
+        content_name: name,
+        content_category: product.category.slug,
+        value: pricing.finalPricePln,
+        currency: "PLN",
+      });
+    };
+    send();
+    window.addEventListener("cookies-accepted", send);
+    return () => window.removeEventListener("cookies-accepted", send);
+  }, [product.id, product.category.slug, name, pricing.finalPricePln]);
 
   const orig =
     locale === "en" ? pricing.originalPriceEur : pricing.originalPricePln;

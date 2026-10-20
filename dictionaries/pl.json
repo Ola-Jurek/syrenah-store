@@ -23,6 +23,7 @@
     "contact": "Kontakt",
     "terms": "Regulamin",
     "privacy": "Polityka prywatności",
+    "cookieSettings": "Ustawienia cookies",
     "returns": "Zwroty i reklamacje",
     "social": "Social",
     "shopData": "Dane sklepu",
@@ -138,9 +139,19 @@
     "toastNetwork": "Wystąpił błąd połączenia. Spróbuj ponownie później."
   },
   "cookie": {
-    "textPrefix": "Nasza strona korzysta z plików cookies, aby zapewnić Ci najwyższą jakość usług. Korzystając ze sklepu, akceptujesz naszą",
-    "privacyLink": "politykę prywatności",
-    "accept": "Akceptuję"
+    "text": "Nasza strona korzysta z plików cookies, aby zapewnić Ci najwyższą jakość usług.",
+    "more": "Więcej w",
+    "privacyLink": "polityce prywatności",
+    "settings": "Ustawienia",
+    "necessary": "Niezbędne",
+    "necessaryDesc": "koszyk i logowanie",
+    "analytics": "Analityczne",
+    "analyticsDesc": "statystyki odwiedzin",
+    "marketing": "Marketingowe",
+    "marketingDesc": "pomiar reklam",
+    "necessaryOnly": "Tylko niezbędne",
+    "save": "Zapisz wybór",
+    "acceptAll": "Akceptuję wszystkie"
   },
   "newsletter": {
     "close": "Zamknij",
@@ -389,7 +400,8 @@
           "operatorowi płatności (Stripe) — w celu obsługi transakcji płatniczych,",
           "dostawcy usług hostingowych i infrastruktury IT,",
           "dostawcy usług e-mail transakcyjnych (Resend),",
-          "podmiotom uprawnionym na podstawie przepisów prawa."
+          "podmiotom uprawnionym na podstawie przepisów prawa,",
+          "Meta Platforms Ireland Ltd. — w celu pomiaru skuteczności reklam na Facebooku i Instagramie, wyłącznie po zgodzie na pliki cookies."
         ]
       },
       {
@@ -402,9 +414,10 @@
             "sub": [
               "Niezbędne — wymagane do prawidłowego działania Sklepu (sesja, koszyk, uwierzytelnianie).",
               "Analityczne — pomagają zrozumieć, w jaki sposób Klienci korzystają ze Sklepu.",
-              "Marketingowe — wykorzystywane do wyświetlania spersonalizowanych treści reklamowych."
+              "Marketingowe — piksel Meta (Facebook i Instagram), używany do pomiaru odwiedzin, koszyka i zakupów z reklam. Włącza się dopiero po zaznaczeniu zgody na cookies marketingowe."
             ]
           },
+          "Te same zdarzenia (odsłona strony, obejrzenie produktu, dodanie do koszyka, rozpoczęcie płatności i zakup) sklep wysyła do Meta także z serwera (Conversions API), żeby zakup został policzony również wtedy, gdy przeglądarka zablokuje piksel. Przy zakupie przekazywany jest m.in. zahaszowany adres e-mail.",
           "Klient może w dowolnym momencie zmienić ustawienia plików cookies w swojej przeglądarce internetowej, w tym zablokować ich zapisywanie."
         ]
       },

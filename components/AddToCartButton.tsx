@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useCart } from "@/components/CartContext";
 import { AddToCartModal } from "./AddToCartModal";
 import { cn } from "@/lib/utils";
+import { trackMetaEvent } from "@/lib/meta-client";
 import type { Messages } from "@/lib/dict";
 
 type ProductI18n = Messages["product"];
@@ -87,6 +88,15 @@ export function AddToCartButton({
       color: selectedColor || undefined,
       slug,
       categorySlug,
+    });
+
+    trackMetaEvent("AddToCart", {
+      content_ids: [productId],
+      content_type: "product",
+      content_name: namePl || name,
+      value: price,
+      currency: "PLN",
+      contents: [{ id: productId, quantity: 1, item_price: price }],
     });
 
     setIsLoading(false);

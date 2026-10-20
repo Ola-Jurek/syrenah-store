@@ -10,6 +10,7 @@ import { SessionProvider } from "@/components/SessionProvider";
 import { WishlistProvider } from "@/components/WishlistContext";
 import { NewsletterPopup } from "@/components/NewsletterPopup";
 import { CookieBanner } from "@/components/CookieBanner";
+import { MetaPixel } from "@/components/MetaPixel";
 import { LanguageProvider } from "@/components/LanguageContext";
 
 
@@ -93,6 +94,7 @@ export default function RootLayout({
                 </main>
                 <Footer />
                 <CookieBanner />
+                <MetaPixel />
                 <NewsletterPopup />
               </WishlistProvider>
             </CartProvider>

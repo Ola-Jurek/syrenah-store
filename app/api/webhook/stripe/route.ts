@@ -9,6 +9,7 @@ import {
   orderConfirmationEmail,
   orderConfirmationSubject,
 } from "@/lib/emails/orderConfirmation";
+import { sendMetaPurchaseForSession } from "@/lib/meta-capi";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -103,6 +104,17 @@ export async function POST(req: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       const sessionId = session.id;
       console.log("Session ID:", sessionId);
+
+      try {
+        const metaResult = await sendMetaPurchaseForSession(session);
+        if (metaResult.skipped) {
+          console.log("Meta CAPI purchase skipped");
+        } else if (metaResult.ok) {
+          console.log("Meta CAPI purchase sent");
+        }
+      } catch (metaError) {
+        console.error("Meta CAPI purchase failed:", metaError);
+      }
 
       // Idempotencja: sprawdź czy zamówienie już istnieje
       console.log("Checking for existing order...");
