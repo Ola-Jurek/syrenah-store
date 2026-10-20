@@ -91,8 +91,8 @@ export function CookieBanner() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[9990] bg-[#FAF8F5] border-t border-[#E8E3D8] animate-slide-up">
       <div className="max-w-5xl mx-auto px-5 py-3.5 flex flex-col gap-3">
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-xs text-neutral-500 leading-relaxed">
+        <div className="flex items-start gap-3 sm:gap-4">
+          <p className="min-w-0 text-xs text-neutral-500 leading-relaxed sm:max-w-2xl">
             {copy.text}
             <span className="block mt-1">
               {copy.more}{" "}
@@ -114,16 +114,14 @@ export function CookieBanner() {
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:w-auto sm:justify-end">
+        <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:w-auto sm:justify-start">
           <BannerButton
             primary
-            className="sm:order-2"
             onClick={() => persist({ necessary: true, analytics: true, marketing: true })}
           >
             {copy.acceptAll}
           </BannerButton>
           <BannerButton
-            className="sm:order-1"
             onClick={() => persist({ necessary: true, analytics: false, marketing: false })}
           >
             {copy.necessaryOnly}
