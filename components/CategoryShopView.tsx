@@ -13,10 +13,14 @@ export function CategoryShopView({
   categoryNamePl,
   categoryNameEn,
   products,
+  descriptionPl,
+  descriptionEn,
 }: {
   categorySlug: string;
   categoryNamePl: string;
   categoryNameEn: string;
+  descriptionPl?: string | null;
+  descriptionEn?: string | null;
   products: CardProduct[];
 }) {
   const { locale, t } = useLanguage();
@@ -24,6 +28,9 @@ export function CategoryShopView({
     locale === "en" && categoryNameEn?.trim()
       ? categoryNameEn
       : categoryNamePl;
+
+  const description =
+    locale === "en" && descriptionEn?.trim() ? descriptionEn : descriptionPl;
 
   return (
     <div className="px-6 pt-24 pb-16 max-w-7xl mx-auto bg-white">
@@ -36,6 +43,17 @@ export function CategoryShopView({
           <span className="text-[#C1A88C]/60">{catName.toUpperCase()}</span>
         </div>
       </nav>
+
+      <header className="mb-10">
+        <h1 className="font-serif text-2xl md:text-3xl tracking-[0.15em] text-black uppercase">
+          {catName}
+        </h1>
+        {description?.trim() && (
+          <p className="mt-4 max-w-2xl text-sm font-light leading-relaxed text-black/60">
+            {description}
+          </p>
+        )}
+      </header>
 
       {products.length === 0 ? (
         <ShopEmpty />

@@ -32,13 +32,10 @@ const siteDescription =
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Syrenah Store",
+    default: "Syrenah – ekskluzywna moda damska | polski design",
     template: "%s | Syrenah",
   },
   description: siteDescription,
-  alternates: {
-    canonical: "/",
-  },
   icons: {
     icon: [
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -54,7 +51,7 @@ export const metadata: Metadata = {
     locale: "pl_PL",
     url: siteUrl,
     siteName: "Syrenah",
-    title: "Syrenah Store",
+    title: "Syrenah – ekskluzywna moda damska | polski design",
     description: siteDescription,
   },
   robots: {

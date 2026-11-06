@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { CategoryShopView } from "@/components/CategoryShopView";
@@ -15,6 +16,26 @@ type Props = {
     category: string;
   }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { category } = await params;
+  const data = await prisma.category.findUnique({
+    where: { slug: category },
+    select: { namePl: true, descriptionPl: true },
+  });
+  if (!data) return { title: "Kategoria nie znaleziona" };
+
+  const description =
+    data.descriptionPl?.trim().slice(0, 160) ||
+    `${data.namePl} – kolekcja Syrenah. Ekskluzywna moda damska, polski design i najwyższa jakość.`;
+
+  return {
+    title: `${data.namePl} – moda damska`,
+    description,
+    alternates: { canonical: `/shop/${category}` },
+    openGraph: { title: data.namePl, description },
+  };
+}
 
 export default async function CategoryPage({ params }: Props) {
   const { category } = await params;
@@ -83,6 +104,8 @@ export default async function CategoryPage({ params }: Props) {
       categorySlug={category}
       categoryNamePl={categoryData.namePl}
       categoryNameEn={categoryData.nameEn}
+      descriptionPl={categoryData.descriptionPl}
+      descriptionEn={categoryData.descriptionEn}
       products={cardProducts}
     />
   );

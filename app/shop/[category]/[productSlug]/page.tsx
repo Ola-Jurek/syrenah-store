@@ -48,6 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? await prisma.product.findUnique({
         where: { slug },
         include: {
+          category: { select: { slug: true } },
           images: {
             where: { isPrimary: true },
             take: 1,
@@ -73,6 +74,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: product.namePl,
     description,
+    alternates: {
+      canonical: `/shop/${product.category.slug}/${product.slug}`,
+    },
     openGraph: {
       title: product.namePl,
       description: description,
@@ -143,7 +147,56 @@ export default async function ProductPage({ params }: Props) {
     discount: discountInfo,
   });
 
+  const siteUrl = "https://syrenahthelabel.com";
+  const productUrl = `${siteUrl}/shop/${product.category.slug}/${product.slug}`;
+  const inStock =
+    sellableStock(product.stock, product.sizes, product.sizeStocks) > 0;
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: product.namePl,
+      description: product.descriptionPl || undefined,
+      sku: product.sku || product.id,
+      image: product.images.map((img) => img.url),
+      brand: { "@type": "Brand", name: "Syrenah" },
+      category: product.category.namePl,
+      offers: {
+        "@type": "Offer",
+        url: productUrl,
+        priceCurrency: "PLN",
+        price: pricing.finalPricePln.toFixed(2),
+        availability: inStock
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
+        itemCondition: "https://schema.org/NewCondition",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Strona główna", item: siteUrl },
+        { "@type": "ListItem", position: 2, name: "Sklep", item: `${siteUrl}/shop` },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: product.category.namePl,
+          item: `${siteUrl}/shop/${product.category.slug}`,
+        },
+        { "@type": "ListItem", position: 4, name: product.namePl, item: productUrl },
+      ],
+    },
+  ];
+
   return (
+    <>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+      }}
+    />
     <ProductPageView
       product={{
         id: product.id,
@@ -184,5 +237,6 @@ export default async function ProductPage({ params }: Props) {
         hasDiscount: pricing.hasDiscount,
       }}
     />
+    </>
   );
 }

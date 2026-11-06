@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/ProductCard";
 import { ShopFilters } from "@/components/ShopFilters";
@@ -18,6 +19,18 @@ export const dynamic = "force-dynamic";
 type Props = {
   searchParams: Promise<{ search?: string; sort?: string; filter?: string }>;
 };
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const { search, sort, filter } = await searchParams;
+  const isVariant = !!(search || sort || (filter && filter !== "all"));
+  return {
+    title: "Sklep – ekskluzywna moda damska",
+    description:
+      "Poznaj kolekcję Syrenah: ekskluzywna moda damska, polski design i najwyższa jakość wykonania.",
+    alternates: { canonical: "/shop" },
+    robots: isVariant ? { index: false, follow: true } : undefined,
+  };
+}
 
 const productInclude = {
   category: {
@@ -206,6 +219,7 @@ export default async function ShopPage({ searchParams }: Props) {
       {showBanner && <ShopBanner discount={activeDiscountWithCode} />}
 
       <div className="px-6 pb-16 max-w-7xl mx-auto pt-8">
+        <h1 className="sr-only">Sklep – ekskluzywna moda damska Syrenah</h1>
         <Suspense
           fallback={
             <div className="h-12 mb-8 border-b border-[#C1A88C]/10 animate-pulse" />

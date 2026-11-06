@@ -5,6 +5,19 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
+      disallow: [
+        "/admin",
+        "/api/",
+        "/checkout",
+        "/cart",
+        "/account",
+        "/orders",
+        "/wishlist",
+        "/search",
+        "/success",
+        "/login",
+        "/register",
+      ],
     },
     sitemap: "https://syrenahthelabel.com/sitemap.xml",
   };

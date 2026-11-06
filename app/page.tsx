@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { HeroSection } from "@/components/HeroSection";
 import { InstagramFeed } from "@/components/InstagramFeed";
@@ -8,6 +9,10 @@ import {
   extractDiscountLabel,
 } from "@/lib/pricing";
 import { sellableStock } from "@/lib/size-stock";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 // Hero i „najnowsze” mają być widoczne od razu po zapisie w adminie.
 export const dynamic = "force-dynamic";
